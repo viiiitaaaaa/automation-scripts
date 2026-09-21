@@ -1,108 +1,92 @@
 <mxfile host="app.diagrams.net">
   <diagram name="ARTMELLIO — вся экосистема">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1000" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1650" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
         <!-- ЗАГОЛОВОК -->
         <mxCell id="title" value="ARTMELLIO — вся экосистема автоматизации" style="text;html=1;fontSize=22;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="10" width="1400" height="30" as="geometry" />
+          <mxGeometry x="0" y="10" width="1300" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ИНФРАСТРУКТУРА: просто информационная строка, без стрелок -->
+        <mxCell id="infra" value="ИНФРАСТРУКТУРА (используется на каждом шаге ниже): Dolphin{anty} (профили 828976678 / 859648353) · Shopify Admin API (токен на 24ч) · GitHub automation-scripts (весь код и схемы)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=2;align=center;" vertex="1" parent="1">
+          <mxGeometry x="60" y="55" width="1180" height="40" as="geometry" />
         </mxCell>
 
         <!-- ОРКЕСТРАЦИЯ -->
         <mxCell id="n8n" value="n8n&#10;(оркестратор, сам выпускает токен Shopify)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="520" y="50" width="220" height="60" as="geometry" />
+          <mxGeometry x="360" y="130" width="260" height="60" as="geometry" />
         </mxCell>
         <mxCell id="ops" value="Operations System — панель&#10;(поверх n8n, 4 doc Telegram = 1 документ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="770" y="50" width="220" height="60" as="geometry" />
+          <mxGeometry x="680" y="130" width="260" height="60" as="geometry" />
         </mxCell>
         <mxCell id="e_ops_n8n" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="ops" target="n8n"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="orch_note" value="управляет и мониторит весь конвейер ниже" style="text;html=1;fontSize=11;fontColor=#666666;fontStyle=2;align=center;" vertex="1" parent="1">
+          <mxGeometry x="360" y="190" width="580" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ЛИЧНОЕ, ИЗОЛИРОВАНО, СПРАВА СВЕРХУ -->
+        <mxCell id="clE" value="ЛИЧНОЕ (не про магазин)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=1;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="990" y="130" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="clE_txt" value="Скрипты для переписки с мужчинами&#10;(«НЛП-влюбление») — скилл love-scripts" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="162" width="230" height="55" as="geometry" />
+        </mxCell>
 
         <!-- CLUSTER A: ТРЕНДЫ И СИГНАЛЫ -->
         <mxCell id="clA" value="ИСТОЧНИКИ СИГНАЛОВ И ТРЕНДОВ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;spacingTop=6;" vertex="1" parent="1">
-          <mxGeometry x="40" y="150" width="460" height="220" as="geometry" />
+          <mxGeometry x="60" y="270" width="560" height="200" as="geometry" />
         </mxCell>
-        <mxCell id="clA_txt" value="• Google Trends / Pinterest / TikTok (Bright Data)&#10;• Подбор товаров AliExpress (Apify / Dolphin, пагинация)&#10;скилл: trend-radar&#10;&#10;• Дашборд лайков Instagram по хэштегу&#10;• Мониторинг публичных Telegram-каналов (tg_monitor)&#10;&#10;→ HTML-галерея кандидатов на товар, сверка с ручным отбором" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="50" y="182" width="440" height="180" as="geometry" />
+        <mxCell id="clA_txt" value="• Google Trends / Pinterest / TikTok (Bright Data)&#10;• Подбор товаров AliExpress (Apify / Dolphin, пагинация)&#10;  скилл: trend-radar&#10;&#10;• Дашборд лайков Instagram по хэштегу&#10;• Мониторинг публичных Telegram-каналов (tg_monitor)&#10;&#10;→ итог: HTML-галерея кандидатов на товар" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="300" width="520" height="160" as="geometry" />
         </mxCell>
 
         <!-- CLUSTER B: ДИЗАЙН -->
         <mxCell id="clB" value="ДИЗАЙН И ВИЗУАЛ (ComfyUI Cloud)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;fontStyle=1;spacingTop=6;" vertex="1" parent="1">
-          <mxGeometry x="540" y="150" width="460" height="220" as="geometry" />
+          <mxGeometry x="680" y="270" width="560" height="200" as="geometry" />
         </mxCell>
-        <mxCell id="clB_txt" value="• Вырезка товара без фона (cutout_collection.py)&#10;• Пересъёмка товаров в едином стиле — скилл product-scenes&#10;• Сборка интерьерных сцен из товаров — скилл room-scenes&#10;  (правки по коллажу поверх кадра)&#10;• Подложка сайта / дизайн-система (оболочка + токены&#10;  коллекций) — скилл site-mockups" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="550" y="182" width="440" height="180" as="geometry" />
+        <mxCell id="clB_txt" value="• Вырезка товара без фона (cutout_collection.py)&#10;• Пересъёмка товаров в едином стиле — product-scenes&#10;• Сборка интерьерных сцен из товаров — room-scenes&#10;  (правки по коллажу поверх кадра)&#10;• Подложка сайта / дизайн-система (оболочка + токены&#10;  коллекций) — скилл site-mockups" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="700" y="300" width="520" height="160" as="geometry" />
         </mxCell>
 
-        <!-- CLUSTER E: ЛИЧНОЕ, ИЗОЛИРОВАНО -->
-        <mxCell id="clE" value="ЛИЧНОЕ (не про магазин)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=1;spacingTop=6;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="150" width="360" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="clE_txt" value="• Скрипты для переписки с мужчинами&#10;  (конспект «НЛП-влюбление») — скилл love-scripts" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="182" width="340" height="60" as="geometry" />
-        </mxCell>
+        <!-- Стрелки вниз к отбору -->
+        <mxCell id="eA_C" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" parent="1" source="clA" target="clC"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eB_C" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="1" source="clB" target="clC"><mxGeometry relative="1" as="geometry"/></mxCell>
 
         <!-- CLUSTER C: ОТБОР И ПУБЛИКАЦИЯ -->
         <mxCell id="clC" value="ОТБОР И ПУБЛИКАЦИЯ ТОВАРА" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1;spacingTop=6;" vertex="1" parent="1">
-          <mxGeometry x="40" y="410" width="460" height="230" as="geometry" />
+          <mxGeometry x="160" y="540" width="980" height="130" as="geometry" />
         </mxCell>
-        <mxCell id="clC_txt" value="1. Скрин магазина AliExpress (.com, десктоп) — dolphin-shots&#10;2. Нарезка карточек товаров — cut-products&#10;3. Разбивка по коллекциям стилей 25-26 — style-collections&#10;   (коллекция «остаток» пересчитывается строго)&#10;4. Поиск ссылок по фото (phash) — product-links&#10;5. Импорт ссылок в DSers Import list — dsers-import&#10;6. Публикация: название/описание/теги/фото — shopify-admin" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="50" y="442" width="440" height="190" as="geometry" />
+        <mxCell id="clC_txt" value="1. Скрин магазина AliExpress (.com, десктоп — dolphin-shots)  →  2. Нарезка карточек товаров (cut-products)  →  3. Разбивка по коллекциям стилей 25-26 (style-collections)  →  4. Поиск ссылок по фото (product-links)  →  5. Импорт в DSers Import list (dsers-import)  →  6. Публикация в Shopify: название / описание / теги / фото (shopify-admin)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;spacing=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="180" y="565" width="940" height="90" as="geometry" />
         </mxCell>
+
+        <mxCell id="eC_D" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="clC" target="clD"><mxGeometry relative="1" as="geometry"/></mxCell>
 
         <!-- CLUSTER D: ОПЕРАЦИИ МАГАЗИНА -->
         <mxCell id="clD" value="ОПЕРАЦИИ МАГАЗИНА (текущие)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;fontStyle=1;spacingTop=6;" vertex="1" parent="1">
-          <mxGeometry x="540" y="410" width="460" height="230" as="geometry" />
+          <mxGeometry x="160" y="720" width="980" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="clD_txt" value="• Категории, цвета, наличие, доставка, чекаут, страницы,&#10;  футер, метаполя — скилл shopify-admin (Admin API)&#10;• Светлая/тёмная тема витрины, цвета — decor-shell.css&#10;• Сверка магазина с курсом по дропшиппингу — dropship-audit&#10;• Коллекция «остаток» не должна пересекаться с другими —&#10;  пересчёт после каждого изменения коллекций" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="550" y="442" width="440" height="190" as="geometry" />
+        <mxCell id="clD_txt" value="• Категории, цвета, наличие, доставка, чекаут, страницы, футер, метаполя — скилл shopify-admin (Admin API)&#10;• Светлая / тёмная тема витрины, цвета — decor-shell.css  •  Коллекция «остаток» пересчитывается строго после каждого изменения&#10;• Сверка магазина с курсом по дропшиппингу — скилл dropship-audit" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;spacing=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="180" y="745" width="940" height="100" as="geometry" />
         </mxCell>
 
         <!-- HUBS: МАГАЗИНЫ -->
         <mxCell id="hubMain" value="Shopify ARTMELLIO&#10;kmfmxn-r4.myshopify.com" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="140" y="700" width="280" height="70" as="geometry" />
+          <mxGeometry x="310" y="930" width="300" height="70" as="geometry" />
         </mxCell>
         <mxCell id="hubNew" value="Новый магазин (профиль 3)&#10;2e0bv7-jn.myshopify.com" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="540" y="700" width="280" height="70" as="geometry" />
+          <mxGeometry x="690" y="930" width="300" height="70" as="geometry" />
         </mxCell>
 
-        <!-- ИНФРАСТРУКТУРА -->
-        <mxCell id="dolphin" value="Dolphin{anty} — антидетект-браузер&#10;профили 828976678 / 859648353" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="40" y="820" width="360" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="github" value="GitHub: automation-scripts&#10;(весь код и схемы, приватный репозиторий)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="440" y="820" width="360" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="shopifyapi" value="Shopify Admin API&#10;(ключи, токен на 24ч, вместо админки с капчей)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="840" y="820" width="360" height="60" as="geometry" />
-        </mxCell>
+        <mxCell id="eD_hub" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.4;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="clD" target="hubMain"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eD_hubNew" value="повторится здесь позже" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=11;exitX=0.6;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="clD" target="hubNew"><mxGeometry relative="1" as="geometry"/></mxCell>
 
-        <!-- СВЯЗИ МЕЖДУ КЛАСТЕРАМИ -->
-        <mxCell id="eA_C" value="кандидаты" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="clA" target="clC"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eB_C" value="визуал карточки" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="clB" target="clC"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eB_hub" value="экраны / дизайн-система" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="clB" target="hubMain"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eC_hub" value="публикация" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="clC" target="hubMain"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eD_hub" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="clD" target="hubMain"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eD_hubNew" value="повторится здесь позже" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=11;" edge="1" parent="1" source="clD" target="hubNew"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-        <mxCell id="eDolphin_A" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="dolphin" target="clA"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eDolphin_C" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="dolphin" target="clC"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eShopifyApi_hub" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="shopifyapi" target="hubMain"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eShopifyApi_D" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="shopifyapi" target="clD"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-        <mxCell id="eGithub_A" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="clA" target="github"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eGithub_B" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="clB" target="github"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eGithub_C" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="clC" target="github"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eGithub_D" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="clD" target="github"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-        <mxCell id="eOps_A" value="мониторит" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="ops" target="clA"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eOps_B" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="ops" target="clB"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eOps_C" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="n8n" target="clC"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="eOps_D" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="n8n" target="clD"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-        <mxCell id="legend" value="Сплошная линия = данные/результат идут дальше по процессу.  Пунктир = вспомогательная связь (инфраструктура, код, мониторинг).&#10;Сейчас всё запускается вручную через Claude Code. Цель: перенести жёлтые/зелёные/красные блоки в n8n как workflow." style="text;html=1;align=left;fontStyle=2;fontColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="40" y="900" width="1160" height="50" as="geometry" />
+        <!-- ЛЕГЕНДА -->
+        <mxCell id="legend" value="Сплошная стрелка = данные/результат идут дальше по процессу.  Пунктир = связь, которая пока не реализована / сработает позже.&#10;Серые блоки инфраструктуры используются на всех этапах, но не выделены стрелками — чтобы не перегружать схему.&#10;Сейчас всё запускается вручную через Claude Code. Цель: перенести цветные блоки в n8n как workflow с кнопкой запуска." style="text;html=1;align=left;fontStyle=2;fontColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1030" width="1180" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
