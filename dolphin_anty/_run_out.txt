@@ -1,0 +1,31 @@
+Traceback (most recent call last):
+  File "C:\Users\User\fashion-trend-radar\fashion-trend-radar\.venv\Lib\site-packages\requests\models.py", line 1116, in json
+    return complexjson.loads(self.text, **kwargs)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\User\fashion-trend-radar\fashion-trend-radar\run.py", line 59, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\User\fashion-trend-radar\fashion-trend-radar\run.py", line 22, in main
+    raw = collector.fetch_keyword_data(keyword=keyword, category=category)
+  File "C:\Users\User\fashion-trend-radar\fashion-trend-radar\src\collectors\google_trends_collector.py", line 28, in fetch_keyword_data
+    return self.client.fetch_url(url)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\User\fashion-trend-radar\fashion-trend-radar\src\clients\brightdata_client.py", line 34, in fetch_url
+    return response.json()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\User\fashion-trend-radar\fashion-trend-radar\.venv\Lib\site-packages\requests\models.py", line 1120, in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)

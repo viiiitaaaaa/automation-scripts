@@ -1,0 +1,338 @@
+{{ 'component-cart.css' | asset_url | stylesheet_tag }}
+
+{{ 'component-totals.css' | asset_url | stylesheet_tag }}
+
+{{ 'component-price.css' | asset_url | stylesheet_tag }}
+
+{{ 'component-discounts.css' | asset_url | stylesheet_tag }}
+
+{{ 'cart-upsell.css' | asset_url | stylesheet_tag }}
+
+<script src="{{ 'cart-upsell.js' | asset_url }}" defer="defer"></script>
+
+
+
+{%- style -%}
+
+  .section-{{ section.id }}-padding {
+
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+
+  }
+
+
+
+  @media screen and (min-width: 750px) {
+
+    .section-{{ section.id }}-padding {
+
+      padding-top: {{ section.settings.padding_top }}px;
+
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+
+    }
+
+  }
+
+{%- endstyle -%}
+
+
+
+<div
+
+  class="gradient color-{{ section.settings.color_scheme }}{% if cart == empty %} is-empty{% endif %}"
+
+  id="main-cart-footer"
+
+  data-id="{{ section.id }}"
+
+>
+
+  <div class="page-width">
+
+    <div class="cart__footer isolate section-{{ section.id }}-padding">
+
+      {%- if settings.show_cart_note -%}
+
+        <cart-note class="cart__note field">
+
+          <label for="Cart-note">{{ 'sections.cart.note' | t }}</label>
+
+          <textarea
+
+            class="text-area field__input"
+
+            name="note"
+
+            form="cart"
+
+            id="Cart-note"
+
+            placeholder="{{ 'sections.cart.note' | t }}"
+
+          >{{ cart.note }}</textarea>
+
+        </cart-note>
+
+      {%- endif -%}
+
+
+
+      {%- unless cart == empty -%}
+
+        {%- render 'cart-savings-bar' -%}
+
+        <cart-upsell
+
+          data-url="{{ routes.product_recommendations_url }}"
+
+          data-product-id="{{ cart.items.first.product.id }}"
+
+          hidden
+
+        ></cart-upsell>
+
+      {%- endunless -%}
+
+
+
+      <div class="cart__blocks">
+
+        {% for block in section.blocks %}
+
+          {%- case block.type -%}
+
+            {%- when '@app' -%}
+
+              {% render block %}
+
+            {%- when 'subtotal' -%}
+
+              <div class="js-contents" {{ block.shopify_attributes }}>
+
+                <div>
+
+                  {%- if cart.cart_level_discount_applications.size > 0 -%}
+
+                    <ul class="discounts list-unstyled" role="list" aria-label="{{ 'customer.order.discount' | t }}">
+
+                      {%- for discount in cart.cart_level_discount_applications -%}
+
+                        <li class="discounts__discount discounts__discount--position">
+
+                          {{- 'icon-discount.svg' | inline_asset_content -}}
+
+                          {{ discount.title | escape }}
+
+                          (-{{ discount.total_allocated_amount | money }})
+
+                        </li>
+
+                      {%- endfor -%}
+
+                    </ul>
+
+                  {%- endif -%}
+
+                </div>
+
+
+
+                <div class="totals">
+
+                  <h2 class="totals__total">{{ 'sections.cart.estimated_total' | t }}</h2>
+
+                  <p class="totals__total-value">{{ cart.total_price | money_with_currency }}</p>
+
+                </div>
+
+
+
+                {%- comment -%} Строка про налоги и доставку убрана, см. sections/main-product.liquid {%- endcomment -%}
+
+              </div>
+
+            {%- else -%}
+
+              <div class="cart__ctas" {{ block.shopify_attributes }}>
+
+                <button
+
+                  type="submit"
+
+                  id="checkout"
+
+                  class="cart__checkout-button button"
+
+                  name="checkout"
+
+                  {% if cart == empty %}
+
+                    disabled
+
+                  {% endif %}
+
+                  form="cart"
+
+                >
+
+                  {{ 'sections.cart.checkout' | t }}
+
+                </button>
+
+              </div>
+
+
+
+              {%- if additional_checkout_buttons -%}
+
+                <div class="cart__dynamic-checkout-buttons additional-checkout-buttons">
+
+                  {{ content_for_additional_checkout_buttons }}
+
+                </div>
+
+              {%- endif -%}
+
+          {%- endcase -%}
+
+        {% endfor %}
+
+
+
+        {%- comment -%}
+          Значки платёжных систем: берутся из подключённых к магазину
+          способов оплаты. Свои картинки не грузим - это чужие знаки.
+        {%- endcomment -%}
+        {%- if shop.enabled_payment_types.size > 0 -%}
+          <div class="cart__payment-icons">
+            <ul class="list-unstyled list-payment" role="list">
+              {%- for type in shop.enabled_payment_types -%}
+                <li class="list-payment__item">
+                  {{ type | payment_type_svg_tag: class: 'icon icon--full-color' }}
+                </li>
+              {%- endfor -%}
+            </ul>
+          </div>
+        {%- endif -%}
+
+        <div id="cart-errors"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+{% schema %}
+
+{
+
+  "name": "t:sections.main-cart-footer.name",
+
+  "class": "cart__footer-wrapper",
+
+  "settings": [
+
+    {
+
+      "type": "color_scheme",
+
+      "id": "color_scheme",
+
+      "label": "t:sections.all.colors.label",
+
+      "default": "scheme-1"
+
+    },
+
+    {
+
+      "type": "header",
+
+      "content": "t:sections.all.padding.section_padding_heading"
+
+    },    
+
+    {
+
+      "type": "range",
+
+      "id": "padding_top",
+
+      "min": 0,
+
+      "max": 100,
+
+      "step": 4,
+
+      "unit": "px",
+
+      "label": "t:sections.all.padding.padding_top",
+
+      "default": 40
+
+    },
+
+    {
+
+      "type": "range",
+
+      "id": "padding_bottom",
+
+      "min": 0,
+
+      "max": 100,
+
+      "step": 4,
+
+      "unit": "px",
+
+      "label": "t:sections.all.padding.padding_bottom",
+
+      "default": 40
+
+    }
+
+  ],
+
+  "blocks": [
+
+    {
+
+      "type": "subtotal",
+
+      "name": "t:sections.main-cart-footer.blocks.subtotal.name",
+
+      "limit": 1
+
+    },
+
+    {
+
+      "type": "buttons",
+
+      "name": "t:sections.main-cart-footer.blocks.buttons.name",
+
+      "limit": 1
+
+    },
+
+    {
+
+      "type": "@app"
+
+    }
+
+  ]
+
+}
+
+{% endschema %}
+

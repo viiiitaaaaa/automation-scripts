@@ -1,0 +1,403 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "featured_neo": {
+      "type": "featured-collection",
+      "settings": {
+        "title": "Neo-Japandi",
+        "heading_size": "h2",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
+        "collection": "neo-japandi",
+        "products_to_show": 4,
+        "columns_desktop": 4,
+        "color_scheme": "scheme-1",
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "link",
+        "enable_desktop_slider": false,
+        "swipe_on_mobile": false,
+        "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "padding_top": 48,
+        "padding_bottom": 16
+      }
+    },
+    "featured_sculptural": {
+      "type": "featured-collection",
+      "settings": {
+        "title": "Sculptural Contemporary",
+        "heading_size": "h2",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
+        "collection": "sculptural",
+        "products_to_show": 4,
+        "columns_desktop": 4,
+        "color_scheme": "scheme-1",
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "link",
+        "enable_desktop_slider": false,
+        "swipe_on_mobile": false,
+        "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "padding_top": 16,
+        "padding_bottom": 16
+      }
+    },
+    "collection_list": {
+      "type": "collection-list",
+      "blocks": {
+        "col_0": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "neo-japandi"
+          }
+        },
+        "col_1": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "warm-minimalism"
+          }
+        },
+        "col_2": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "organic-luxe"
+          }
+        },
+        "col_3": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "quiet-luxury"
+          }
+        },
+        "col_4": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "sculptural"
+          }
+        },
+        "col_5": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "dark-academia"
+          }
+        },
+        "col_6": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "heritage-maximalism"
+          }
+        },
+        "col_7": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "eclectic-collector"
+          }
+        }
+      },
+      "block_order": [
+        "col_0",
+        "col_1",
+        "col_2",
+        "col_3",
+        "col_4",
+        "col_5",
+        "col_6",
+        "col_7"
+      ],
+      "settings": {
+        "title": "Shop by style",
+        "heading_size": "h2",
+        "image_ratio": "square",
+        "columns_desktop": 4,
+        "color_scheme": "scheme-1",
+        "show_view_all": false,
+        "swipe_on_mobile": true,
+        "columns_mobile": "2",
+        "padding_top": 48,
+        "padding_bottom": 48
+      }
+    },
+    "about": {
+      "type": "image-with-text",
+      "blocks": {
+        "heading": {
+          "type": "heading",
+          "settings": {
+            "heading": "Cut, not moulded",
+            "heading_size": "h2"
+          }
+        },
+        "text": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Every piece here is cut from a natural block — Volakos, Emperador, Nero Marquina, travertine, onyx. The veining is not printed and not repeated: the tray on your basin will not match the photograph exactly, and that is the point of buying stone rather than a copy of it.</p>",
+            "text_style": "body"
+          }
+        },
+        "button": {
+          "type": "button",
+          "settings": {
+            "button_label": "See the collections",
+            "button_link": "shopify://collections/neo-japandi"
+          }
+        }
+      },
+      "block_order": [
+        "heading",
+        "text",
+        "button"
+      ],
+      "settings": {
+        "height": "adapt",
+        "desktop_image_width": "medium",
+        "layout": "image_first",
+        "desktop_content_position": "middle",
+        "desktop_content_alignment": "left",
+        "content_layout": "no-overlap",
+        "color_scheme": "scheme-2",
+        "mobile_content_alignment": "left",
+        "padding_top": 40,
+        "padding_bottom": 40,
+        "image": "shopify://shop_images/banner-bathroom-neo-japandi-v2.jpg"
+      }
+    },
+    "faq": {
+      "type": "collapsible-content",
+      "blocks": {
+        "q0": {
+          "type": "collapsible_row",
+          "settings": {
+            "heading": "How long does delivery take?",
+            "row_content": "<p>Orders are dispatched within two working days. Delivery takes 7–14 working days to the UK and Europe, 10–18 to the United States. You get a tracking number as soon as the parcel leaves the warehouse.</p>"
+          }
+        },
+        "q1": {
+          "type": "collapsible_row",
+          "settings": {
+            "heading": "Is shipping really free?",
+            "row_content": "<p>Yes — to the United Kingdom, the European Union and the United States, with no minimum order. The price you see on the product page is the price at checkout.</p>"
+          }
+        },
+        "q2": {
+          "type": "collapsible_row",
+          "settings": {
+            "heading": "Every piece looks slightly different in the photos. Why?",
+            "row_content": "<p>Because marble, travertine and onyx are cut from natural blocks. Veining, tone and the pattern of the pores change from piece to piece, and the one you receive will not be an exact copy of the photograph.</p>"
+          }
+        },
+        "q3": {
+          "type": "collapsible_row",
+          "settings": {
+            "heading": "How do I look after natural stone?",
+            "row_content": "<p>Wipe with a damp cloth and dry it. Avoid acidic cleaners, limescale removers and bleach: they etch polished stone and leave dull marks that cannot be buffed out.</p>"
+          }
+        },
+        "q4": {
+          "type": "collapsible_row",
+          "settings": {
+            "heading": "Can I return an order?",
+            "row_content": "<p>Yes, within 14 days of delivery, provided the piece is unused and in its original packaging. Write to us and we will send return instructions.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "q0",
+        "q1",
+        "q2",
+        "q3",
+        "q4"
+      ],
+      "settings": {
+        "caption": "",
+        "heading": "Before you order",
+        "heading_size": "h2",
+        "heading_alignment": "left",
+        "layout": "row",
+        "color_scheme": "scheme-1",
+        "container_color_scheme": "scheme-2",
+        "open_first_collapsible_row": false,
+        "image_ratio": "adapt",
+        "desktop_layout": "image_second",
+        "padding_top": 48,
+        "padding_bottom": 48
+      }
+    },
+    "newsletter": {
+      "type": "newsletter",
+      "blocks": {
+        "heading": {
+          "type": "heading",
+          "settings": {
+            "heading": "New stone, first",
+            "heading_size": "h2"
+          }
+        },
+        "paragraph": {
+          "type": "paragraph",
+          "settings": {
+            "text": "<p>One letter when a new cut arrives. No weekly mailing.</p>"
+          }
+        },
+        "email_form": {
+          "type": "email_form",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "heading",
+        "paragraph",
+        "email_form"
+      ],
+      "settings": {
+        "color_scheme": "scheme-2",
+        "full_width": true,
+        "padding_top": 48,
+        "padding_bottom": 48
+      }
+    },
+    "slideshow": {
+      "type": "slideshow",
+      "blocks": {
+        "slide_0": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/hero-1.png",
+            "image_overlay_opacity": 30,
+            "heading": "Stone, cut for the everyday",
+            "heading_size": "h1",
+            "subheading": "Marble, travertine and onyx for the basin, the table and the shelf.",
+            "button_label": "",
+            "link": "",
+            "button_style_secondary": false,
+            "show_text_box": false,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": "scheme-3"
+          }
+        },
+        "slide_1": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/hero-3.png",
+            "image_overlay_opacity": 30,
+            "heading": "Quiet materials, warm light",
+            "heading_size": "h1",
+            "subheading": "Pale stone, unglazed ceramic and nothing that competes for attention.",
+            "button_label": "",
+            "link": "",
+            "button_style_secondary": false,
+            "show_text_box": false,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": "scheme-3"
+          }
+        },
+        "slide_2": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/hero-2.png",
+            "image_overlay_opacity": 30,
+            "heading": "Green marble and brass",
+            "heading_size": "h1",
+            "subheading": "Deeper tones for the kitchen and the dining table.",
+            "button_label": "",
+            "link": "",
+            "button_style_secondary": false,
+            "show_text_box": false,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": "scheme-3"
+          }
+        },
+        "slide_3": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/hero-4.png",
+            "image_overlay_opacity": 30,
+            "heading": "Rooms that stay calm",
+            "heading_size": "h1",
+            "subheading": "Plain forms in single tones, where the value sits in the material.",
+            "button_label": "",
+            "link": "",
+            "button_style_secondary": false,
+            "show_text_box": false,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": "scheme-3"
+          }
+        },
+        "slide_4": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/hero-5.png",
+            "image_overlay_opacity": 30,
+            "heading": "Colour, drenched",
+            "heading_size": "h1",
+            "subheading": "Onyx, enamel and coloured stone for rooms that are not afraid of it.",
+            "button_label": "",
+            "link": "",
+            "button_style_secondary": false,
+            "show_text_box": false,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": "scheme-3"
+          }
+        }
+      },
+      "block_order": [
+        "slide_0",
+        "slide_1",
+        "slide_2",
+        "slide_3",
+        "slide_4"
+      ],
+      "settings": {
+        "layout": "full_bleed",
+        "slide_height": "adapt_image",
+        "slider_visual": "counter",
+        "auto_rotate": true,
+        "change_slides_speed": 5,
+        "image_behavior": "none",
+        "show_text_below": false,
+        "accessibility_info": "Interiors featuring ARTMELLIO pieces"
+      }
+    }
+  },
+  "order": [
+    "slideshow",
+    "featured_neo",
+    "featured_sculptural",
+    "collection_list",
+    "about",
+    "faq",
+    "newsletter"
+  ]
+}

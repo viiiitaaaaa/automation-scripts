@@ -1,0 +1,6 @@
+{
+  "error": {
+    "type": "invalid-input",
+    "message": "Input is not valid: Field input.searchQueries is required"
+  }
+}
