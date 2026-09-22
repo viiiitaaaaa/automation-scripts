@@ -197,7 +197,7 @@ __HEADER__
   const grid = document.getElementById("rd-grid"), tip = document.getElementById("rd-tip");
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const MON = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-  const DEC = { TEST: "тестировать", WATCH: "наблюдать", STEADY: "спрос есть", REJECT: "отказ" };
+  const DEC = { TEST: "тестировать", WATCH: "наблюдать", REJECT: "отказ" };
   const CH = [["check_google","G","Google"],["check_pinterest","P","Pinterest"],["check_youtube","Y","YouTube"],["check_tiktok","T","TikTok"],
               ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"]];
   const W = 320, H = 118, L = 22, R = 6, T = 8, B = 16, pw = W - L - R, ph = H - T - B;
@@ -300,6 +300,7 @@ __HEADER__
         <div class="rd-checks">${chips}<span class="rd-nums">${pinNums}</span></div>
         ${r.pin_quarters ? `<div class="rd-sub">Pinterest по кварталам к прошлому году: <span class="rd-q">${esc(r.pin_quarters)}</span></div>` : ""}
         ${r.reject_reason ? `<div class="rd-why">Почему отказ: ${esc(r.reject_reason)}</div>` : ""}
+        ${r.watch_reason ? `<div class="rd-sub">Почему наблюдать: ${esc(r.watch_reason)}</div>` : ""}
         ${curves || '<div class="rd-nocurve">Кривой нет: ни Pinterest, ни Google, ни YouTube не дали 2-летней истории по этому запросу.</div>'}
         ${foot.length ? `<div class="rd-foot">${foot.join("<br>")}</div>` : ""}`;
       grid.appendChild(card);

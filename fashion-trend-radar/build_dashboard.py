@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 from radar_curves import build_block
+from src.processors.candidate_matrix import sort_candidates
 
 LOCAL = Path(r"C:\Users\User\dolphin_anty\trend_radar_dashboard.html")
 
@@ -84,7 +85,7 @@ def data_gaps(cand):
 
 def main():
     cand = pd.read_csv("data/reports/radar_candidates.csv")
-    cand = cand.sort_values(["checks_passed", "pin_yoy_pct"], ascending=[False, False], na_position="last")
+    cand = sort_candidates(cand)   # тест → наблюдать → отказ → короткий сезон
     for col in ["google_yoy_pct", "pin_mom_pct", "pin_yoy_pct", "youtube_yoy_pct"]:
         cand[col] = cand[col].round(0)
     cand["amazon_median_price"] = cand["amazon_median_price"].round(2)
@@ -266,8 +267,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <div class="stats" id="stats"></div>
   <div class="rule">
     <span><b>4–6 проверок</b> — тестировать</span>
-    <span><b>3</b> — наблюдать</span>
-    <span><b>Спрос есть</b> — роста к прошлому году нет, но спрос большой и не падает: от 5 тыс. поисков на Amazon в месяц или 5+ товаров в хитах, Pinterest не ниже −10%, поиск не в минусе</span>
+    <span><b>3</b> — наблюдать; также наблюдать, если роста к прошлому году нет, но спрос большой и не падает (от 5 тыс. поисков на Amazon в месяц или 5+ товаров в хитах)</span>
     <span><b>0–2</b> — отказ</span>
     <span><b>Сезон</b> — в эти же недели прошлого года был такой же подъём</span>
     <span><b>Короткий сезон</b> — спрос держится меньше 2 месяцев: отказ в любом случае</span>
@@ -276,21 +276,9 @@ TEMPLATE = r"""<title>Trend Radar</title>
 
   <section>
     <h2>Кандидаты</h2>
-    <p class="note">G — Google, P — Pinterest, Y — поиск на YouTube (у всех трёх: последние 8 недель выше тех же недель прошлого года на 5%+), T — TikTok (хэштег в топе или рост за 2 недели на 5%+), A — Amazon (≥2 товара в хитах или поиск за месяц вырос на 5%+), R — бренды (≥2 ритейлера). Полоска — рост на Pinterest к прошлому году, в среднем за 8 недель. Нажмите на строку, чтобы увидеть доказательства.</p>
-    <div class="filters" role="group" aria-label="Фильтр по решению">
-      <button type="button" data-f="ALL" aria-pressed="true">Все</button>
-      <button type="button" data-f="TEST" aria-pressed="false">Тестировать</button>
-      <button type="button" data-f="WATCH" aria-pressed="false">Наблюдать</button>
-      <button type="button" data-f="STEADY" aria-pressed="false">Спрос есть</button>
-      <button type="button" data-f="REJECT" aria-pressed="false">Отказ</button>
-    </div>
-    <div class="list" id="list"></div>
-  </section>
-
-  <section>
-    <h2>Кривые</h2>
-    <p class="note">Вся кривая за 2 года. Зелёная полоса — последние 8 недель, серая — те же недели год назад: радар сравнивает их. Горб справа выше прошлогоднего — настоящий рост; одинаковые — просто сезон. Шкала 0–100, где 100 — пик за 2 года.</p>
+    <p class="note">Сверху — тестировать и наблюдать, ниже — отказы, в самом конце — короткие сезоны. Буквы: G — Google, P — Pinterest, Y — поиск на YouTube (у всех трёх: последние 8 недель выше тех же недель прошлого года на 5%+), T — TikTok (хэштег в топе или рост за 2 недели на 5%+), A — Amazon (≥2 товара в хитах или поиск за месяц вырос на 5%+), R — бренды (≥2 ритейлера). На графиках вся кривая за 2 года: зелёная полоса — последние 8 недель, серая — те же недели год назад. Горб справа выше прошлогоднего — настоящий рост; одинаковые — просто сезон. Шкала 0–100, где 100 — пик за 2 года.</p>
     __CURVES__
+    <div class="list" id="list" hidden></div>
   </section>
 
   <section class="grid2">
@@ -319,7 +307,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   const D = JSON.parse(document.getElementById("radar-data").textContent);
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const DEC = { TEST: "тестировать", WATCH: "наблюдать", STEADY: "спрос есть", REJECT: "отказ" };
+  const DEC = { TEST: "тестировать", WATCH: "наблюдать", REJECT: "отказ" };
   const GROUP = { material: "ткань", pattern: "принт", neckline: "ворот", silhouette: "силуэт", detail: "деталь", audience_occasion: "аудитория" };
   const ATTR = { knit: "трикотаж", oversized: "оверсайз", plaid: "клетка", roll_neck: "высокий ворот", stripe: "полоска",
                  faux_fur: "искусственный мех", v_neck: "V-вырез", leather: "кожа", wool: "шерсть", boat_neck: "лодочка",

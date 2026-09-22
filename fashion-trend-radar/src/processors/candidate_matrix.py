@@ -284,13 +284,15 @@ def build_matrix(
         r["checks_passed"] = int(sum(bool(r[c]) for c in checks))
         # Gates first (user rules), then the channel vote
         r["reject_reason"] = ""
+        r["watch_reason"] = ""
         r["steady_demand"] = steady_demand(r)
         if r["short_season"]:
             r["decision"], r["reject_reason"] = "REJECT", "короткий сезон"
         elif not r["stable_growth"]:
             if r["steady_demand"] and r["checks_passed"] >= 2:
-                r["decision"] = "STEADY"          # роста нет, но спрос большой и не падает
-                r["reject_reason"] = ""
+                # user 22.09.2026: такие вещи — «наблюдать», отдельного решения не нужно
+                r["decision"] = "WATCH"
+                r["watch_reason"] = "роста к прошлому году нет, но спрос большой и не падает"
             else:
                 r["decision"] = "REJECT"
                 r["reject_reason"] = ("нет стабильного роста" if phrase in pinterest_series
@@ -303,6 +305,13 @@ def build_matrix(
             r["decision"], r["reject_reason"] = "REJECT", "мало подтверждений"
         rows.append(r)
 
-    return pd.DataFrame(rows).sort_values(
-        ["checks_passed", "pin_yoy_pct"], ascending=[False, False], na_position="last"
-    ).reset_index(drop=True)
+    return sort_candidates(pd.DataFrame(rows))
+
+
+def sort_candidates(df: pd.DataFrame) -> pd.DataFrame:
+    """User rule 22.09.2026: TEST, then WATCH, then REJECT; short-season rejects always last."""
+    rank = df["decision"].map({"TEST": 0, "WATCH": 1, "REJECT": 2}).fillna(2)
+    rank = rank + df["short_season"].fillna(False).astype(bool).astype(int)
+    return (df.assign(_rank=rank)
+              .sort_values(["_rank", "checks_passed", "pin_yoy_pct"], ascending=[True, False, False], na_position="last")
+              .drop(columns="_rank").reset_index(drop=True))
