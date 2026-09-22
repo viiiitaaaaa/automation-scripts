@@ -63,6 +63,7 @@ def main():
                      trendsmcp=load("data/processed/trendsmcp.csv", pd.read_csv),
                      shopping_history=shopping_history,
                      amazon_bought=load("data/processed/amazon_bought.csv", pd.read_csv),
+                     tiktok_tags=load("data/processed/tiktok_tags.csv", pd.read_csv),
                      manual=manual, season_override=season_override)
 
     out = Path("data/reports/radar_candidates.csv")
@@ -92,6 +93,8 @@ def main():
             note.append(f"купили ≥{r['amazon_bought_sum']:,.0f}/мес")
         if pd.notna(r["google_shop_yoy_pct"]):
             note.append(f"Shopping {r['google_shop_yoy_pct']:+.0f}%")
+        if pd.notna(r["tt_us_fresh"]):
+            note.append(f"TikTok #{r['tt_hashtag']}: США свежих {r['tt_us_fresh']:.0f}/{r['tt_us_sampled']:.0f}")
         if pd.notna(r["tiktok_mcp_lift_pct"]):
             note.append(f"TikTok {r['tiktok_mcp_lift_pct']:+.0f}% за 2 нед")
         print(f"{r['candidate']:<24} {mark(r['check_google'])}  {mark(r['check_pinterest'])}  "

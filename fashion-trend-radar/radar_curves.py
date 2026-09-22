@@ -90,12 +90,22 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     cfg = pd.read_csv("config/candidates.csv")
     order = {c: i for i, c in enumerate(cfg["candidate"])}
     fixed = dict(zip(cfg["candidate"], cfg["color_slot"])) if "color_slot" in cfg else {}
+    # up to 3 fresh US TikTok videos under our hashtag (run_tiktok_tags.py), most viewed first
+    tt_links = {}
+    vf = Path("data/processed/tiktok_tag_videos.csv")
+    if vf.exists():
+        from datetime import date, timedelta
+        v = pd.read_csv(vf)
+        v = v[(v["region"].fillna("US") == "US") & (v["created"].astype(str) >= str(date.today() - timedelta(days=30)))]
+        for c, g in v.sort_values("views", ascending=False).groupby("candidate", sort=False):
+            tt_links[c] = [{"link": x.link, "views": int(x.views or 0), "created": str(x.created)} for x in g.head(3).itertuples()]
     rows = []
     for _, r in cand.iterrows():
         name = r["candidate"]
         rec = json.loads(r.to_json(force_ascii=False))
         s = fixed.get(name)
         rec["color_slot"] = int(s) if pd.notna(s) and s else order.get(name, 0) % 8 + 1
+        rec["tt_links"] = tt_links.get(name, [])
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -192,8 +202,9 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-hl { stroke: var(--rd-prev); stroke-width: 1; opacity: 0; pointer-events: none; }
   .rd-hd { fill: var(--k, var(--rd-line)); stroke: var(--rd-surface); stroke-width: 2; opacity: 0; pointer-events: none; }
   .rd-nocurve { font-size: 12px; color: var(--muted); background: var(--rd-soft); border-radius: 8px; padding: 14px 12px; }
-  .rd-foot { font-size: 11.5px; color: var(--rd-text-2); line-height: 1.45; border-top: 1px solid var(--border); padding-top: 8px; }
-  .rd-foot b { color: var(--muted); font-weight: 600; font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .04em; }
+  .rd-foot { font-size: 13px; color: var(--rd-text-2); line-height: 1.55; border-top: 1px solid var(--border); padding-top: 10px; }
+  .rd-foot b { color: var(--muted); font-weight: 600; font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .04em; }
+  .rd-foot a { color: var(--rd-text); text-decoration-color: var(--k, var(--rd-line)); text-underline-offset: 3px; }
   .rd-tip { position: fixed; pointer-events: none; z-index: 30; background: var(--rd-text); color: var(--page);
             font: 11.5px/1.4 "IBM Plex Mono", "JetBrains Mono", monospace; padding: 5px 9px; border-radius: 6px;
             opacity: 0; transform: translate(-50%, -130%); white-space: nowrap; }
@@ -323,6 +334,12 @@ __HEADER__
       if (r.retailer_brands) foot.push(`<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`);
       if (r.google_rising_top) foot.push(`<b>GOOGLE</b> ${esc(String(r.google_rising_top).split(" | ")[0])}`);
       if (r.tiktok_hashtags) foot.push(`<b>TIKTOK</b> ${esc(r.tiktok_hashtags)}`);
+      if (r.tt_hashtag && r.tt_total_videos !== null && r.tt_total_videos !== undefined) {
+        const big = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + " млн" : n >= 1e3 ? Math.round(n / 1e3) + " тыс." : String(n);
+        const links = (r.tt_links || []).map((v) => `<a href="${esc(v.link)}" target="_blank" rel="noopener">${big(v.views)} просм., ${esc(v.created.slice(5))}</a>`).join(" · ");
+        foot.push(`<b>TIKTOK США #${esc(r.tt_hashtag)}</b> всего ${big(r.tt_total_videos)} видео, ${big(r.tt_total_views)} просмотров; `
+          + `свежих американских за 30 дней: ${r.tt_us_fresh} из ${r.tt_us_sampled}` + (links ? `<br>свежие видео: ${links}` : ""));
+      }
       if (r.ac_modifiers) {
         const words = String(r.ac_modifiers).split(" | ").slice(0, 8).map((m) => m.split(" (")[0]);
         foot.push(`<b>ДОПИСЫВАЮТ В ПОИСКЕ</b> ${esc(words.join(", "))}`

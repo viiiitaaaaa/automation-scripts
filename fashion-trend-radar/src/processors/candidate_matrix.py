@@ -74,6 +74,8 @@ WINDOW = 8          # weeks compared against the same weeks a year earlier
 SEASON_LIFT = 20    # % rise last year in these weeks that marks a recurring season
 MIN_YOY = 5         # % growth for every growth check (user decision 22.09.2026: was 15)
 MIN_NONZERO = 0.5   # share of weeks with data; below this the series is too sparse to judge
+TT_MIN_FRESH = 5          # TikTok check: >= 5 US videos under our hashtag posted in the last 30 days
+TT_MIN_FRESH_SHARE = 0.4  # ... and they are >= 40% of the US videos TikTok returns for the tag
 
 
 def window_stats(values: list, w: int = WINDOW) -> dict | None:
@@ -245,12 +247,14 @@ def build_matrix(
     trendsmcp: pd.DataFrame | None = None,        # run_trendsmcp.py output: candidate, source, lift_pct, ...
     shopping_history: pd.DataFrame | None = None, # same shape as google_history, Google Shopping (gprop=froogle)
     amazon_bought: pd.DataFrame | None = None,    # run_extra_signals.py --amazon: candidate, bought_sum, ...
+    tiktok_tags: pd.DataFrame | None = None,      # run_tiktok_tags.py: hashtag totals + US videos in the last 30 days
     manual: dict | None = None,                   # candidate -> (decision, reason): user's own call, shown as such
     season_override: dict | None = None,          # candidate -> set of months, when the user knows the season better
     today_month: int | None = None,
 ) -> pd.DataFrame:
     manual = manual or {}
     season_override = season_override or {}
+    tt = tiktok_tags.set_index("candidate") if tiktok_tags is not None and not tiktok_tags.empty else pd.DataFrame()
     if today_month is None:
         from datetime import date
         today_month = date.today().month
@@ -355,8 +359,19 @@ def build_matrix(
         t_hits = tiktok[tiktok["hashtag"].apply(lambda h: hashtag_matches(s, h))] if not tiktok.empty else tiktok
         r["tiktok_hashtags"] = " ".join("#" + h for h in t_hits["hashtag"].head(3)) if len(t_hits) else ""
         r["tiktok_mcp_lift_pct"], _ = mcp_lift(phrase, "tiktok")
-        r["check_tiktok"] = bool(len(t_hits)) or (r["tiktok_mcp_lift_pct"] is not None
-                                                   and r["tiktok_mcp_lift_pct"] >= MIN_YOY)
+        # Our own hashtag in the US (treg/TikHub): is it alive right now?
+        t = tt.loc[phrase] if phrase in tt.index else None
+        num = lambda x: int(x) if x is not None and pd.notna(x) else None
+        r["tt_hashtag"] = t["hashtag"] if t is not None else ""
+        r["tt_total_videos"] = num(t["total_videos"]) if t is not None else None
+        r["tt_total_views"] = num(t["total_views"]) if t is not None else None
+        r["tt_us_sampled"] = num(t["us_videos_sampled"]) if t is not None else None
+        r["tt_us_fresh"] = num(t["us_fresh_30d"]) if t is not None else None
+        tt_alive = bool(r["tt_us_fresh"] and r["tt_us_sampled"]
+                        and r["tt_us_fresh"] >= TT_MIN_FRESH
+                        and r["tt_us_fresh"] / r["tt_us_sampled"] >= TT_MIN_FRESH_SHARE)
+        r["check_tiktok"] = (bool(len(t_hits)) or tt_alive
+                             or (r["tiktok_mcp_lift_pct"] is not None and r["tiktok_mcp_lift_pct"] >= MIN_YOY))
 
         # Amazon: >=2 matching items in new releases / best sellers, OR searches rising month over month (trendsmcp)
         a_hits = amazon[amazon["title"].fillna("").apply(lambda t: matches(s, t))] if not amazon.empty else amazon
