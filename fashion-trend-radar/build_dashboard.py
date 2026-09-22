@@ -21,19 +21,65 @@ CHANNELS = [
     {"key": "check_youtube", "short": "Y", "name": "YouTube", "status": "ok",
      "note": "поиск на YouTube за 2 года (Google Trends) + YouTube API для лидеров: просмотры свежих видео к прошлому году, комментарии «где купить»"},
     {"key": "check_tiktok", "short": "T", "name": "TikTok", "status": "partial",
-     "note": "90 дней; видна только мода из общего топ-100 — фильтр «Одежда» пока не работает"},
+     "note": "90 дней; видна только мода из общего топ-100 — фильтр «Одежда» пока не работает. "
+             "Trends MCP: объём хэштега по дням, но только у крупных (#falloutfit)"},
     {"key": "check_amazon", "short": "A", "name": "Amazon", "status": "ok",
-     "note": "новинки + хиты продаж в 8 разделах женской одежды"},
+     "note": "новинки + хиты продаж в 8 разделах женской одежды; "
+             "Trends MCP: сколько раз вещь искали на Amazon за месяц и рост к прошлому месяцу"},
     {"key": "check_retailers", "short": "R", "name": "Бренды", "status": "ok",
      "note": "новинки Zara, ASOS, Aritzia, Free People"},
 ]
 PENDING = [
-    ("Etsy", "ключ есть, ждём одобрения Etsy (Pending Personal Approval)"),
+    ("Etsy", "Etsy заблокировал ключ (Banned) — канал закрыт"),
     ("Reddit", "для коммерческого использования нужно письменное одобрение Reddit — пока исключён"),
     ("Meta Ad Library", "нужна платёжка"),
     ("Google Merchant Center", "Best Sellers Google Shopping; регистрация просит карту — отложено"),
     ("Keyword Tool", "платный тариф"),
 ]
+
+
+def data_gaps(cand):
+    """What the radar is still missing, with live coverage counts from the current data."""
+    n = len(cand)
+    cnt = lambda col: int(cand[col].notna().sum()) if col in cand else 0
+    amazon_days = sorted({p.stem[-10:] for p in Path("data/normalized/amazon").glob("amazon_*.parquet")})
+    brand_days = sorted({p.stem[-10:] for p in Path("data/normalized/retailers").glob("retailers_*.parquet")})
+    return [
+        {"what": "TikTok по каждому кандидату", "have": f"{int(cand['check_tiktok'].sum())} из {n}",
+         "why": "в топ-100 хэштегов наших вещей нет, страница хэштега в TikTok One не открывается; "
+                "Trends MCP знает только крупные хэштеги",
+         "fix": "поиск TikTok через Dolphin или Apify после 15.10 (бесплатные кредиты)"},
+        {"what": "Instagram", "have": "не подключён",
+         "why": "нет официального доступа; неофициальные библиотеки отвергнуты (логин, риск бана)",
+         "fix": "скрипт в Dolphin (бесплатно) или Instagram Graph API: аккаунт «Автор» + страница Facebook"},
+        {"what": "Pinterest-кривые", "have": f"{cnt('pin_yoy_pct')} из {n}",
+         "why": "по редким фразам Pinterest данных не даёт", "fix": "подбирать формулировки, которые Pinterest знает"},
+        {"what": "YouTube: видео и «где купить»", "have": f"{cnt('yt_views_90d')} из {n}",
+         "why": "собрано только для лидеров", "fix": "run_youtube_api.py по остальным (~220 ед. квоты на вещь, бесплатно)"},
+        {"what": "Подсказки поиска", "have": f"{cnt('ac_modifiers')} из {n}",
+         "why": "собрано только для лидеров", "fix": "run_autocomplete.py по остальным (бесплатно)"},
+        {"what": "История Amazon", "have": f"{len(amazon_days)} снимка ({', '.join(d[5:] for d in amazon_days)})",
+         "why": "рост мест в рейтинге и цен виден только за несколько снимков", "fix": "снимать раз в неделю по команде"},
+        {"what": "История брендов", "have": f"{len(brand_days)} снимок; Aritzia ~10 товаров",
+         "why": "не видно, что бренды добавляют от недели к неделе; Aritzia грузит не всё",
+         "fix": "снимать раз в неделю; догрузка Aritzia прокруткой; добавить H&M, Mango, Urban Outfitters"},
+        {"what": "Поиск на Amazon (Trends MCP)", "have": f"{cnt('amazon_monthly_searches')} из {n}",
+         "why": "бесплатно только 90 дней и 100 запросов в месяц; редкие фразы сервис не знает",
+         "fix": "run_trendsmcp.py по команде; 2 года истории — платный тариф Pro"},
+        {"what": "Etsy (микро-ниши)", "have": "заблокирован", "why": "Etsy перевёл ключ в Banned",
+         "fix": "новые заявки не подаём — правила Etsy это запрещают"},
+        {"what": "Покупки в Google Shopping", "have": "нет", "why": "Merchant Center просит карту",
+         "fix": "после появления карты"},
+        {"what": "Реклама конкурентов", "have": "нет", "why": "Meta Ad Library требует платёжку",
+         "fix": "после появления карты"},
+        {"what": "Насыщение рынка", "have": "нет",
+         "why": "не собираем, сколько продавцов продают одно и то же", "fix": "отзывы и продавцы на Amazon по кандидату"},
+        {"what": "Новые кандидаты", "have": f"{n} слов вручную",
+         "why": "радар проверяет только наш список, сам новое не ищет",
+         "fix": "автоподбор из Google rising, Pinterest Trends и признаков брендов"},
+        {"what": "Поставщики и маржа", "have": "нет", "why": "намеренно позже — только для прошедших радар",
+         "fix": "после выбора вещи для теста"},
+    ]
 
 
 def main():
@@ -55,6 +101,7 @@ def main():
         "date": date.today().strftime("%d.%m.%Y"),
         "channels": CHANNELS,
         "pending": [{"name": n, "why": w} for n, w in PENDING],
+        "gaps": data_gaps(cand),
         "candidates": json.loads(cand.to_json(orient="records", force_ascii=False)),
         "attributes": json.loads(attrs.to_json(orient="records", force_ascii=False)) if not attrs.empty else [],
     }
@@ -66,17 +113,18 @@ def main():
     out.write_text(html, encoding="utf-8")
     print(f"Сохранено: {out} ({len(cand)} кандидатов)")
 
-    update_local(cand, payload["date"])
+    update_local(cand, payload["date"], payload["gaps"])
 
 
-def update_local(cand, date_str):
+def update_local(cand, date_str, gaps=None):
     """Put the curve cards on top of the local Dolphin dashboard, keep the old 12.09 collection below."""
     if not LOCAL.exists():
         print(f"Нет файла {LOCAL} — пропускаю")
         return
     page = LOCAL.read_text(encoding="utf-8")
     block = build_block(cand, with_header=True, date_str=date_str,
-                        archive_note="Ниже — архив: сбор 12–13.09 по старой логике (Google Trends 12 мес, TikTok-видео, Instagram).")
+                        archive_note="Ниже — архив: сбор 12–13.09 по старой логике (Google Trends 12 мес, TikTok-видео, Instagram).",
+                        gaps=gaps)
     start, end = page.find("<!-- RADAR:START"), page.find("<!-- RADAR:END -->")
     if start != -1 and end != -1:
         page = page[:start] + block + page[end + len("<!-- RADAR:END -->\n"):]
@@ -157,6 +205,8 @@ TEMPLATE = r"""<title>Trend Radar</title>
   summary { list-style: none; cursor: pointer; padding: 12px 16px;
             display: grid; grid-template-columns: minmax(150px, 1.6fr) auto auto minmax(110px, 1fr); gap: 14px; align-items: center; }
   summary::-webkit-details-marker { display: none; }
+  summary > * { min-width: 0; }
+  .name small { overflow-wrap: anywhere; }
   .name { font-weight: 600; }
   .name small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
   .checks { display: flex; gap: 4px; }
@@ -173,6 +223,8 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .yoy .track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; position: relative; min-width: 60px; }
   .yoy .zero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
   .yoy .fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+  .why { margin: 0 16px 10px; font-size: 13px; color: var(--season); background: var(--season-bg);
+         border-radius: 8px; padding: 6px 10px; }
   .evidence { padding: 0 16px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
   .ev { background: var(--page); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
   .ev b { display: block; font-size: 11px; font-family: "JetBrains Mono", monospace; letter-spacing: .05em;
@@ -189,6 +241,15 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .attr { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
   .attr:first-of-type { border-top: 0; }
   .attr .b { color: var(--muted); font-size: 12px; text-align: right; }
+  .gaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .gap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+         display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .gap-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .gap-head b { font-size: 14px; }
+  .gap-have { font: 600 11.5px "JetBrains Mono", monospace; color: var(--watch); white-space: nowrap; }
+  .gap-why { color: var(--text-2); }
+  .gap-fix { color: var(--muted); }
+  .gap-fix::before { content: "→ "; }
 
   @media (max-width: 640px) {
     summary { grid-template-columns: 1fr auto; }
@@ -207,11 +268,13 @@ TEMPLATE = r"""<title>Trend Radar</title>
     <span><b>3</b> — наблюдать</span>
     <span><b>0–2</b> — отказ</span>
     <span><b>Сезон</b> — в эти же недели прошлого года был такой же подъём</span>
+    <span><b>Короткий сезон</b> — спрос держится меньше 2 месяцев: отказ в любом случае</span>
+    <span><b>Только стабильный рост</b> — по Pinterest последние 8 недель и 3 из 4 кварталов выше прошлого года на 5%+</span>
   </div>
 
   <section>
     <h2>Кандидаты</h2>
-    <p class="note">G — Google, P — Pinterest, Y — поиск на YouTube (у всех трёх: последние 8 недель выше тех же недель прошлого года на 15%+), T — TikTok, A — Amazon (≥2 товара), R — бренды (≥2 ритейлера). Полоска — рост на Pinterest к прошлому году, в среднем за 8 недель. Нажмите на строку, чтобы увидеть доказательства.</p>
+    <p class="note">G — Google, P — Pinterest, Y — поиск на YouTube (у всех трёх: последние 8 недель выше тех же недель прошлого года на 5%+), T — TikTok (хэштег в топе или рост за 2 недели на 5%+), A — Amazon (≥2 товара в хитах или поиск за месяц вырос на 5%+), R — бренды (≥2 ритейлера). Полоска — рост на Pinterest к прошлому году, в среднем за 8 недель. Нажмите на строку, чтобы увидеть доказательства.</p>
     <div class="filters" role="group" aria-label="Фильтр по решению">
       <button type="button" data-f="ALL" aria-pressed="true">Все</button>
       <button type="button" data-f="TEST" aria-pressed="false">Тестировать</button>
@@ -238,6 +301,12 @@ TEMPLATE = r"""<title>Trend Radar</title>
       <p class="note">Признаки, которые есть в новинках сразу у нескольких ритейлеров.</p>
       <div class="card" id="attrs"></div>
     </div>
+  </section>
+
+  <section>
+    <h2>Чего не хватает радару</h2>
+    <p class="note">Что ещё не собирается или собрано не по всем кандидатам. Цифры пересчитываются при каждой сборке страницы.</p>
+    <div class="gaps" id="gaps"></div>
   </section>
 </div>
 
@@ -280,20 +349,30 @@ TEMPLATE = r"""<title>Trend Radar</title>
       const lift = x.pin_season_lift_prev;
       const p = m === null && y === null ? "" : `за месяц ${m > 0 ? "+" : ""}${m ?? "—"}% · 8 недель к прошлому году ${y > 0 ? "+" : ""}${y ?? "—"}%`
         + (lift !== null && lift !== undefined ? `<br>год назад в эти недели: ${lift > 0 ? "+" : ""}${Math.round(lift)}%` : "");
-      const a = x.amazon_items ? `${x.amazon_items} товаров (новинок ${x.amazon_new_releases}), медиана $${x.amazon_median_price}` : "";
+      const sgn = (v) => `${v > 0 ? "+" : ""}${Math.round(v)}%`;
+      const vol = (v) => v >= 1000 ? `${Math.round(v / 1000)} тыс.` : String(v);
+      const a = [
+        x.amazon_items ? `${x.amazon_items} товаров (новинок ${x.amazon_new_releases}), медиана $${x.amazon_median_price}` : "",
+        x.amazon_monthly_searches ? `искали ${vol(x.amazon_monthly_searches)} раз за месяц, ${sgn(x.amazon_mcp_lift_pct)} к прошлому месяцу` : ""
+      ].filter(Boolean).join("<br>");
+      const t = [esc(x.tiktok_hashtags),
+        x.tiktok_mcp_lift_pct !== null && x.tiktok_mcp_lift_pct !== undefined ? `объём хэштега за 2 недели: ${sgn(x.tiktok_mcp_lift_pct)}` : ""
+      ].filter(Boolean).join("<br>");
+      const amz = x.amazon_monthly_searches ? ` · Amazon ${vol(x.amazon_monthly_searches)} поисков/мес` : "";
       return `<details class="row ${x.decision === "TEST" ? "test" : ""}">
         <summary>
-          <div class="name">${esc(x.candidate)}<small>${x.checks_passed} из ${D.channels.length} проверок</small></div>
+          <div class="name">${esc(x.candidate)}<small>${x.checks_passed} из ${D.channels.length} проверок${x.season_weeks ? ` · сезон ${x.season_weeks >= 52 ? "круглый год" : Math.round(x.season_weeks) + " нед"}` : ""}${amz}</small></div>
           <div class="checks">${chips}</div>
-          <div><span class="pill ${x.decision}">${DEC[x.decision]}</span>${x.seasonal_flag ? '<span class="pill season">сезон</span>' : ""}</div>
+          <div><span class="pill ${x.decision}">${DEC[x.decision]}</span>${x.short_season ? '<span class="pill season">короткий сезон</span>' : x.seasonal_flag ? '<span class="pill season">сезон</span>' : ""}</div>
           ${yoyBar(y)}
         </summary>
+        ${x.reject_reason ? `<div class="why">Почему отказ: ${esc(x.reject_reason)}${x.pin_quarters ? ` · Pinterest по кварталам: ${esc(x.pin_quarters)}` : ""}</div>` : ""}
         <div class="evidence">
           ${ev("Google", g)}${ev("Pinterest", p)}${ev("YouTube", [
             x.youtube_yoy_pct === null || x.youtube_yoy_pct === undefined ? "" : `поиск, 8 недель к прошлому году: ${x.youtube_yoy_pct > 0 ? "+" : ""}${x.youtube_yoy_pct}%`,
             x.yt_views_yoy_pct === null || x.yt_views_yoy_pct === undefined ? "" : `просмотры видео за 90 дн: ${x.yt_views_yoy_pct > 0 ? "+" : ""}${Math.round(x.yt_views_yoy_pct)}% к прошлому году`,
             x.yt_comments_read ? `«где купить»: ${x.yt_intent_comments} из ${x.yt_comments_read} комментариев` : ""
-          ].filter(Boolean).join("<br>"))}${ev("TikTok", esc(x.tiktok_hashtags))}
+          ].filter(Boolean).join("<br>"))}${ev("TikTok", t)}
           ${ev("Amazon", a)}${ev("Бренды", x.retailer_brands ? `${x.retailer_brands}: ${esc(x.retailer_list)}` : "")}
         </div>
       </details>`;
@@ -308,6 +387,10 @@ TEMPLATE = r"""<title>Trend Radar</title>
   $("channels").innerHTML =
     D.channels.map((ch) => `<div class="ch"><span class="dot ${ch.status}"></span><div><b>${ch.name}</b><small>${esc(ch.note)}</small></div></div>`).join("") +
     D.pending.map((p) => `<div class="ch"><span class="dot wait"></span><div><b>${p.name}</b><small>не подключено — ${esc(p.why)}</small></div></div>`).join("");
+
+  $("gaps").innerHTML = (D.gaps || []).map((g) => `<div class="gap">
+      <div class="gap-head"><b>${esc(g.what)}</b><span class="gap-have">${esc(g.have)}</span></div>
+      <div class="gap-why">${esc(g.why)}</div><div class="gap-fix">${esc(g.fix)}</div></div>`).join("");
 
   $("attrs").innerHTML = D.attributes.length ? D.attributes.map((a) =>
     `<div class="attr"><span>${ATTR[a.attribute] || esc(a.attribute)} <span style="color:var(--muted)">· ${GROUP[a.group] || a.group}</span></span><span class="b">${a.brands} бренда · ${a.items} шт</span></div>`).join("")

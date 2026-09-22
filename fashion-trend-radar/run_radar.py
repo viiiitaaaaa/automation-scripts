@@ -47,7 +47,8 @@ def main():
 
     m = build_matrix(candidates, google_rising, google_history, pinterest, tiktok, amazon, retailers,
                      pinterest_series=pin_series, youtube_history=youtube_history,
-                     youtube_api=load("data/processed/youtube_api.csv", pd.read_csv))
+                     youtube_api=load("data/processed/youtube_api.csv", pd.read_csv),
+                     trendsmcp=load("data/processed/trendsmcp.csv", pd.read_csv))
 
     out = Path("data/reports/radar_candidates.csv")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -64,6 +65,10 @@ def main():
             note.append(f"бренды: {r['retailer_list']}")
         if r["amazon_items"]:
             note.append(f"Amazon {r['amazon_items']} шт, ~${r['amazon_median_price']}")
+        if pd.notna(r["amazon_monthly_searches"]):
+            note.append(f"поиск Amazon {r['amazon_monthly_searches']:,.0f}/мес ({r['amazon_mcp_lift_pct']:+.0f}%)")
+        if pd.notna(r["tiktok_mcp_lift_pct"]):
+            note.append(f"TikTok {r['tiktok_mcp_lift_pct']:+.0f}% за 2 нед")
         print(f"{r['candidate']:<24} {mark(r['check_google'])}  {mark(r['check_pinterest'])}  "
               f"{mark(r['check_youtube'])}  {mark(r['check_tiktok'])}  {mark(r['check_amazon'])}  "
               f"{mark(r['check_retailers'])}  {r['checks_passed']}/6  {r['decision']:<7}  | {yoy:>6}         | {'; '.join(note)}")

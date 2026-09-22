@@ -9,3 +9,5 @@ node_modules/
 media/
 *.log
 *_token.json
+claude-skills/synced/
+artifact-scratch/

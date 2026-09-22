@@ -72,7 +72,7 @@ def hashtag_matches(spec: CandidateSpec, hashtag: str) -> bool:
 
 WINDOW = 8          # weeks compared against the same weeks a year earlier
 SEASON_LIFT = 20    # % rise last year in these weeks that marks a recurring season
-MIN_YOY = 15        # % growth vs the same weeks last year for the Google, Pinterest and YouTube checks
+MIN_YOY = 5         # % growth for every growth check (user decision 22.09.2026: was 15)
 MIN_NONZERO = 0.5   # share of weeks with data; below this the series is too sparse to judge
 
 
@@ -95,6 +95,62 @@ def window_stats(values: list, w: int = WINDOW) -> dict | None:
     return {"yoy_pct": pct(now, prev), "lift_now": pct(now, now_before), "lift_prev": pct(prev, prev_before)}
 
 
+MIN_SEASON_WEEKS = 8   # user rule: seasonal items are fine, but the season must last >= 2 months
+
+
+def season_weeks(values: list) -> tuple[int, bool] | None:
+    """How many weeks the demand season lasts: around each year's peak (2 years of weekly
+    data, 3-week smoothing), count contiguous weeks at >= half the peak; take the longest.
+    Returns (weeks, all_open) -- all_open means every season ran into the edge of the data
+    (still going / started before it), so a short number is a lower bound, not a verdict.
+    Measured over the whole series, not split per year: autumn seasons start in September,
+    exactly where a per-year split would cut them."""
+    v = [float(x) for x in values if x is not None and pd.notna(x)][-104:]
+    if len(v) < 100 or sum(1 for x in v if x > 0) / len(v) < MIN_NONZERO:
+        return None
+    v = [sum(v[max(0, i - 1):i + 2]) / len(v[max(0, i - 1):i + 2]) for i in range(len(v))]
+    n = len(v)
+    runs = []
+    for lo, hi in ((0, n // 2), (n // 2, n)):
+        p = max(range(lo, hi), key=lambda i: v[i])
+        thr, l, r = v[p] * 0.5, p, p
+        while l > 0 and v[l - 1] >= thr:
+            l -= 1
+        while r < n - 1 and v[r + 1] >= thr:
+            r += 1
+        runs.append((r - l + 1, l == 0 or r == n - 1))
+    return max(w for w, _ in runs), all(open_ for _, open_ in runs)
+
+
+MIN_GROWING_QUARTERS = 3   # of the last 4 quarters, each vs the same quarter a year earlier
+
+
+def quarterly_growth(values: list) -> list | None:
+    """Growth of each of the last 4 quarters (13 weeks) vs the same quarter a year earlier, oldest first."""
+    v = [float(x) for x in values if x is not None and pd.notna(x)][-104:]
+    if len(v) < 104 or sum(1 for x in v if x > 0) / len(v) < MIN_NONZERO:
+        return None
+    mean = lambda xs: sum(xs) / len(xs)
+    out = []
+    for i in range(3, -1, -1):
+        now = v[len(v) - 13 * (i + 1):len(v) - 13 * i]
+        prev = v[len(v) - 52 - 13 * (i + 1):len(v) - 52 - 13 * i]
+        out.append(round((mean(now) - mean(prev)) / mean(prev) * 100, 1) if mean(prev) else None)
+    return out
+
+
+def is_stable_growth(st: dict | None, quarters: list | None) -> bool:
+    """User rule: only steadily growing items. Last 8 weeks AND at least 3 of the last 4
+    quarters above the same period a year earlier by MIN_YOY. Judged on Pinterest only:
+    Google Trends has a simultaneous spike in Mar-May 2026 across almost every keyword
+    (13 of 19 peak in April, incl. sweaters and fall jackets) -- a data artefact that
+    fakes long-window growth."""
+    if not st or not quarters or st["yoy_pct"] is None:
+        return False
+    return (st["yoy_pct"] >= MIN_YOY
+            and sum(1 for q in quarters if q is not None and q >= MIN_YOY) >= MIN_GROWING_QUARTERS)
+
+
 def is_seasonal(st: dict | None) -> bool:
     """Same weeks rose last year as well, and this year is not clearly higher -> the season repeating."""
     return bool(st and st["lift_prev"] is not None and st["yoy_pct"] is not None
@@ -112,8 +168,20 @@ def build_matrix(
     pinterest_series: dict | None = None,   # term -> weekly values, 2y, oldest first
     youtube_history: pd.DataFrame | None = None,  # same shape as google_history, YouTube search
     youtube_api: pd.DataFrame | None = None,      # run_youtube_api.py output, one row per candidate
+    trendsmcp: pd.DataFrame | None = None,        # run_trendsmcp.py output: candidate, source, lift_pct, ...
 ) -> pd.DataFrame:
     yt_api = youtube_api.set_index("candidate") if youtube_api is not None and not youtube_api.empty else pd.DataFrame()
+    mcp = {}
+    if trendsmcp is not None and not trendsmcp.empty:
+        mcp = {(c, s): row for (c, s), row in trendsmcp.set_index(["candidate", "source"]).iterrows()}
+
+    def mcp_lift(phrase, source):
+        """trendsmcp curve: latest period vs the one before (90 days only, so no year-over-year).
+        Sparse curves (mostly zeros) are not evidence, same rule as window_stats."""
+        m = mcp.get((phrase, source))
+        if m is None or pd.isna(m["lift_pct"]) or (pd.notna(m["nonzero_share"]) and m["nonzero_share"] < MIN_NONZERO):
+            return None, None
+        return m["lift_pct"], (m["last_volume"] if pd.notna(m["last_volume"]) else None)
     rows = []
     pin = pinterest.set_index("term") if not pinterest.empty else pd.DataFrame()
     pinterest_series = pinterest_series or {}
@@ -142,6 +210,9 @@ def build_matrix(
         r["pin_yoy_pct"] = p_st["yoy_pct"] if p_st else None
         r["pin_season_lift_prev"] = p_st["lift_prev"] if p_st else None
         r["check_pinterest"] = r["pin_yoy_pct"] is not None and r["pin_yoy_pct"] >= MIN_YOY
+        pq = quarterly_growth(pinterest_series[phrase]) if phrase in pinterest_series else None
+        r["pin_quarters"] = " | ".join("—" if q is None else f"{q:+.0f}%" for q in pq) if pq else ""
+        r["stable_growth"] = is_stable_growth(p_st, pq)
 
         # YouTube search ("how to wear ..."): same 8-week comparison as Google
         y_st = None
@@ -163,17 +234,31 @@ def build_matrix(
         # Season, judged on two years: Pinterest first, Google if Pinterest has no series
         r["seasonal_flag"] = is_seasonal(p_st) if p_st else is_seasonal(g_st)
 
-        # TikTok: fashion hashtag in the 90-day top list
+        # Season length: short event peaks (homecoming dress) don't fit the business
+        g_vals = []
+        if not google_history.empty:
+            h = google_history[google_history["keyword"] == phrase]
+            g_vals = h[~h["is_partial"].astype(bool)].sort_values("date")["interest"].tolist()
+        sw = (season_weeks(pinterest_series[phrase]) if phrase in pinterest_series else None) or season_weeks(g_vals)
+        r["season_weeks"] = sw[0] if sw else None
+        r["short_season"] = bool(sw and sw[0] < MIN_SEASON_WEEKS and not sw[1])
+
+        # TikTok: fashion hashtag in the 90-day top list, OR the hashtag's volume rising (trendsmcp)
         t_hits = tiktok[tiktok["hashtag"].apply(lambda h: hashtag_matches(s, h))] if not tiktok.empty else tiktok
         r["tiktok_hashtags"] = " ".join("#" + h for h in t_hits["hashtag"].head(3)) if len(t_hits) else ""
-        r["check_tiktok"] = bool(len(t_hits))
+        r["tiktok_mcp_lift_pct"], _ = mcp_lift(phrase, "tiktok")
+        r["check_tiktok"] = bool(len(t_hits)) or (r["tiktok_mcp_lift_pct"] is not None
+                                                   and r["tiktok_mcp_lift_pct"] >= MIN_YOY)
 
-        # Amazon: >=2 matching items in new releases / best sellers
+        # Amazon: >=2 matching items in new releases / best sellers, OR searches rising month over month (trendsmcp)
         a_hits = amazon[amazon["title"].fillna("").apply(lambda t: matches(s, t))] if not amazon.empty else amazon
         r["amazon_items"] = len(a_hits)
         r["amazon_new_releases"] = int((a_hits["list"] == "new_releases").sum()) if len(a_hits) else 0
         r["amazon_median_price"] = round(float(a_hits["price"].median()), 2) if len(a_hits) and a_hits["price"].notna().any() else None
-        r["check_amazon"] = len(a_hits) >= 2
+        r["amazon_mcp_lift_pct"], vol = mcp_lift(phrase, "amazon")
+        r["amazon_monthly_searches"] = int(vol) if vol else None
+        r["check_amazon"] = len(a_hits) >= 2 or (r["amazon_mcp_lift_pct"] is not None
+                                                  and r["amazon_mcp_lift_pct"] >= MIN_YOY)
 
         # Retailers: >=2 brands releasing it
         re_hits = retailers[retailers["name"].fillna("").apply(lambda n: matches(s, n))] if not retailers.empty else retailers
@@ -183,12 +268,20 @@ def build_matrix(
 
         checks = ["check_google", "check_pinterest", "check_youtube", "check_tiktok", "check_amazon", "check_retailers"]
         r["checks_passed"] = int(sum(bool(r[c]) for c in checks))
-        if r["checks_passed"] >= 4:
+        # Gates first (user rules), then the channel vote
+        r["reject_reason"] = ""
+        if r["short_season"]:
+            r["decision"], r["reject_reason"] = "REJECT", "короткий сезон"
+        elif not r["stable_growth"]:
+            r["decision"] = "REJECT"
+            r["reject_reason"] = ("нет стабильного роста" if phrase in pinterest_series
+                                  else "рост не проверить: нет кривой Pinterest")
+        elif r["checks_passed"] >= 4:
             r["decision"] = "TEST"
         elif r["checks_passed"] == 3:
             r["decision"] = "WATCH"
         else:
-            r["decision"] = "REJECT"
+            r["decision"], r["reject_reason"] = "REJECT", "мало подтверждений"
         rows.append(r)
 
     return pd.DataFrame(rows).sort_values(

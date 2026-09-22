@@ -4,6 +4,7 @@ weeks a year ago (Pinterest, and Google where 2-year history exists).
 build_block() returns a self-contained HTML fragment (style + markup + script)
 that works inside both dashboards -- colours come from the host page tokens.
 """
+import html
 import json
 from pathlib import Path
 
@@ -50,7 +51,22 @@ def _split(pts):
     return {"dates": [d for d, _ in pts], "vals": vals, "sparse": sparse}
 
 
-def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_note: str = "") -> str:
+def gaps_html(gaps) -> str:
+    """Static 'what the radar is missing' cards for the local page (styles live in BLOCK)."""
+    if not gaps:
+        return ""
+    e = html.escape
+    cards = "".join(
+        f'<div class="rd-gap"><div class="rd-gap-head"><b>{e(g["what"])}</b><span>{e(g["have"])}</span></div>'
+        f'<div class="rd-gap-why">{e(g["why"])}</div><div class="rd-gap-fix">→ {e(g["fix"])}</div></div>'
+        for g in gaps)
+    return (f'<h2 class="rd-h2">Чего не хватает радару</h2>'
+            f'<p class="rd-lead">Что ещё не собирается или собрано не по всем кандидатам.</p>'
+            f'<div class="rd-gaps">{cards}</div>')
+
+
+def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_note: str = "",
+                gaps=None) -> str:
     pin, goo = _pinterest_series(), _google_series()
     yt = _google_series("data/normalized/google_trends_youtube")
     rows = []
@@ -69,7 +85,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
   <p class="rd-lead">Вся кривая интереса за 2 года, неделя за неделей. Зелёная полоса справа — последние 8 недель,
   серая — те же 8 недель год назад: радар сравнивает именно их. Если справа горб выше, чем год назад, — вещь растёт по-настоящему;
   если горбы одинаковые — это сезон, который повторяется каждый год. Шкала 0–100: 100 — пик интереса к слову за 2 года.</p>""" if with_header else ""
-    archive = f'<div class="rd-archive">{archive_note}</div>\n' if archive_note else ""
+    archive = gaps_html(gaps) + (f'<div class="rd-archive">{archive_note}</div>\n' if archive_note else "")
     return BLOCK.replace("__HEADER__", header).replace("__ARCHIVE__", archive).replace("__DATA__", data) \
         .replace("__NCURVES__", str(n_curves)).replace("__NTOTAL__", str(len(rows)))
 
@@ -130,6 +146,8 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-g { stroke: var(--rd-grid); stroke-width: 1; }
   .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 8.5px; }
   .rd-now { fill: none; stroke: var(--rd-line); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
+  .rd-why { font-size: 12px; color: var(--rd-hot); background: var(--rd-hot-bg); border-radius: 6px; padding: 5px 8px; }
   .rd-sparse { color: var(--rd-hot); text-transform: none; letter-spacing: 0; }
   .rd-band-now { fill: var(--rd-good-bg); }
   .rd-band-prev { fill: var(--rd-prev); fill-opacity: .28; }
@@ -142,6 +160,14 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-tip { position: fixed; pointer-events: none; z-index: 30; background: var(--rd-text); color: var(--page);
             font: 11.5px/1.4 "IBM Plex Mono", "JetBrains Mono", monospace; padding: 5px 9px; border-radius: 6px;
             opacity: 0; transform: translate(-50%, -130%); white-space: nowrap; }
+  .rd-h2 { font-size: 22px; margin: 40px 0 6px; text-wrap: balance; }
+  .rd-gaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; margin-top: 14px; }
+  .rd-gap { background: var(--rd-surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+            display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .rd-gap-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .rd-gap-head span { font: 600 11.5px "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-warn); white-space: nowrap; }
+  .rd-gap-why { color: var(--rd-text-2); }
+  .rd-gap-fix { color: var(--muted); }
   .rd-archive { margin-top: 40px; padding-top: 18px; border-top: 1px dashed var(--border); font-size: 13px; color: var(--muted); }
   @media (max-width: 520px) { .rd-filters { margin-left: 0; } }
 </style>
@@ -249,6 +275,8 @@ __HEADER__
         + chart(r.youtube_curve, "YouTube · поиск 0–100");
       const foot = [];
       if (r.amazon_items) foot.push(`<b>AMAZON</b> ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`);
+      if (r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
+        + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);
       if (r.retailer_brands) foot.push(`<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`);
       if (r.google_rising_top) foot.push(`<b>GOOGLE</b> ${esc(String(r.google_rising_top).split(" | ")[0])}`);
       if (r.tiktok_hashtags) foot.push(`<b>TIKTOK</b> ${esc(r.tiktok_hashtags)}`);
@@ -266,10 +294,12 @@ __HEADER__
       }
       card.innerHTML = `
         <div class="rd-head">
-          <div><div class="rd-name">${esc(r.candidate)}</div><div class="rd-sub">${r.checks_passed} из ${CH.length} каналов подтверждают</div></div>
-          <div class="rd-pills"><span class="rd-pill ${r.decision}">${DEC[r.decision]}</span>${r.seasonal_flag ? '<span class="rd-pill season">сезон</span>' : ""}</div>
+          <div><div class="rd-name">${esc(r.candidate)}</div><div class="rd-sub">${r.checks_passed} из ${CH.length} каналов подтверждают${r.season_weeks ? ` · сезон ${r.season_weeks >= 52 ? "круглый год" : Math.round(r.season_weeks) + " нед"}` : ""}</div></div>
+          <div class="rd-pills"><span class="rd-pill ${r.decision}">${DEC[r.decision]}</span>${r.short_season ? '<span class="rd-pill season">короткий сезон</span>' : r.seasonal_flag ? '<span class="rd-pill season">сезон</span>' : ""}</div>
         </div>
         <div class="rd-checks">${chips}<span class="rd-nums">${pinNums}</span></div>
+        ${r.pin_quarters ? `<div class="rd-sub">Pinterest по кварталам к прошлому году: <span class="rd-q">${esc(r.pin_quarters)}</span></div>` : ""}
+        ${r.reject_reason ? `<div class="rd-why">Почему отказ: ${esc(r.reject_reason)}</div>` : ""}
         ${curves || '<div class="rd-nocurve">Кривой нет: ни Pinterest, ни Google, ни YouTube не дали 2-летней истории по этому запросу.</div>'}
         ${foot.length ? `<div class="rd-foot">${foot.join("<br>")}</div>` : ""}`;
       grid.appendChild(card);
