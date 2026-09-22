@@ -150,6 +150,10 @@ def build(conn, state, notes):
             body = "".join(f"<p>{fmt_note(s)}</p>" for s in n.get("summary", []))
             if n.get("for_us"):
                 body += f'<p class="forus"><b>Для нас:</b> {fmt_note(n["for_us"])}</p>'
+            if n.get("installed"):
+                body += f'<p class="mark ok">✓ Установлено: {fmt_note(n["installed"])}</p>'
+            elif n.get("declined"):
+                body += f'<p class="mark no">Не ставили: {fmt_note(n["declined"])}</p>'
             out.append(
                 f'<article class="article" data-ch="{html.escape(r[0])}">{head(r[0], local(r[2]), is_new(r))}'
                 f'<h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
@@ -187,6 +191,12 @@ def build(conn, state, notes):
     if not any(notes.get(f"{r[0]}/{r[1]}", {}).get("cat") == "soft" for r in rows):
         quiet = f'<div class="pill-row"><span class="pill soft">{CATS["soft"]}</span><span class="rule"></span></div>' + quiet
 
+    # всё, что когда-либо поставили из новостей (не только за окно панели)
+    inst = [(v.get("tool") or v.get("headline", ""), v["installed"]) for v in notes.values() if v.get("installed")]
+    installed_html = ("" if not inst else
+                      '<div class="installed"><b>Из новостей установлено:</b> '
+                      + " · ".join(f'<span title="{html.escape(w)}">{html.escape(t)}</span>' for t, w in inst) + "</div>")
+
     upd = datetime.now().astimezone()
     new_count = sum(1 for r in rows if is_new(r))
     page = (TEMPLATE
@@ -197,6 +207,7 @@ def build(conn, state, notes):
                     (n_notes, "разобрано в «Главном»"), (f"{len(readable)}/{len(channels)}", "каналов читается")]))
             .replace("__MAIN__", "\n".join(main_html) if n_notes else '<p class="section-note">Пока нет разобранных постов.</p>')
             .replace("__QUIET__", quiet)
+            .replace("__INSTALLED__", installed_html)
             .replace("__OFFERS__", "\n".join(courses) or '<p class="section-note">Новых курсов за этот период нет.</p>')
             .replace("__OFFERS_N__", str(len(courses)))
             .replace("__WINDOW__", str(WINDOW_DAYS))
@@ -228,7 +239,7 @@ def main():
 
 
 TEMPLATE = """<title>Рабочая панель</title>
-<meta name="description" content="Дайджест Telegram-каналов по дропшиппингу, Shopify и инструментам, с лентой за полтора месяца">
+<meta name="description" content="Дайджест Telegram-каналов по дропшиппингу, Shopify и инструментам, плюс свежие курсы и что из новостей установлено">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
   :root {
@@ -321,6 +332,13 @@ TEMPLATE = """<title>Рабочая панель</title>
   .article p { margin: 0 0 8px; font-size: 13.5px; color: var(--ink-soft); }
   .article b { color: var(--ink); }
   .forus { border-left: 3px solid var(--biz-border); padding-left: 10px; }
+  .article p.mark { font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 6px 10px; }
+  .mark.ok { background: var(--biz-bg); color: var(--biz); }
+  .mark.no { background: var(--border-soft); color: var(--muted); font-weight: 500; }
+  .installed { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--biz-bg);
+               border: 1px solid var(--biz-border); border-radius: 12px; padding: 10px 14px; }
+  .installed b { color: var(--biz); }
+  .installed span { font-weight: 600; color: var(--ink); }
   .src { font-size: 12px; text-decoration: none; }
   code.inline { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--border-soft); padding: 1px 6px;
                 border-radius: 5px; overflow-wrap: anywhere; }
@@ -371,6 +389,7 @@ TEMPLATE = """<title>Рабочая панель</title>
     <h1>Дайджест и рекомендации</h1>
     <p>Что важного было в отслеживаемых каналах за __WINDOW__ дней, и какие курсы стоит взять. Старые новости не удаляются.</p>
     <div class="stats">__STATS__</div>
+    __INSTALLED__
   </div>
 
   <section id="digest">

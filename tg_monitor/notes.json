@@ -103,7 +103,9 @@
   "headline": "Inspo — готовые примеры дизайна для агентов",
   "summary": [
    "Бесплатный MCP-сервер: ищет примеры среди 800+ сайтов под конкретный экран или стиль. Установка: `npx inspo-mcp install`."
-  ]
+  ],
+  "tool": "Inspo MCP",
+  "installed": "22.09 — MCP-сервер для Claude Code (`claude mcp add --scope user`), github.com/Nutlope/inspo"
  },
  "python2day/8164": {
   "cat": "tool",
@@ -111,14 +113,17 @@
   "summary": [
    "Убирает 20+ шаблонов ИИ-текста, сохраняя стиль автора. `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`, затем `/no-ai-slop ваш текст`."
   ],
-  "for_us": "Может пригодиться для описаний товаров."
+  "for_us": "Может пригодиться для описаний товаров.",
+  "tool": "no-ai-slop",
+  "installed": "22.09 — скилл `/no-ai-slop`, файлы проверены и положены вручную, github.com/petergyang/no-ai-slop"
  },
  "python2day/8160": {
   "cat": "tool",
   "headline": "Antidetect Tools — подборка ресурсов",
   "summary": [
    "Антидетект-браузеры, библиотеки, humanizing, капча-солверы, SMS-сервисы, прокси — то же направление, что наш Dolphin{anty}."
-  ]
+  ],
+  "declined": "средства обхода защиты сайтов — против наших правил, Dolphin уже есть"
  },
  "proecomdmitriy/1189": {
   "cat": "biz",
@@ -177,7 +182,8 @@
   "headline": "Google открыла AX — оркестратор ИИ-агентов",
   "summary": [
    "Что-то вроде Kubernetes для выполнения агентов. Код: github.com/google/ax"
-  ]
+  ],
+  "declined": "оркестратор для команд с десятками агентов — нам избыточно"
  },
  "vibecoding_tg/3910": {
   "cat": "tool",
