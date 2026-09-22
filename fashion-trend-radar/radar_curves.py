@@ -56,6 +56,68 @@ def _google_series(root="data/normalized/google_trends"):
     return out
 
 
+def _amazon_months():
+    """candidate -> [{label, v}] monthly Amazon searches (trendsmcp raw answers, newest file per candidate)."""
+    out = {}
+    raw = Path("data/raw/trendsmcp")
+    if not raw.exists():
+        return out
+    for c in pd.read_csv("config/candidates.csv")["candidate"]:
+        files = sorted(raw.glob(f"*_get_time_series_amazon_{c.replace(' ', '-')}.json"))
+        if not files:
+            continue
+        d = json.loads(files[-1].read_text(encoding="utf-8"))
+        body = d.get("body") if isinstance(d, dict) else None
+        rows = json.loads(body) if isinstance(body, str) else (d if isinstance(d, list) else [])
+        if not isinstance(rows, list):   # {"error": "no_data", ...}
+            continue
+        pts = [(r["date"], r.get("volume")) for r in rows if isinstance(r, dict) and r.get("volume") is not None]
+        if pts:
+            out[c] = [{"label": MONTHS[int(dt[5:7]) - 1], "v": int(v)} for dt, v in sorted(pts)]
+    return out
+
+
+def _tiktok_weeks(weeks=12):
+    """candidate -> [{label, v}] new US videos under our hashtag per week, last `weeks` weeks (Monday-based)."""
+    from datetime import date, timedelta
+    f = Path("data/processed/tiktok_tag_videos.csv")
+    if not f.exists():
+        return {}
+    v = pd.read_csv(f)
+    v = v[v["region"].fillna("US") == "US"].copy()
+    v["created"] = pd.to_datetime(v["created"], errors="coerce")
+    monday = date.today() - timedelta(days=date.today().weekday())
+    starts = [monday - timedelta(weeks=k) for k in range(weeks - 1, -1, -1)]
+    out = {}
+    for c, g in v.groupby("candidate"):
+        days = g["created"].dt.date
+        out[c] = [{"label": f"{s.day} {MONTHS[s.month - 1]}", "v": int(((days >= s) & (days < s + timedelta(days=7))).sum())}
+                  for s in starts]
+    return out
+
+
+def _instagram():
+    """candidate -> {per_day, sampled, oldest, likes_median, top:[{link, likes, date}]}"""
+    f, fp = Path("data/processed/instagram_tags.csv"), Path("data/processed/instagram_tag_posts.csv")
+    if not f.exists():
+        return {}
+    s = pd.read_csv(f).set_index("candidate")
+    posts = pd.read_csv(fp) if fp.exists() else pd.DataFrame()
+    out = {}
+    for c, r in s.iterrows():
+        top = []
+        if not posts.empty:
+            g = posts[posts["candidate"] == c].sort_values("likes", ascending=False).head(3)
+            top = [{"link": x.link, "likes": int(x.likes or 0), "date": str(x.taken_at)[:10]} for x in g.itertuples()]
+        out[c] = {"tag": r["hashtag"], "per_day": None if pd.isna(r["posts_per_day"]) else float(r["posts_per_day"]),
+                  "sampled": int(r["posts_sampled"]), "oldest": str(r["oldest"]),
+                  "likes_median": None if pd.isna(r["likes_median"]) else int(r["likes_median"]), "top": top}
+    return out
+
+
+MONTHS = "янв фев мар апр май июн июл авг сен окт ноя дек".split()
+
+
 def _split(pts):
     """The whole 2-year weekly curve, oldest first."""
     pts = pts[-2 * WEEKS:]
@@ -86,6 +148,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     yt = _google_series("data/normalized/google_trends_youtube")
     shop = _google_series("data/normalized/google_trends_shopping")
     aliases = pinterest_aliases()
+    amz, ttw, ig = _amazon_months(), _tiktok_weeks(), _instagram()
     # colour follows the item (color_slot 1-8 in config/candidates.csv, else its place there), never its rank on the page
     cfg = pd.read_csv("config/candidates.csv")
     order = {c: i for i, c in enumerate(cfg["candidate"])}
@@ -106,6 +169,9 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
         s = fixed.get(name)
         rec["color_slot"] = int(s) if pd.notna(s) and s else order.get(name, 0) % 8 + 1
         rec["tt_links"] = tt_links.get(name, [])
+        rec["amz_months"] = amz.get(name, [])
+        rec["tt_weeks"] = ttw.get(name, [])
+        rec["ig"] = ig.get(name)
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -191,6 +257,8 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-card svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; touch-action: pan-y; }
   .rd-g { stroke: var(--rd-grid); stroke-width: 1; }
   .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 17px; }
+  .rd-bar { fill: var(--k, var(--rd-line)); }
+  .rd-bv { fill: var(--rd-text-2); font-weight: 600; }
   .rd-now { fill: none; stroke: var(--k, var(--rd-line)); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
   .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
   .rd-why { font-size: 12px; color: var(--rd-hot); background: var(--rd-hot-bg); border-radius: 6px; padding: 5px 8px; }
@@ -293,6 +361,23 @@ __HEADER__
         <line class="rd-hl" x1="0" x2="0" y1="${T}" y2="${T + ph}"/><circle class="rd-hd" r="8"/>
       </svg></div>`;
   }
+  // Bar chart for short counted series (Amazon months, TikTok weeks): value printed above each bar
+  const bigN = (n) => n >= 1e6 ? (n / 1e6).toFixed(1).replace(".0", "") + " млн" : n >= 1e3 ? Math.round(n / 1e3) + " тыс." : String(n);
+  function bars(pts, label) {
+    if (!pts || !pts.length || !pts.some((p) => p.v > 0)) return "";
+    const BH = 230, bt = 30, bb = 34, bph = BH - bt - bb, n = pts.length, max = Math.max(...pts.map((p) => p.v));
+    const slot = pw / n, bw = Math.min(90, slot * 0.62);
+    const marks = pts.map((p, i) => {
+      const cx = L + slot * (i + 0.5), h = max ? (p.v / max) * bph : 0, yb = bt + bph - h;
+      const rect = h > 0 ? `<path class="rd-bar" d="M${(cx - bw / 2).toFixed(1)},${(bt + bph).toFixed(1)} V${(yb + 4).toFixed(1)} q0,-4 4,-4 H${(cx + bw / 2 - 4).toFixed(1)} q4,0 4,4 V${(bt + bph).toFixed(1)} Z"><title>${esc(p.label)}: ${p.v}</title></path>` : "";
+      return rect + `<text class="rd-t rd-bv" x="${cx.toFixed(1)}" y="${(yb - 8).toFixed(1)}" text-anchor="middle">${bigN(p.v)}</text>`
+        + `<text class="rd-t" x="${cx.toFixed(1)}" y="${BH - 10}" text-anchor="middle">${esc(p.label)}</text>`;
+    }).join("");
+    return `<div><div class="rd-chart-label">${label}</div>
+      <svg viewBox="0 0 ${W} ${BH}" role="img" aria-label="${label}">
+        <line class="rd-g" x1="${L}" x2="${W - R}" y1="${bt + bph}" y2="${bt + bph}"/>${marks}
+      </svg></div>`;
+  }
   function wire(svg, c) {
     const n = c.dates.length, hl = svg.querySelector(".rd-hl"), hd = svg.querySelector(".rd-hd");
     const hide = () => { hl.style.opacity = 0; hd.style.opacity = 0; tip.style.opacity = 0; };
@@ -322,7 +407,9 @@ __HEADER__
       const curves = chart(r.pin_curve, "Pinterest · интерес 0–100" + (r.pin_alias ? ` · по фразе «${esc(r.pin_alias)}»` : ""))
         + chart(r.google_curve, "Google · интерес 0–100")
         + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
-        + chart(r.youtube_curve, "YouTube · поиск 0–100");
+        + chart(r.youtube_curve, "YouTube · поиск 0–100")
+        + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США)")
+        + bars(r.tt_weeks, `TikTok США · новых видео в неделю под #${esc(r.tt_hashtag || "")} (по выборке до 90 видео)`);
       const foot = [];
       if (r.amazon_items) foot.push(`<b>AMAZON</b> ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`);
       if (r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
@@ -331,6 +418,13 @@ __HEADER__
         + `(у ${r.amazon_bought_items} товаров с первой страницы поиска есть пометка «bought in past month»)`);
       if (r.google_shop_yoy_pct !== null && r.google_shop_yoy_pct !== undefined)
         foot.push(`<b>GOOGLE SHOPPING</b> 8 недель к прошлому году: ${r.google_shop_yoy_pct > 0 ? "+" : ""}${Math.round(r.google_shop_yoy_pct)}%`);
+      if (r.ig && r.ig.sampled) {
+        const ig = r.ig, pd = ig.per_day;
+        const rate = pd === null ? "" : pd >= 1 ? `≈ ${pd} постов в день` : `≈ ${Math.round(pd * 7 * 10) / 10} постов в неделю`;
+        const links = (ig.top || []).map((p) => `<a href="${esc(p.link)}" target="_blank" rel="noopener">${bigN(p.likes)} лайков, ${esc(p.date.slice(5))}</a>`).join(" · ");
+        foot.push(`<b>INSTAGRAM #${esc(ig.tag)}</b> ${rate} (последние ${ig.sampled} постов с ${esc(ig.oldest)}, весь мир)`
+          + (ig.likes_median !== null ? `, обычно ${bigN(ig.likes_median)} лайков` : "") + (links ? `<br>самые залайканные свежие: ${links}` : ""));
+      }
       if (r.retailer_brands) foot.push(`<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`);
       if (r.google_rising_top) foot.push(`<b>GOOGLE</b> ${esc(String(r.google_rising_top).split(" | ")[0])}`);
       if (r.tiktok_hashtags) foot.push(`<b>TIKTOK</b> ${esc(r.tiktok_hashtags)}`);

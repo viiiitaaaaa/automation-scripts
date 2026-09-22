@@ -68,9 +68,18 @@ def hashtag_detail(tag):
     return str(cid) if cid else None, num(st.get("videoCount")), num(st.get("viewCount"))
 
 
+PAGES = 3   # ~30 videos a page; 3 pages give enough dates for a weekly chart
+
+
 def us_videos(cid, n=30):
-    d = call("tikhub.x.tiktok-app-v3-fetch-hashtag-video-list", ch_id=cid, count=n, region=REGION, cursor=0)
-    items = list(walk(d, lambda o: ("aweme_id" in o or "id" in o) and isinstance(o.get("author"), dict)))
+    items, cursor = [], 0
+    for _ in range(PAGES):
+        d = call("tikhub.x.tiktok-app-v3-fetch-hashtag-video-list", ch_id=cid, count=n, region=REGION, cursor=cursor)
+        items += list(walk(d, lambda o: ("aweme_id" in o or "id" in o) and isinstance(o.get("author"), dict)))
+        data = d.get("data") or {}
+        if not data.get("has_more") or not data.get("cursor"):
+            break
+        cursor = data["cursor"]
     out = []
     for v in items:
         a = v["author"]
@@ -88,7 +97,7 @@ def us_videos(cid, n=30):
             "shares": st.get("share_count") or st.get("shareCount"),
             "desc": (v.get("desc") or "").replace("\n", " ")[:150],
         })
-    return out
+    return list({v["link"]: v for v in out}.values())   # pages can repeat a video
 
 
 def main():

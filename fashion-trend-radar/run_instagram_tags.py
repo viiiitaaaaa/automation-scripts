@@ -1,0 +1,100 @@
+"""
+Instagram by OUR candidates' hashtags via treg.to (provider TikHub, $0.002 per call): the most recent posts.
+Instagram has no country filter -> worldwide. From the newest ~36 posts: how many posts a day the tag gets,
+likes, and links to the most liked fresh posts. Runs only by hand.
+
+    .venv/Scripts/python.exe run_instagram_tags.py                  # all candidates
+    .venv/Scripts/python.exe run_instagram_tags.py "bandana cardigan"
+
+Output: data/processed/instagram_tags.csv, data/processed/instagram_tag_posts.csv
+"""
+import json
+import sys
+from datetime import date, datetime
+from pathlib import Path
+
+import pandas as pd
+import requests
+from dotenv import dotenv_values
+
+env = dotenv_values(".env")
+H = {"X-Treg-Token": env["TREG_TOKEN"], "X-Treg-Org": env.get("TREG_ORG", "vi")}
+RAW = Path("data/raw/treg")
+RAW.mkdir(parents=True, exist_ok=True)
+ENDPOINT = "tikhub.x.instagram-v2-fetch-hashtag-posts"
+PAGES = 3
+TAGS = {"womens fall jacket": "falljacket", "flannel shirt women": "flannelshirt"}   # same as run_tiktok_tags.py
+spent = 0.0
+
+
+def call(**params):
+    global spent
+    r = requests.get(f"https://treg.to/call/{ENDPOINT}", headers=H, params=params, timeout=90)
+    spent += int(r.headers.get("X-Treg-Cost-Micro") or 0) / 1e6
+    d = r.json()
+    (RAW / f"{datetime.now():%Y%m%d_%H%M%S}_instagram_{params['keyword']}.json").write_text(
+        json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code} {str(d)[:200]}")
+    return d
+
+
+def recent_posts(tag):
+    posts, token = [], None
+    for _ in range(PAGES):
+        params = {"keyword": tag, "feed_type": "recent"}
+        if token:
+            params["pagination_token"] = token
+        d = (call(**params).get("data") or {})
+        for x in ((d.get("data") or {}).get("items") or []):
+            if not x.get("taken_at") or not x.get("code"):
+                continue
+            cap = (x.get("caption") or {}).get("text") or ""
+            posts.append({
+                "link": f"https://www.instagram.com/p/{x['code']}/",
+                "taken_at": datetime.fromtimestamp(x["taken_at"]).strftime("%Y-%m-%d %H:%M"),
+                "likes": x.get("like_count"), "comments": x.get("comment_count"),
+                "user": ((x.get("user") or {}).get("username")) or "",
+                "caption": cap.replace("\n", " ")[:150],
+            })
+        token = d.get("pagination_token")
+        if not token:
+            break
+    return list({p["link"]: p for p in posts}.values())
+
+
+def main():
+    cands = sys.argv[1:] or pd.read_csv("config/candidates.csv")["candidate"].tolist()
+    summary, allposts = [], []
+    for c in cands:
+        tag = TAGS.get(c, c.replace(" ", "").lower())
+        try:
+            posts = recent_posts(tag)
+        except (RuntimeError, ValueError) as e:
+            print(f"  {c}: {e}")
+            posts = []
+        for p in posts:
+            p.update(candidate=c, hashtag=tag)
+        allposts += posts
+        times = sorted(datetime.strptime(p["taken_at"], "%Y-%m-%d %H:%M") for p in posts)
+        span = (times[-1] - times[0]).total_seconds() / 86400 if len(times) > 1 else None
+        per_day = round(len(times) / max(span, 1 / 24), 1) if span is not None else None
+        likes = [p["likes"] for p in posts if p["likes"] is not None]
+        summary.append({
+            "candidate": c, "hashtag": tag, "posts_sampled": len(posts),
+            "newest": times[-1].strftime("%Y-%m-%d") if times else "",
+            "oldest": times[0].strftime("%Y-%m-%d") if times else "",
+            "posts_per_day": per_day,
+            "likes_median": int(pd.Series(likes).median()) if likes else None,
+            "date": str(date.today()),
+        })
+        s = summary[-1]
+        print(f"  #{tag:<22} постов {s['posts_sampled']:>3}, с {s['oldest']} по {s['newest']}, в день ≈ {s['posts_per_day']}")
+    out = Path("data/processed")
+    pd.DataFrame(summary).to_csv(out / "instagram_tags.csv", index=False, encoding="utf-8-sig")
+    pd.DataFrame(allposts).to_csv(out / "instagram_tag_posts.csv", index=False, encoding="utf-8-sig")
+    print(f"Потрачено: ${spent:.4f}. Сохранено: data/processed/instagram_tags.csv, instagram_tag_posts.csv")
+
+
+if __name__ == "__main__":
+    main()
