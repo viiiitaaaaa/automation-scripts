@@ -137,14 +137,15 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
                        border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px; min-height: 34px; cursor: pointer; }
   .rd-filters button[aria-pressed="true"] { background: var(--rd-text); color: var(--page); border-color: var(--rd-text); }
   .rd-filters button:focus-visible { outline: 2px solid var(--rd-line); outline-offset: 2px; }
-  .rd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-top: 16px; }
-  @media (max-width: 420px) { .rd-grid { grid-template-columns: 1fr; } }
-  .rd-card { background: var(--rd-surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
-             display: flex; flex-direction: column; gap: 9px; }
+  /* one wide card per row, charts two-up inside: the curves are the point of the page */
+  .rd-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 16px; }
+  .rd-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px 22px; }
+  .rd-card { background: var(--rd-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px;
+             display: flex; flex-direction: column; gap: 12px; }
   .rd-card.is-test { border-color: var(--rd-good); box-shadow: 0 0 0 1px var(--rd-good) inset; }
   .rd-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
-  .rd-name { font-weight: 600; font-size: 15px; line-height: 1.3; }
-  .rd-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .rd-name { font-weight: 600; font-size: 18px; line-height: 1.3; }
+  .rd-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
   .rd-pills { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
   .rd-pill { font: 600 11px "IBM Plex Mono", "JetBrains Mono", monospace; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
   .rd-pill.TEST { background: var(--rd-good-bg); color: var(--rd-good); }
@@ -160,12 +161,12 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-nums { margin-left: auto; font: 500 12px "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2);
              font-variant-numeric: tabular-nums; text-align: right; }
   .rd-nums .up { color: var(--rd-good); } .rd-nums .down { color: var(--rd-hot); }
-  .rd-chart-label { font: 500 10px "IBM Plex Mono", "JetBrains Mono", monospace; text-transform: uppercase;
-                    letter-spacing: .05em; color: var(--muted); margin-bottom: 2px; }
+  .rd-chart-label { font: 600 11.5px "IBM Plex Mono", "JetBrains Mono", monospace; text-transform: uppercase;
+                    letter-spacing: .05em; color: var(--rd-text-2); margin-bottom: 4px; }
   .rd-card svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; touch-action: pan-y; }
   .rd-g { stroke: var(--rd-grid); stroke-width: 1; }
-  .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 8.5px; }
-  .rd-now { fill: none; stroke: var(--rd-line); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 14px; }
+  .rd-now { fill: none; stroke: var(--rd-line); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
   .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
   .rd-why { font-size: 12px; color: var(--rd-hot); background: var(--rd-hot-bg); border-radius: 6px; padding: 5px 8px; }
   .rd-sparse { color: var(--rd-hot); text-transform: none; letter-spacing: 0; }
@@ -222,7 +223,7 @@ __HEADER__
   const DEC = { TEST: "тестировать", WATCH: "наблюдать", LATER: "позже", REJECT: "отказ" };
   const CH = [["check_google","G","Google"],["check_pinterest","P","Pinterest"],["check_youtube","Y","YouTube"],["check_tiktok","T","TikTok"],
               ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"]];
-  const W = 320, H = 118, L = 22, R = 6, T = 8, B = 16, pw = W - L - R, ph = H - T - B;
+  const W = 600, H = 240, L = 40, R = 10, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
   const x = (i, n) => L + (i / (n - 1)) * pw, y = (v) => T + (1 - v / 100) * ph;
   const fmtDate = (s) => { const [yy, mm, dd] = s.split("-"); return `${+dd} ${MON[+mm - 1]} ${yy}`; };
   const signed = (v) => v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${Math.round(v)}%`;
@@ -251,7 +252,7 @@ __HEADER__
       if (i < 2 || i > n - 3 || (m - 1) % 3 !== 0) return "";
       const tx = x(i, n).toFixed(1);
       const lab = m === 1 ? `янв’${d.slice(2, 4)}` : MON[m - 1];
-      return `<line class="rd-g${m === 1 ? " rd-year" : ""}" x1="${tx}" x2="${tx}" y1="${T}" y2="${T + ph}"/><text class="rd-t" x="${tx}" y="${H - 3}" text-anchor="middle">${lab}</text>`;
+      return `<line class="rd-g${m === 1 ? " rd-year" : ""}" x1="${tx}" x2="${tx}" y1="${T}" y2="${T + ph}"/><text class="rd-t" x="${tx}" y="${H - 6}" text-anchor="middle">${lab}</text>`;
     }).join("");
     // the two windows the radar compares: last 8 weeks and the same 8 weeks a year earlier
     const bands = n >= 60 ? band(n - 60, n - 52, n, "rd-band-prev") + band(n - 8, n - 1, n, "rd-band-now") : "";
@@ -262,10 +263,10 @@ __HEADER__
         <line class="rd-g" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>
         <line class="rd-g" x1="${L}" x2="${W - R}" y1="${y(50)}" y2="${y(50)}"/>
         <line class="rd-g" x1="${L}" x2="${W - R}" y1="${y(100)}" y2="${y(100)}"/>
-        <text class="rd-t" x="0" y="${y(100) + 3}">100</text><text class="rd-t" x="6" y="${y(50) + 3}">50</text><text class="rd-t" x="12" y="${y(0) + 3}">0</text>
+        <text class="rd-t" x="${L - 8}" y="${y(100) + 5}" text-anchor="end">100</text><text class="rd-t" x="${L - 8}" y="${y(50) + 5}" text-anchor="end">50</text><text class="rd-t" x="${L - 8}" y="${y(0) + 5}" text-anchor="end">0</text>
         ${ticks}
         <path class="rd-now" d="${path(c.vals)}"/>
-        <line class="rd-hl" x1="0" x2="0" y1="${T}" y2="${T + ph}"/><circle class="rd-hd" r="4"/>
+        <line class="rd-hl" x1="0" x2="0" y1="${T}" y2="${T + ph}"/><circle class="rd-hd" r="6"/>
       </svg></div>`;
   }
   function wire(svg, c) {
@@ -331,7 +332,7 @@ __HEADER__
         ${r.later_reason ? `<div class="rd-manual">Позже: ${esc(r.later_reason)}</div>` : ""}
         ${r.watch_reason && r.decision === "WATCH" ? `<div class="rd-sub">Почему наблюдать: ${esc(r.watch_reason)}</div>` : ""}
         ${r.manual_reason ? `<div class="rd-manual">Ручное решение: ${esc(r.manual_reason)} · автоматически было бы «${DEC[r.auto_decision] || r.auto_decision}»</div>` : ""}
-        ${curves || '<div class="rd-nocurve">Кривой нет: ни Pinterest, ни Google, ни YouTube не дали 2-летней истории по этому запросу.</div>'}
+        ${curves ? `<div class="rd-charts">${curves}</div>` : '<div class="rd-nocurve">Кривой нет: ни Pinterest, ни Google, ни YouTube не дали 2-летней истории по этому запросу.</div>'}
         ${foot.length ? `<div class="rd-foot">${foot.join("<br>")}</div>` : ""}`;
       grid.appendChild(card);
       const svgs = card.querySelectorAll("svg[role=img]");

@@ -177,7 +177,13 @@ TEMPLATE = r"""<title>Trend Radar</title>
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--page); color: var(--text);
          font-family: "Work Sans", system-ui, sans-serif; font-size: 14.5px; line-height: 1.5; }
-  .wrap { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 72px; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 72px; }
+  details.howto { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; }
+  details.howto summary { display: list-item; list-style: disclosure-closed; padding: 0; cursor: pointer;
+                          font-weight: 600; font-size: 13.5px; color: var(--text-2); }
+  details.howto[open] summary { list-style: disclosure-open; }
+  details.howto[open] summary { margin-bottom: 8px; }
+  section.cands { margin-top: 18px; }
   h1, h2 { font-family: "Fraunces", Georgia, serif; margin: 0; text-wrap: balance; }
   h1 { font-size: 30px; }
   h2 { font-size: 20px; margin-bottom: 4px; }
@@ -266,6 +272,8 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <h1>Какие вещи подтверждают сразу несколько каналов</h1>
   <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата шестью независимыми «свидетелями» и считает, сколько из них видят рост. Данные на <span class="mono" id="dt"></span>.</p>
   <div class="stats" id="stats"></div>
+  <details class="howto">
+  <summary>Как читать радар: правила решений и буквы каналов</summary>
   <div class="rule">
     <span><b>4–6 проверок</b> — тестировать</span>
     <span><b>3</b> — наблюдать; также наблюдать, если роста к прошлому году нет, но спрос большой и не падает (от 5 тыс. поисков на Amazon в месяц, 5+ товаров в хитах или от 1000 покупок за месяц на первой странице поиска Amazon)</span>
@@ -276,10 +284,10 @@ TEMPLATE = r"""<title>Trend Radar</title>
     <span><b>Сезон вот-вот начнётся</b> — год назад в следующие 8 недель интерес рос на 20%+ (по Google Trends), а в этом году не ниже прошлого: наблюдать обязательно</span>
     <span><b>Только стабильный рост</b> — по Pinterest последние 8 недель и 3 из 4 кварталов выше прошлого года на 5%+</span>
   </div>
+  <p class="note">Порядок: тестировать, наблюдать, позже, отказы, в самом конце — короткие сезоны. Буквы: G — Google (обычный поиск или Google Shopping), P — Pinterest, Y — поиск на YouTube (у всех трёх: последние 8 недель выше тех же недель прошлого года на 5%+), T — TikTok (хэштег в топе или рост за 2 недели на 5%+), A — Amazon (≥2 товара в хитах или поиск за месяц вырос на 5%+), R — бренды (≥2 ритейлера). На графиках вся кривая за 2 года: зелёная полоса — последние 8 недель, серая — те же недели год назад. Горб справа выше прошлогоднего — настоящий рост; одинаковые — просто сезон. Шкала 0–100, где 100 — пик за 2 года.</p>
+  </details>
 
-  <section>
-    <h2>Кандидаты</h2>
-    <p class="note">Сверху — тестировать и наблюдать, ниже — отказы, в самом конце — короткие сезоны. Буквы: G — Google (обычный поиск или Google Shopping), P — Pinterest, Y — поиск на YouTube (у всех трёх: последние 8 недель выше тех же недель прошлого года на 5%+), T — TikTok (хэштег в топе или рост за 2 недели на 5%+), A — Amazon (≥2 товара в хитах или поиск за месяц вырос на 5%+), R — бренды (≥2 ритейлера). На графиках вся кривая за 2 года: зелёная полоса — последние 8 недель, серая — те же недели год назад. Горб справа выше прошлогоднего — настоящий рост; одинаковые — просто сезон. Шкала 0–100, где 100 — пик за 2 года.</p>
+  <section class="cands">
     __CURVES__
     <div class="list" id="list" hidden></div>
   </section>
