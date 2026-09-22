@@ -50,8 +50,8 @@ description: Мультиканальный тренд-радар женской
 | Доп. сигналы (Dolphin) | `run_extra_signals.py --pinterest --amazon` | другие формулировки для Pinterest Trends (`VARIANTS`); Amazon: сумма «N+ bought in past month» на 1-й странице поиска | `data/raw/pinterest_trends/variants_*.json`, `data/processed/amazon_bought.csv` |
 | Trends MCP | `run_trendsmcp.py ["<слово>" ...]` | Amazon: поиски в месяц (4 мес) + рост к прошлому месяцу; TikTok: объём хэштега по дням (только крупные хэштеги). 1 запрос = 1 вещь × 1 источник, кэш 7 дней | `data/processed/trendsmcp.csv` |
 
-Кандидаты — `config/candidates.csv` (21 шт., задаются вручную; lace trim top убрана пользователем 22.09 —
-«гугл-запросов нет, спрос сезонный»). Колонка `pinterest_term` — формулировка, которую знает Pinterest Trends
+Кандидаты — `config/candidates.csv` (20 шт., задаются вручную; пользователь убрала 22.09 lace trim top —
+«гугл-запросов нет, спрос сезонный» и flannel shirt women — «спрос падает»). Колонка `pinterest_term` — формулировка, которую знает Pinterest Trends
 (fall cardigan → cardigan); кривая берётся по ней.
 После любых сборов: `run_radar.py` → `build_dashboard.py`.
 
