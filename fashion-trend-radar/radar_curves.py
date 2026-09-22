@@ -115,6 +115,42 @@ def _instagram():
     return out
 
 
+def _google_volume():
+    """candidate -> {"months": [{label, v}], avg, last, last_vs_avg, cpc} real US Google searches (DataForSEO)."""
+    f, fm = Path("data/processed/google_volume.csv"), Path("data/processed/google_volume_monthly.csv")
+    if not f.exists() or not fm.exists():
+        return {}
+    s, m = pd.read_csv(f).set_index("candidate"), pd.read_csv(fm)
+    out = {}
+    for c, g in m.sort_values("month").groupby("candidate"):
+        r = s.loc[c] if c in s.index else None
+        out[c] = {"months": [{"label": MONTHS[int(x[5:7]) - 1] + ("’" + x[2:4] if x[5:7] == "01" else ""), "v": int(v or 0)}
+                             for x, v in zip(g["month"], g["searches"])],
+                  "avg": None if r is None or pd.isna(r["avg_monthly"]) else int(r["avg_monthly"]),
+                  "last": None if r is None or pd.isna(r["last_month"]) else int(r["last_month"]),
+                  "last_vs_avg": None if r is None or pd.isna(r["last_vs_avg_pct"]) else int(r["last_vs_avg_pct"]),
+                  "cpc": None if r is None or pd.isna(r["cpc"]) else float(r["cpc"])}
+    return out
+
+
+def _tiktok_shop():
+    """candidate -> {products, sold_total, sellers, price_median, top:[{link, title, sold, price}]} (TikTok Shop US)."""
+    f, fp = Path("data/processed/tiktok_shop.csv"), Path("data/processed/tiktok_shop_products.csv")
+    if not f.exists():
+        return {}
+    s = pd.read_csv(f).set_index("candidate")
+    p = pd.read_csv(fp) if fp.exists() and fp.stat().st_size > 5 else pd.DataFrame()
+    out = {}
+    for c, r in s.iterrows():
+        top = []
+        if not p.empty:
+            g = p[p["candidate"] == c].sort_values("sold", ascending=False).head(3)
+            top = [{"link": x.link, "title": str(x.title)[:70], "sold": int(x.sold), "price": x.price} for x in g.itertuples()]
+        out[c] = {"products": int(r["products"]), "sold_total": int(r["sold_total"]), "sellers": int(r["sellers"]),
+                  "price_median": None if pd.isna(r["price_median"]) else float(r["price_median"]), "top": top}
+    return out
+
+
 MONTHS = "янв фев мар апр май июн июл авг сен окт ноя дек".split()
 
 
@@ -149,6 +185,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     shop = _google_series("data/normalized/google_trends_shopping")
     aliases = pinterest_aliases()
     amz, ttw, ig = _amazon_months(), _tiktok_weeks(), _instagram()
+    gvol, ttshop = _google_volume(), _tiktok_shop()
     # colour follows the item (color_slot 1-8 in config/candidates.csv, else its place there), never its rank on the page
     cfg = pd.read_csv("config/candidates.csv")
     order = {c: i for i, c in enumerate(cfg["candidate"])}
@@ -172,6 +209,8 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
         rec["amz_months"] = amz.get(name, [])
         rec["tt_weeks"] = ttw.get(name, [])
         rec["ig"] = ig.get(name)
+        rec["gvol"] = gvol.get(name)
+        rec["shop"] = ttshop.get(name)
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -314,7 +353,7 @@ __HEADER__
   const MON = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
   const DEC = { TEST: "тестировать", WATCH: "наблюдать", LATER: "позже", REJECT: "отказ" };
   const CH = [["check_google","G","Google"],["check_pinterest","P","Pinterest"],["check_youtube","Y","YouTube"],["check_tiktok","T","TikTok"],
-              ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"]];
+              ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"],["check_instagram","I","Instagram"]];
   const W = 1100, H = 340, L = 52, R = 12, T = 14, B = 36, pw = W - L - R, ph = H - T - B;
   const x = (i, n) => L + (i / (n - 1)) * pw, y = (v) => T + (1 - v / 100) * ph;
   const fmtDate = (s) => { const [yy, mm, dd] = s.split("-"); return `${+dd} ${MON[+mm - 1]} ${yy}`; };
@@ -404,13 +443,26 @@ __HEADER__
       const chips = CH.map(([k, s, nm]) => `<span class="rd-chk ${r[k] ? "on" : "off"}" title="${nm}: ${r[k] ? "подтверждает" : "не видит"}">${s}</span>`).join("");
       const pinNums = r.pin_yoy_pct === null && r.pin_mom_pct === null ? "нет на Pinterest"
         : `месяц <span class="${cls(r.pin_mom_pct)}">${signed(r.pin_mom_pct)}</span> · к году <span class="${cls(r.pin_yoy_pct)}" title="среднее за 8 недель против тех же недель прошлого года">${signed(r.pin_yoy_pct)}</span>`;
-      const curves = chart(r.pin_curve, "Pinterest · интерес 0–100" + (r.pin_alias ? ` · по фразе «${esc(r.pin_alias)}»` : ""))
+      const curves = bars(r.gvol && r.gvol.months, "Google · сколько раз искали за месяц (США, реальные числа)")
+        + chart(r.pin_curve, "Pinterest · интерес 0–100" + (r.pin_alias ? ` · по фразе «${esc(r.pin_alias)}»` : ""))
         + chart(r.google_curve, "Google · интерес 0–100")
         + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100")
         + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США)")
         + bars(r.tt_weeks, `TikTok США · новых видео в неделю под #${esc(r.tt_hashtag || "")} (по выборке до 90 видео)`);
       const foot = [];
+      if (r.gvol && r.gvol.avg !== null) {
+        const g = r.gvol;
+        foot.push(`<b>GOOGLE США</b> в среднем ${bigN(g.avg)} поисков в месяц, в последний месяц ${bigN(g.last)}`
+          + (g.last_vs_avg !== null ? ` (${g.last_vs_avg > 0 ? "+" : ""}${g.last_vs_avg}% к среднему за год)` : "")
+          + (g.cpc ? `; клик в рекламе ~$${g.cpc.toFixed(2)}` : ""));
+      }
+      if (r.shop && r.shop.products) {
+        const s = r.shop;
+        const links = (s.top || []).map((p) => `<a href="${esc(p.link)}" target="_blank" rel="noopener">${bigN(p.sold)} продано${p.price ? `, $${Number(p.price).toFixed(0)}` : ""}</a>`).join(" · ");
+        foot.push(`<b>TIKTOK SHOP США</b> у ${s.products} похожих товаров продано ${bigN(s.sold_total)} шт., продавцов ${s.sellers}`
+          + (s.price_median ? `, цена обычно $${s.price_median.toFixed(0)}` : "") + (links ? `<br>самые продаваемые: ${links}` : ""));
+      }
       if (r.amazon_items) foot.push(`<b>AMAZON</b> ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`);
       if (r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
         + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);

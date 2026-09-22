@@ -76,6 +76,9 @@ MIN_YOY = 5         # % growth for every growth check (user decision 22.09.2026:
 MIN_NONZERO = 0.5   # share of weeks with data; below this the series is too sparse to judge
 TT_MIN_FRESH = 5          # TikTok check: >= 5 US videos under our hashtag posted in the last 30 days
 TT_MIN_FRESH_SHARE = 0.4  # ... and they are >= 40% of the US videos TikTok returns for the tag
+IG_MIN_PER_DAY = 1.0      # Instagram check: >= 1 post a day under our hashtag ...
+IG_MAX_AGE_DAYS = 7       # ... and the newest post is at most a week old
+TEST_MIN, WATCH_MIN = 5, 3   # of 7 checks (user 23.09.2026): 5-7 test, 3-4 watch, 0-2 reject
 
 
 def window_stats(values: list, w: int = WINDOW) -> dict | None:
@@ -248,6 +251,7 @@ def build_matrix(
     shopping_history: pd.DataFrame | None = None, # same shape as google_history, Google Shopping (gprop=froogle)
     amazon_bought: pd.DataFrame | None = None,    # run_extra_signals.py --amazon: candidate, bought_sum, ...
     tiktok_tags: pd.DataFrame | None = None,      # run_tiktok_tags.py: hashtag totals + US videos in the last 30 days
+    instagram_tags: pd.DataFrame | None = None,   # run_instagram_tags.py: posts per day under our hashtag (worldwide)
     manual: dict | None = None,                   # candidate -> (decision, reason): user's own call, shown as such
     season_override: dict | None = None,          # candidate -> set of months, when the user knows the season better
     today_month: int | None = None,
@@ -255,6 +259,7 @@ def build_matrix(
     manual = manual or {}
     season_override = season_override or {}
     tt = tiktok_tags.set_index("candidate") if tiktok_tags is not None and not tiktok_tags.empty else pd.DataFrame()
+    igt = instagram_tags.set_index("candidate") if instagram_tags is not None and not instagram_tags.empty else pd.DataFrame()
     if today_month is None:
         from datetime import date
         today_month = date.today().month
@@ -392,7 +397,15 @@ def build_matrix(
         r["retailer_list"] = ", ".join(sorted(re_hits["retailer"].unique())) if len(re_hits) else ""
         r["check_retailers"] = r["retailer_brands"] >= 2
 
-        checks = ["check_google", "check_pinterest", "check_youtube", "check_tiktok", "check_amazon", "check_retailers"]
+        # Instagram (7th witness, user 23.09.2026): our hashtag gets >= 1 post a day and the newest post is <= 7 days old
+        g = igt.loc[phrase] if phrase in igt.index else None
+        r["ig_posts_per_day"] = float(g["posts_per_day"]) if g is not None and pd.notna(g["posts_per_day"]) else None
+        newest = str(g["newest"]) if g is not None and pd.notna(g["newest"]) else ""
+        fresh_ig = bool(newest) and newest >= (pd.Timestamp.today() - pd.Timedelta(days=IG_MAX_AGE_DAYS)).strftime("%Y-%m-%d")
+        r["check_instagram"] = bool(r["ig_posts_per_day"] is not None and r["ig_posts_per_day"] >= IG_MIN_PER_DAY and fresh_ig)
+
+        checks = ["check_google", "check_pinterest", "check_youtube", "check_tiktok", "check_amazon", "check_retailers",
+                  "check_instagram"]
         r["checks_passed"] = int(sum(bool(r[c]) for c in checks))
         # Gates first (user rules), then the channel vote
         r["reject_reason"] = ""
@@ -413,9 +426,9 @@ def build_matrix(
                 r["decision"] = "REJECT"
                 r["reject_reason"] = ("нет стабильного роста" if phrase in pinterest_series
                                       else "рост не проверить: нет кривой Pinterest")
-        elif r["checks_passed"] >= 4:
+        elif r["checks_passed"] >= TEST_MIN:
             r["decision"] = "TEST"
-        elif r["checks_passed"] == 3:
+        elif r["checks_passed"] >= WATCH_MIN:
             r["decision"] = "WATCH"
         else:
             r["decision"], r["reject_reason"] = "REJECT", "мало подтверждений"

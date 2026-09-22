@@ -50,6 +50,8 @@ description: Мультиканальный тренд-радар женской
 | Доп. сигналы (Dolphin) | `run_extra_signals.py --pinterest --amazon` | другие формулировки для Pinterest Trends (`VARIANTS`); Amazon: сумма «N+ bought in past month» на 1-й странице поиска | `data/raw/pinterest_trends/variants_*.json`, `data/processed/amazon_bought.csv` |
 | TikTok по нашим хэштегам (США) | `run_tiktok_tags.py ["<слово>" ...]` | treg.to → TikHub, $0.001/запрос, 2 на вещь (~$0.044 за 22): карточка хэштега (всего видео/просмотров, statsV2) + до 30 видео `region=US` со ссылками; T засчитывается при ≥5 свежих (30 дн) американских видео и ≥40% выдачи | `data/processed/tiktok_tags.csv`, `tiktok_tag_videos.csv` |
 | Instagram по нашим хэштегам | `run_instagram_tags.py ["<слово>" ...]` | treg → TikHub v2 `feed_type=recent`, $0.002/запрос, 3 страницы по 12 постов (~$0.124 за 22); страны нет — весь мир; частота «постов в день» по последним ~36 постам + самые залайканные свежие. Пока только информация на карточке, не голос | `data/processed/instagram_tags.csv`, `instagram_tag_posts.csv` |
+| Объём поиска Google (США) | `run_google_volume.py` | DataForSEO через treg: **$0.09 за ОДИН запрос на все слова** (не запускать дважды!) — реальные поиски в месяц за 12 мес, CPC; на карточке столбики + «последний месяц к среднему» | `data/processed/google_volume.csv`, `google_volume_monthly.csv` |
+| TikTok Shop (США) | `run_tiktok_shop.py [--from-raw]` | TikHub через treg, $0.001: 1-я страница поиска (до 30 товаров) — **сколько продано**, цены, продавцы, ссылки. `--from-raw` перечитывает сегодняшние ответы бесплатно. Ответ TikHub обёрнут дважды: `data.data.products` | `data/processed/tiktok_shop.csv`, `tiktok_shop_products.csv` |
 | TikTok тренды дня | `run_tiktok_trending.py [страниц]` | общемировая лента «Интересное» (~10 видео на запрос) + трендовые поисковые запросы; не про моду | `data/processed/tiktok_trending_<дата>.csv` |
 | Trends MCP | `run_trendsmcp.py ["<слово>" ...]` | Amazon: поиски в месяц (4 мес) + рост к прошлому месяцу; TikTok: объём хэштега по дням (только крупные хэштеги). 1 запрос = 1 вещь × 1 источник, кэш 7 дней | `data/processed/trendsmcp.csv` |
 
@@ -159,6 +161,10 @@ YouTube) с зелёной полосой «последние 8 недель» 
 - **Графики на карточке** (23.09): кривые Pinterest/Google/Shopping/YouTube + столбики «Amazon · поисков в месяц»
   (сырые ответы Trends MCP, поле volume) и «TikTok США · новых видео в неделю» (12 недель по выборке до 90 видео,
   `run_tiktok_tags.py` листает 3 страницы). Instagram — строкой под графиками.
+- **Instagram седьмой свидетель** (23.09): I = ≥1 пост в день и последний пост ≤7 дней. Пороги на 7 проверок:
+  5–7 тестировать, 3–4 наблюдать, 0–2 отказ (`TEST_MIN`, `WATCH_MIN`).
+- **Pinterest-поиск через treg (scrapecreators)** отдаёт только id/ссылки пинов, без дат и сохранений — бесполезен, не подключать.
+- **Ответы TikHub обёрнуты дважды** (`data.data.…`) — у Instagram, TikTok Shop; парсить через `data.get("data") or data`.
 - **Instagram «recent» у редких хэштегов** отдаёт и старые посты (2017–2021) — частота тогда ≈ 0, это «хэштег мёртвый».
 - **Pinterest `/metrics/` → 400**, если end_date = сегодня (данных ещё нет) или в пачке незнакомая фраза:
   брать end_date из собственного запроса страницы, иначе неделя назад; при 400 спрашивать по одной фразе.

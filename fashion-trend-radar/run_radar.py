@@ -64,6 +64,7 @@ def main():
                      shopping_history=shopping_history,
                      amazon_bought=load("data/processed/amazon_bought.csv", pd.read_csv),
                      tiktok_tags=load("data/processed/tiktok_tags.csv", pd.read_csv),
+                     instagram_tags=load("data/processed/instagram_tags.csv", pd.read_csv),
                      manual=manual, season_override=season_override)
 
     out = Path("data/reports/radar_candidates.csv")
@@ -71,7 +72,7 @@ def main():
     m.to_csv(out, index=False, encoding="utf-8-sig")
 
     mark = lambda b: "✓" if b else "·"
-    print(f"{'кандидат':<24} G  P  Y  T  A  R  итог  решение  | Pinterest год  | заметки")
+    print(f"{'кандидат':<24} G  P  Y  T  A  R  I  итог  решение  | Pinterest год  | заметки")
     for _, r in m.iterrows():
         yoy = "" if pd.isna(r["pin_yoy_pct"]) else f"{r['pin_yoy_pct']:+.0f}%"
         note = []
@@ -99,7 +100,7 @@ def main():
             note.append(f"TikTok {r['tiktok_mcp_lift_pct']:+.0f}% за 2 нед")
         print(f"{r['candidate']:<24} {mark(r['check_google'])}  {mark(r['check_pinterest'])}  "
               f"{mark(r['check_youtube'])}  {mark(r['check_tiktok'])}  {mark(r['check_amazon'])}  "
-              f"{mark(r['check_retailers'])}  {r['checks_passed']}/6  {r['decision']:<7}  | {yoy:>6}         | {'; '.join(note)}")
+              f"{mark(r['check_retailers'])}  {mark(r['check_instagram'])}  {r['checks_passed']}/7  {r['decision']:<7}  | {yoy:>6}         | {'; '.join(note)}")
     print(f"\nСохранено: {out}")
 
 
