@@ -260,8 +260,9 @@ def build_matrix(
         r["check_youtube"] = ((r["youtube_yoy_pct"] is not None and r["youtube_yoy_pct"] >= MIN_YOY)
                               or (r["yt_views_yoy_pct"] is not None and r["yt_views_yoy_pct"] >= MIN_YOY))
 
-        # Season, judged on two years: Pinterest first, Google if Pinterest has no series
-        r["seasonal_flag"] = is_seasonal(p_st) if p_st else is_seasonal(g_st)
+        # Season, judged on two years: Google Trends first (user 22.09.2026: «ориентируемся на Google Trends»),
+        # Pinterest if Google has no usable series. 8-week windows in Jul-Sep are clear of the spring-2026 Google glitch.
+        r["seasonal_flag"] = is_seasonal(g_st) if g_st else is_seasonal(p_st)
 
         # Season length: short event peaks (homecoming dress) don't fit the business
         g_vals = []
