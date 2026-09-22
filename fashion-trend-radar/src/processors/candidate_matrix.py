@@ -138,6 +138,50 @@ def season_weeks(values: list) -> tuple[int, bool] | None:
     return max(w for w, _ in runs), all(open_ for _, open_ in runs)
 
 
+MONTHS_RU = "янв фев мар апр май июн июл авг сен окт ноя дек".split()
+SOON_MONTHS = 2     # «текущий или предстоящий сезон»: this month and the next two
+
+
+def season_calendar(dates: list, values: list) -> set | None:
+    """Months of the season from the CLEAN year (104..52 weeks ago; spring 2026 Google glitch excluded):
+    3-week smoothing, months where interest >= half of that year's peak. 10+ months = all year."""
+    pts = [(str(d)[:10], float(v)) for d, v in zip(dates, values) if v is not None and pd.notna(v)]
+    if len(pts) < 100:
+        return None
+    year = pts[-104:-52]
+    vals = [v for _, v in year]
+    if sum(1 for v in vals if v > 0) / len(vals) < MIN_NONZERO:
+        return None
+    sm = [sum(vals[max(0, i - 1):i + 2]) / len(vals[max(0, i - 1):i + 2]) for i in range(len(vals))]
+    peak = max(sm)
+    return {int(year[i][0][5:7]) for i in range(len(sm)) if peak and sm[i] >= peak * 0.5} or None
+
+
+def months_label(months: set | None) -> str:
+    if not months:
+        return ""
+    if len(months) >= 10:
+        return "круглый год"
+    # contiguous ranges, wrapping over December -> January
+    ms = sorted(months)
+    runs, start, prev = [], ms[0], ms[0]
+    for m in ms[1:] + [None]:
+        if m != (prev % 12) + 1:
+            runs.append((start, prev))
+            start = m
+        prev = m if m else prev
+    if len(runs) > 1 and runs[0][0] == 1 and runs[-1][1] == 12:
+        runs = [(runs[-1][0], runs[0][1])] + runs[1:-1]
+    return ", ".join(MONTHS_RU[a - 1] if a == b else f"{MONTHS_RU[a - 1]}–{MONTHS_RU[b - 1]}" for a, b in runs)
+
+
+def in_season_soon(months: set | None, today_month: int) -> bool:
+    """No calendar -> can't say it's off-season, so True."""
+    if not months or len(months) >= 10:
+        return True
+    return any(((today_month - 1 + k) % 12) + 1 in months for k in range(SOON_MONTHS + 1))
+
+
 AHEAD_WEEKS = 8     # user 22.09.2026: a season that starts within ~2 months must be considered
 
 
@@ -202,8 +246,14 @@ def build_matrix(
     shopping_history: pd.DataFrame | None = None, # same shape as google_history, Google Shopping (gprop=froogle)
     amazon_bought: pd.DataFrame | None = None,    # run_extra_signals.py --amazon: candidate, bought_sum, ...
     manual: dict | None = None,                   # candidate -> (decision, reason): user's own call, shown as such
+    season_override: dict | None = None,          # candidate -> set of months, when the user knows the season better
+    today_month: int | None = None,
 ) -> pd.DataFrame:
     manual = manual or {}
+    season_override = season_override or {}
+    if today_month is None:
+        from datetime import date
+        today_month = date.today().month
     bought = amazon_bought.set_index("candidate") if amazon_bought is not None and not amazon_bought.empty else pd.DataFrame()
     yt_api = youtube_api.set_index("candidate") if youtube_api is not None and not youtube_api.empty else pd.DataFrame()
     mcp = {}
@@ -279,10 +329,16 @@ def build_matrix(
         r["seasonal_flag"] = is_seasonal(g_st) if g_st else is_seasonal(p_st)
 
         # Season length: short event peaks (homecoming dress) don't fit the business
-        g_vals = []
+        g_vals, g_dates = [], []
         if not google_history.empty:
             h = google_history[google_history["keyword"] == phrase]
-            g_vals = h[~h["is_partial"].astype(bool)].sort_values("date")["interest"].tolist()
+            h = h[~h["is_partial"].astype(bool)].sort_values("date")
+            g_vals, g_dates = h["interest"].tolist(), h["date"].tolist()
+        # Season calendar (user 22.09.2026: «ориентируемся на Google Trends», текущий или предстоящий сезон)
+        cal = season_override.get(phrase) or season_calendar(g_dates, g_vals)
+        r["season_months"] = months_label(cal)
+        r["season_source"] = "вручную" if phrase in season_override else ("Google" if cal else "")
+        r["in_season"] = in_season_soon(cal, today_month)
         sw = (season_weeks(pinterest_series[phrase]) if phrase in pinterest_series else None) or season_weeks(g_vals)
         r["season_weeks"] = sw[0] if sw else None
         r["short_season"] = bool(sw and sw[0] < MIN_SEASON_WEEKS and not sw[1])
@@ -353,14 +409,19 @@ def build_matrix(
         if phrase in manual:
             r["decision"], r["manual_reason"] = manual[phrase]
             r["reject_reason"] = "" if r["decision"] != "REJECT" else r["reject_reason"]
+        # Out of season: «наблюдать» only for the current or upcoming season, otherwise «позже»
+        r["later_reason"] = ""
+        if r["decision"] == "WATCH" and not r["in_season"]:
+            r["decision"] = "LATER"
+            r["later_reason"] = f"не сезон: сезон {r['season_months']} — вернуться, когда он подойдёт"
         rows.append(r)
 
     return sort_candidates(pd.DataFrame(rows))
 
 
 def sort_candidates(df: pd.DataFrame) -> pd.DataFrame:
-    """User rule 22.09.2026: TEST, then WATCH, then REJECT; short-season rejects always last."""
-    rank = df["decision"].map({"TEST": 0, "WATCH": 1, "REJECT": 2}).fillna(2)
+    """User rule 22.09.2026: TEST, WATCH, LATER (off-season), REJECT; short-season rejects always last."""
+    rank = df["decision"].map({"TEST": 0, "WATCH": 1, "LATER": 2, "REJECT": 3}).fillna(3)
     rank = rank + df["short_season"].fillna(False).astype(bool).astype(int)
     return (df.assign(_rank=rank)
               .sort_values(["_rank", "checks_passed", "pin_yoy_pct"], ascending=[True, False, False], na_position="last")

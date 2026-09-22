@@ -272,6 +272,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
     <span><b>0–2</b> — отказ</span>
     <span><b>Сезон</b> — в эти же недели прошлого года был такой же подъём</span>
     <span><b>Короткий сезон</b> — спрос держится меньше 2 месяцев: отказ в любом случае</span>
+    <span><b>Позже</b> — вещь не в сезоне: её сезон (по Google Trends) не приходится ни на текущий, ни на два ближайших месяца</span>
     <span><b>Сезон вот-вот начнётся</b> — год назад в следующие 8 недель интерес рос на 20%+ (по Google Trends), а в этом году не ниже прошлого: наблюдать обязательно</span>
     <span><b>Только стабильный рост</b> — по Pinterest последние 8 недель и 3 из 4 кварталов выше прошлого года на 5%+</span>
   </div>
@@ -309,7 +310,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   const D = JSON.parse(document.getElementById("radar-data").textContent);
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const DEC = { TEST: "тестировать", WATCH: "наблюдать", REJECT: "отказ" };
+  const DEC = { TEST: "тестировать", WATCH: "наблюдать", LATER: "позже", REJECT: "отказ" };
   const GROUP = { material: "ткань", pattern: "принт", neckline: "ворот", silhouette: "силуэт", detail: "деталь", audience_occasion: "аудитория" };
   const ATTR = { knit: "трикотаж", oversized: "оверсайз", plaid: "клетка", roll_neck: "высокий ворот", stripe: "полоска",
                  faux_fur: "искусственный мех", v_neck: "V-вырез", leather: "кожа", wool: "шерсть", boat_neck: "лодочка",

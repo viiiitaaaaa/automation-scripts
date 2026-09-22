@@ -27,7 +27,10 @@ def main():
     candidates = cfg["candidate"].tolist()
     # manual_decision / manual_reason: the user's own call (e.g. an early trend the channels can't see yet)
     manual = {r.candidate: (r.manual_decision, r.manual_reason) for r in cfg.itertuples()
-              if "manual_decision" in cfg and r.manual_decision in ("TEST", "WATCH", "REJECT")}
+              if "manual_decision" in cfg and r.manual_decision in ("TEST", "WATCH", "LATER", "REJECT")}
+    # season_months: the user's own season calendar, e.g. "5,6,7,8" (overrides the Google calendar)
+    season_override = {r.candidate: {int(m) for m in str(r.season_months).split(",") if m.strip()}
+                       for r in cfg.itertuples() if "season_months" in cfg and str(r.season_months).strip()}
 
     google_rising = load("data/processed/candidates_google_rising.csv", pd.read_csv)
     hist_root = Path("data/normalized/google_trends")
@@ -60,7 +63,7 @@ def main():
                      trendsmcp=load("data/processed/trendsmcp.csv", pd.read_csv),
                      shopping_history=shopping_history,
                      amazon_bought=load("data/processed/amazon_bought.csv", pd.read_csv),
-                     manual=manual)
+                     manual=manual, season_override=season_override)
 
     out = Path("data/reports/radar_candidates.csv")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -71,6 +74,10 @@ def main():
     for _, r in m.iterrows():
         yoy = "" if pd.isna(r["pin_yoy_pct"]) else f"{r['pin_yoy_pct']:+.0f}%"
         note = []
+        if r["season_months"]:
+            note.append(f"сезон {r['season_months']}")
+        if r["later_reason"]:
+            note.append(f"ПОЗЖЕ: {r['later_reason']}")
         if r["manual_reason"]:
             note.append(f"РУЧНОЕ: {r['manual_reason']} (авто: {r['auto_decision']})")
         if r["seasonal_flag"]:

@@ -149,6 +149,7 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-pill { font: 600 11px "IBM Plex Mono", "JetBrains Mono", monospace; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
   .rd-pill.TEST { background: var(--rd-good-bg); color: var(--rd-good); }
   .rd-pill.WATCH { background: var(--rd-warn-bg); color: var(--rd-warn); }
+  .rd-pill.LATER { background: var(--rd-soft); color: var(--rd-text-2); border: 1px dashed var(--border); }
   .rd-pill.REJECT { background: var(--rd-soft); color: var(--muted); }
   .rd-pill.season { background: var(--rd-hot-bg); color: var(--rd-hot); }
   .rd-checks { display: flex; gap: 4px; align-items: center; }
@@ -204,6 +205,7 @@ __HEADER__
       <button type="button" data-f="ALL" aria-pressed="true">Все</button>
       <button type="button" data-f="TEST" aria-pressed="false">Тестировать</button>
       <button type="button" data-f="WATCH" aria-pressed="false">Наблюдать</button>
+      <button type="button" data-f="LATER" aria-pressed="false">Позже</button>
       <button type="button" data-f="REJECT" aria-pressed="false">Отказ</button>
     </div>
   </div>
@@ -217,7 +219,7 @@ __HEADER__
   const grid = document.getElementById("rd-grid"), tip = document.getElementById("rd-tip");
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const MON = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-  const DEC = { TEST: "тестировать", WATCH: "наблюдать", REJECT: "отказ" };
+  const DEC = { TEST: "тестировать", WATCH: "наблюдать", LATER: "позже", REJECT: "отказ" };
   const CH = [["check_google","G","Google"],["check_pinterest","P","Pinterest"],["check_youtube","Y","YouTube"],["check_tiktok","T","TikTok"],
               ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"]];
   const W = 320, H = 118, L = 22, R = 6, T = 8, B = 16, pw = W - L - R, ph = H - T - B;
@@ -320,13 +322,14 @@ __HEADER__
       }
       card.innerHTML = `
         <div class="rd-head">
-          <div><div class="rd-name">${esc(r.candidate)}</div><div class="rd-sub">${r.checks_passed} из ${CH.length} каналов подтверждают${r.season_weeks ? ` · сезон ${r.season_weeks >= 52 ? "круглый год" : Math.round(r.season_weeks) + " нед"}` : ""}</div></div>
+          <div><div class="rd-name">${esc(r.candidate)}</div><div class="rd-sub">${r.checks_passed} из ${CH.length} каналов подтверждают${r.season_months ? ` · сезон: ${esc(r.season_months)}${r.season_source === "вручную" ? " (задан вручную)" : ""}` : ""}</div></div>
           <div class="rd-pills"><span class="rd-pill ${r.decision}">${DEC[r.decision]}</span>${r.short_season ? '<span class="rd-pill season">короткий сезон</span>' : r.seasonal_flag ? '<span class="rd-pill season">сезон</span>' : ""}</div>
         </div>
         <div class="rd-checks">${chips}<span class="rd-nums">${pinNums}</span></div>
         ${r.pin_quarters ? `<div class="rd-sub">Pinterest по кварталам к прошлому году: <span class="rd-q">${esc(r.pin_quarters)}</span></div>` : ""}
         ${r.reject_reason ? `<div class="rd-why">Почему отказ: ${esc(r.reject_reason)}</div>` : ""}
-        ${r.watch_reason ? `<div class="rd-sub">Почему наблюдать: ${esc(r.watch_reason)}</div>` : ""}
+        ${r.later_reason ? `<div class="rd-manual">Позже: ${esc(r.later_reason)}</div>` : ""}
+        ${r.watch_reason && r.decision === "WATCH" ? `<div class="rd-sub">Почему наблюдать: ${esc(r.watch_reason)}</div>` : ""}
         ${r.manual_reason ? `<div class="rd-manual">Ручное решение: ${esc(r.manual_reason)} · автоматически было бы «${DEC[r.auto_decision] || r.auto_decision}»</div>` : ""}
         ${curves || '<div class="rd-nocurve">Кривой нет: ни Pinterest, ни Google, ни YouTube не дали 2-летней истории по этому запросу.</div>'}
         ${foot.length ? `<div class="rd-foot">${foot.join("<br>")}</div>` : ""}`;

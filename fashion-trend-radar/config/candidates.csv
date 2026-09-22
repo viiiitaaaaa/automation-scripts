@@ -1,23 +1,23 @@
-candidate,source,pinterest_term,manual_decision,manual_reason
-plaid skirt,google+radar,,,
-plaid mini skirt,amazon,,WATCH,"сезонка (по Google Trends): сейчас продавать нет смысла, не убираем — вернуться ближе к сезону"
-funnel neck sweater,radar,,,
-roll neck sweater,google+retailers,,,
-chunky sweater,radar,,,
-cable knit sweater,amazon,,,
-fall cardigan,google,cardigan,,
-bandana cardigan,google,,TEST,"сигнал нового тренда: взлёт запроса в Google (gap bandana cardigan +850%), остальные каналы ещё не подхватили"
-faux fur coat,radar+retailers,,,
-tennis skirt,radar,,,
-hoco dress,google+tiktok,,,
-womens fall jacket,google,,,
-lace trim skirt,amazon,,WATCH,"сезонка (по Google Trends): сейчас продавать нет смысла, не убираем — вернуться ближе к сезону"
-satin midi skirt,amazon,,,
-faux leather midi skirt,amazon,,,
-faux suede skirt,amazon,,WATCH,"сезонка (по Google Trends): сейчас продавать нет смысла, не убираем — вернуться ближе к сезону"
-sweater dress,amazon,,,
-wrap sweater dress,amazon,,,
-bow top,tiktok,,,
-fall outfit inspo,tiktok,,,
-lace trim top,amazon,,WATCH,"сезонка: вернули по правилу «сезонки не убираем, а наблюдаем» — пересмотреть ближе к сезону"
-flannel shirt women,amazon,,WATCH,"сезонка: вернули по правилу «сезонки не убираем, а наблюдаем» — пересмотреть ближе к сезону"
+candidate,source,pinterest_term,manual_decision,manual_reason,season_months
+plaid skirt,google+radar,,,,
+plaid mini skirt,amazon,,WATCH,"сезонка (по Google Trends): сейчас продавать нет смысла, не убираем — вернуться ближе к сезону",
+funnel neck sweater,radar,,,,
+roll neck sweater,google+retailers,,,,
+chunky sweater,radar,,,,
+cable knit sweater,amazon,,,,
+fall cardigan,google,cardigan,,,
+bandana cardigan,google,,TEST,"сигнал нового тренда: взлёт запроса в Google (gap bandana cardigan +850%), остальные каналы ещё не подхватили",
+faux fur coat,radar+retailers,,,,
+tennis skirt,radar,,,,
+hoco dress,google+tiktok,,,,
+womens fall jacket,google,,,,
+lace trim skirt,amazon,,WATCH,"сезонка (по Google Trends): сейчас продавать нет смысла, не убираем — вернуться ближе к сезону",
+satin midi skirt,amazon,,,,
+faux leather midi skirt,amazon,,,,
+faux suede skirt,amazon,,WATCH,"сезонка (по Google Trends): сейчас продавать нет смысла, не убираем — вернуться ближе к сезону",
+sweater dress,amazon,,,,
+wrap sweater dress,amazon,,,,
+bow top,tiktok,,,,
+fall outfit inspo,tiktok,,,,
+lace trim top,amazon,,,,"5,6,7,8"
+flannel shirt women,amazon,,WATCH,"сезонка: вернули по правилу «сезонки не убираем, а наблюдаем» — пересмотреть ближе к сезону",
