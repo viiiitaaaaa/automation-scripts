@@ -138,6 +138,20 @@ def season_weeks(values: list) -> tuple[int, bool] | None:
     return max(w for w, _ in runs), all(open_ for _, open_ in runs)
 
 
+AHEAD_WEEKS = 8     # user 22.09.2026: a season that starts within ~2 months must be considered
+
+
+def season_ahead(values: list) -> float | None:
+    """Last year's rise right after this point: mean of the 8 weeks that followed «now» a year ago
+    vs the 4 weeks around «now» a year ago, in %. Positive and big = the season is about to start."""
+    v = [float(x) for x in values if x is not None and pd.notna(x)]
+    if len(v) < 60 or sum(1 for x in v if x > 0) / len(v) < MIN_NONZERO:
+        return None
+    mean = lambda xs: sum(xs) / len(xs)
+    before, after = mean(v[-56:-52]), mean(v[-52:-52 + AHEAD_WEEKS])
+    return round((after - before) / before * 100, 1) if before else None
+
+
 MIN_GROWING_QUARTERS = 3   # of the last 4 quarters, each vs the same quarter a year earlier
 
 
@@ -272,6 +286,14 @@ def build_matrix(
         sw = (season_weeks(pinterest_series[phrase]) if phrase in pinterest_series else None) or season_weeks(g_vals)
         r["season_weeks"] = sw[0] if sw else None
         r["short_season"] = bool(sw and sw[0] < MIN_SEASON_WEEKS and not sw[1])
+        # Season about to start: Google Trends first (user's reference), Pinterest if Google has no series
+        ahead = season_ahead(g_vals)
+        ahead_yoy = r["google_yoy_pct"]
+        if ahead is None and phrase in pinterest_series:
+            ahead, ahead_yoy = season_ahead(pinterest_series[phrase]), r["pin_yoy_pct"]
+        r["season_ahead_pct"] = ahead
+        r["season_soon"] = bool(ahead is not None and ahead >= SEASON_LIFT
+                                and (ahead_yoy is None or ahead_yoy >= STEADY_MIN_YOY))
 
         # TikTok: fashion hashtag in the 90-day top list, OR the hashtag's volume rising (trendsmcp)
         t_hits = tiktok[tiktok["hashtag"].apply(lambda h: hashtag_matches(s, h))] if not tiktok.empty else tiktok
@@ -308,7 +330,11 @@ def build_matrix(
         if r["short_season"]:
             r["decision"], r["reject_reason"] = "REJECT", "короткий сезон"
         elif not r["stable_growth"]:
-            if r["steady_demand"] and r["checks_passed"] >= 2:
+            if r["season_soon"]:
+                r["decision"] = "WATCH"
+                r["watch_reason"] = (f"сезон вот-вот начнётся: год назад в следующие {AHEAD_WEEKS} недель "
+                                     f"интерес вырос на {r['season_ahead_pct']:+.0f}%, в этом году не ниже прошлого")
+            elif r["steady_demand"] and r["checks_passed"] >= 2:
                 # user 22.09.2026: такие вещи — «наблюдать», отдельного решения не нужно
                 r["decision"] = "WATCH"
                 r["watch_reason"] = "роста к прошлому году нет, но спрос большой и не падает"
