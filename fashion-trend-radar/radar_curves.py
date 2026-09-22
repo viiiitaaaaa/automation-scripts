@@ -86,10 +86,16 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     yt = _google_series("data/normalized/google_trends_youtube")
     shop = _google_series("data/normalized/google_trends_shopping")
     aliases = pinterest_aliases()
+    # colour follows the item (color_slot 1-8 in config/candidates.csv, else its place there), never its rank on the page
+    cfg = pd.read_csv("config/candidates.csv")
+    order = {c: i for i, c in enumerate(cfg["candidate"])}
+    fixed = dict(zip(cfg["candidate"], cfg["color_slot"])) if "color_slot" in cfg else {}
     rows = []
     for _, r in cand.iterrows():
         name = r["candidate"]
         rec = json.loads(r.to_json(force_ascii=False))
+        s = fixed.get(name)
+        rec["color_slot"] = int(s) if pd.notna(s) and s else order.get(name, 0) % 8 + 1
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -117,13 +123,20 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
         --rd-prev: var(--baseline, var(--muted));
         --rd-good: #2f7d5b; --rd-good-bg: rgba(47,125,91,.13);
         --rd-warn: #a0671a; --rd-warn-bg: rgba(160,103,26,.14);
-        --rd-hot: #b0472f; --rd-hot-bg: rgba(176,71,47,.13); }
+        --rd-hot: #b0472f; --rd-hot-bg: rgba(176,71,47,.13);
+        /* 8-slot categorical palette (validated for CVD), one colour per item */
+        --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
+        --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rd {
         --rd-good: #6cc49a; --rd-good-bg: rgba(108,196,154,.16); --rd-warn: #e0a857; --rd-warn-bg: rgba(224,168,87,.16);
-        --rd-hot: #e5876f; --rd-hot-bg: rgba(229,135,111,.16); } }
+        --rd-hot: #e5876f; --rd-hot-bg: rgba(229,135,111,.16);
+        --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+        --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; } }
   :root[data-theme="dark"] .rd {
         --rd-good: #6cc49a; --rd-good-bg: rgba(108,196,154,.16); --rd-warn: #e0a857; --rd-warn-bg: rgba(224,168,87,.16);
-        --rd-hot: #e5876f; --rd-hot-bg: rgba(229,135,111,.16); }
+        --rd-hot: #e5876f; --rd-hot-bg: rgba(229,135,111,.16);
+        --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+        --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; }
   .rd { margin-bottom: 44px; }
   .rd-eyebrow { font: 600 11.5px "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace; letter-spacing: .09em;
                 text-transform: uppercase; color: var(--rd-line); }
@@ -140,9 +153,11 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   /* one wide card per row, charts two-up inside: the curves are the point of the page */
   .rd-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 16px; }
   .rd-charts { display: grid; grid-template-columns: 1fr; gap: 18px; }   /* one chart per row, full card width */
-  .rd-card { background: var(--rd-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px;
-             display: flex; flex-direction: column; gap: 12px; }
-  .rd-card.is-test { border-color: var(--rd-good); box-shadow: 0 0 0 1px var(--rd-good) inset; }
+  .rd-card { background: var(--rd-surface); border: 1px solid var(--border); border-left: 8px solid var(--k, var(--border));
+             border-radius: 12px; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+  .rd-sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: var(--k); margin-right: 8px;
+           vertical-align: -1px; }
+  .rd-card.is-test { border-color: var(--rd-good); border-left-color: var(--k, var(--rd-good)); box-shadow: 0 0 0 1px var(--rd-good); }
   .rd-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
   .rd-name { font-weight: 600; font-size: 18px; line-height: 1.3; }
   .rd-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
@@ -166,7 +181,7 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-card svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; touch-action: pan-y; }
   .rd-g { stroke: var(--rd-grid); stroke-width: 1; }
   .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 17px; }
-  .rd-now { fill: none; stroke: var(--rd-line); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+  .rd-now { fill: none; stroke: var(--k, var(--rd-line)); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
   .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
   .rd-why { font-size: 12px; color: var(--rd-hot); background: var(--rd-hot-bg); border-radius: 6px; padding: 5px 8px; }
   .rd-sparse { color: var(--rd-hot); text-transform: none; letter-spacing: 0; }
@@ -175,7 +190,7 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-band-prev { fill: var(--rd-prev); fill-opacity: .28; }
   .rd-year { stroke: var(--rd-prev); stroke-dasharray: 2 2; }
   .rd-hl { stroke: var(--rd-prev); stroke-width: 1; opacity: 0; pointer-events: none; }
-  .rd-hd { fill: var(--rd-line); stroke: var(--rd-surface); stroke-width: 2; opacity: 0; pointer-events: none; }
+  .rd-hd { fill: var(--k, var(--rd-line)); stroke: var(--rd-surface); stroke-width: 2; opacity: 0; pointer-events: none; }
   .rd-nocurve { font-size: 12px; color: var(--muted); background: var(--rd-soft); border-radius: 8px; padding: 14px 12px; }
   .rd-foot { font-size: 11.5px; color: var(--rd-text-2); line-height: 1.45; border-top: 1px solid var(--border); padding-top: 8px; }
   .rd-foot b { color: var(--muted); font-weight: 600; font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .04em; }
@@ -291,6 +306,7 @@ __HEADER__
     ROWS.filter((r) => f === "ALL" || r.decision === f).forEach((r) => {
       const card = document.createElement("article");
       card.className = "rd-card" + (r.decision === "TEST" ? " is-test" : "");
+      card.style.setProperty("--k", `var(--c${r.color_slot || 1})`);
       const chips = CH.map(([k, s, nm]) => `<span class="rd-chk ${r[k] ? "on" : "off"}" title="${nm}: ${r[k] ? "подтверждает" : "не видит"}">${s}</span>`).join("");
       const pinNums = r.pin_yoy_pct === null && r.pin_mom_pct === null ? "нет на Pinterest"
         : `месяц <span class="${cls(r.pin_mom_pct)}">${signed(r.pin_mom_pct)}</span> · к году <span class="${cls(r.pin_yoy_pct)}" title="среднее за 8 недель против тех же недель прошлого года">${signed(r.pin_yoy_pct)}</span>`;
@@ -323,7 +339,7 @@ __HEADER__
       }
       card.innerHTML = `
         <div class="rd-head">
-          <div><div class="rd-name">${esc(r.candidate)}</div><div class="rd-sub">${r.checks_passed} из ${CH.length} каналов подтверждают${r.season_months ? ` · сезон: ${esc(r.season_months)}${r.season_source === "вручную" ? " (задан вручную)" : ""}` : ""}</div></div>
+          <div><div class="rd-name"><span class="rd-sw" aria-hidden="true"></span>${esc(r.candidate)}</div><div class="rd-sub">${r.checks_passed} из ${CH.length} каналов подтверждают${r.season_months ? ` · сезон: ${esc(r.season_months)}${r.season_source === "вручную" ? " (задан вручную)" : ""}` : ""}</div></div>
           <div class="rd-pills"><span class="rd-pill ${r.decision}">${DEC[r.decision]}</span>${r.short_season ? '<span class="rd-pill season">короткий сезон</span>' : r.seasonal_flag ? '<span class="rd-pill season">сезон</span>' : ""}</div>
         </div>
         <div class="rd-checks">${chips}<span class="rd-nums">${pinNums}</span></div>
