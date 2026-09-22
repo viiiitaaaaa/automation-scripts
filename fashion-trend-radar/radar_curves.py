@@ -121,11 +121,23 @@ def _google_volume():
     if not f.exists() or not fm.exists():
         return {}
     s, m = pd.read_csv(f).set_index("candidate"), pd.read_csv(fm)
+    weekly = _google_series()   # Google Trends 0-100 by week, for the current-month estimate
     out = {}
     for c, g in m.sort_values("month").groupby("candidate"):
         r = s.loc[c] if c in s.index else None
-        out[c] = {"months": [{"label": MONTHS[int(x[5:7]) - 1] + ("’" + x[2:4] if x[5:7] == "01" else ""), "v": int(v or 0)}
-                             for x, v in zip(g["month"], g["searches"])],
+        months = [{"label": MONTHS[int(x[5:7]) - 1] + ("’" + x[2:4] if x[5:7] == "01" else ""), "v": int(v or 0)}
+                  for x, v in zip(g["month"], g["searches"])]
+        # Monthly volumes come only for finished months. Estimate the running month:
+        # last full month's volume x (this month's full weeks / last month's weeks) in Google Trends.
+        last_m = g["month"].iloc[-1]
+        nxt = pd.Period(last_m, "M") + 1
+        wk = weekly.get(c) or []
+        cur = [v for d, v in wk if d[:7] == str(nxt)]
+        prev = [v for d, v in wk if d[:7] == last_m]
+        if cur and prev and sum(prev) and int(g["searches"].iloc[-1] or 0):
+            est = int(round(int(g["searches"].iloc[-1]) * (sum(cur) / len(cur)) / (sum(prev) / len(prev)), -1))
+            months.append({"label": MONTHS[nxt.month - 1] + " (оценка)", "v": est, "est": True})
+        out[c] = {"months": months,
                   "avg": None if r is None or pd.isna(r["avg_monthly"]) else int(r["avg_monthly"]),
                   "last": None if r is None or pd.isna(r["last_month"]) else int(r["last_month"]),
                   "last_vs_avg": None if r is None or pd.isna(r["last_vs_avg_pct"]) else int(r["last_vs_avg_pct"]),
@@ -297,6 +309,7 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-g { stroke: var(--rd-grid); stroke-width: 1; }
   .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 17px; }
   .rd-bar { fill: var(--k, var(--rd-line)); }
+  .rd-bar.rd-est { fill-opacity: .38; stroke: var(--k, var(--rd-line)); stroke-width: 2; stroke-dasharray: 6 4; }
   .rd-bv { fill: var(--rd-text-2); font-weight: 600; }
   .rd-now { fill: none; stroke: var(--k, var(--rd-line)); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
   .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
@@ -408,7 +421,7 @@ __HEADER__
     const slot = pw / n, bw = Math.min(90, slot * 0.62);
     const marks = pts.map((p, i) => {
       const cx = L + slot * (i + 0.5), h = max ? (p.v / max) * bph : 0, yb = bt + bph - h;
-      const rect = h > 0 ? `<path class="rd-bar" d="M${(cx - bw / 2).toFixed(1)},${(bt + bph).toFixed(1)} V${(yb + 4).toFixed(1)} q0,-4 4,-4 H${(cx + bw / 2 - 4).toFixed(1)} q4,0 4,4 V${(bt + bph).toFixed(1)} Z"><title>${esc(p.label)}: ${p.v}</title></path>` : "";
+      const rect = h > 0 ? `<path class="rd-bar${p.est ? " rd-est" : ""}" d="M${(cx - bw / 2).toFixed(1)},${(bt + bph).toFixed(1)} V${(yb + 4).toFixed(1)} q0,-4 4,-4 H${(cx + bw / 2 - 4).toFixed(1)} q4,0 4,4 V${(bt + bph).toFixed(1)} Z"><title>${esc(p.label)}: ${p.v}</title></path>` : "";
       return rect + `<text class="rd-t rd-bv" x="${cx.toFixed(1)}" y="${(yb - 8).toFixed(1)}" text-anchor="middle">${bigN(p.v)}</text>`
         + `<text class="rd-t" x="${cx.toFixed(1)}" y="${BH - 10}" text-anchor="middle">${esc(p.label)}</text>`;
     }).join("");
@@ -443,12 +456,12 @@ __HEADER__
       const chips = CH.map(([k, s, nm]) => `<span class="rd-chk ${r[k] ? "on" : "off"}" title="${nm}: ${r[k] ? "подтверждает" : "не видит"}">${s}</span>`).join("");
       const pinNums = r.pin_yoy_pct === null && r.pin_mom_pct === null ? "нет на Pinterest"
         : `месяц <span class="${cls(r.pin_mom_pct)}">${signed(r.pin_mom_pct)}</span> · к году <span class="${cls(r.pin_yoy_pct)}" title="среднее за 8 недель против тех же недель прошлого года">${signed(r.pin_yoy_pct)}</span>`;
-      const curves = bars(r.gvol && r.gvol.months, "Google · сколько раз искали за месяц (США, реальные числа)")
+      const curves = bars(r.gvol && r.gvol.months, "Google · сколько раз искали за месяц (США, реальные числа; текущий месяц — оценка по неделям Google Trends)")
         + chart(r.pin_curve, "Pinterest · интерес 0–100" + (r.pin_alias ? ` · по фразе «${esc(r.pin_alias)}»` : ""))
         + chart(r.google_curve, "Google · интерес 0–100")
         + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100")
-        + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США)")
+        + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США; последний полный месяц — сервис отдаёт месяц после его окончания)")
         + bars(r.tt_weeks, `TikTok США · новых видео в неделю под #${esc(r.tt_hashtag || "")} (по выборке до 90 видео)`);
       const foot = [];
       if (r.gvol && r.gvol.avg !== null) {
