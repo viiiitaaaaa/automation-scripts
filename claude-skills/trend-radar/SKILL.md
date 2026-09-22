@@ -46,9 +46,13 @@ description: Мультиканальный тренд-радар женской
 | Amazon | `run_amazon.py` (Dolphin) | Best Sellers + New Releases, 8 женских разделов, снимки | `data/normalized/amazon/amazon_<дата>.parquet` |
 | Бренды | `run_retailers.py` (Dolphin) | новинки Zara/ASOS/Aritzia/Free People → признаки | `data/processed/retailer_attributes.csv` |
 | Подсказки | `run_autocomplete.py "<слово>" ...` | что дописывают в Google/YouTube/Amazon (цвет, фасон) | `data/processed/autocomplete_summary.csv` |
+| Google Shopping | `run_trends_bootstrap.py --shopping --all` | 2 года покупательского интереса (gprop=froogle); входит в проверку G | `data/normalized/google_trends_shopping/` |
+| Доп. сигналы (Dolphin) | `run_extra_signals.py --pinterest --amazon` | другие формулировки для Pinterest Trends (`VARIANTS`); Amazon: сумма «N+ bought in past month» на 1-й странице поиска | `data/raw/pinterest_trends/variants_*.json`, `data/processed/amazon_bought.csv` |
 | Trends MCP | `run_trendsmcp.py ["<слово>" ...]` | Amazon: поиски в месяц (4 мес) + рост к прошлому месяцу; TikTok: объём хэштега по дням (только крупные хэштеги). 1 запрос = 1 вещь × 1 источник, кэш 7 дней | `data/processed/trendsmcp.csv` |
 
-Кандидаты — `config/candidates.csv` (22 шт., задаются вручную).
+Кандидаты — `config/candidates.csv` (21 шт., задаются вручную; lace trim top убрана пользователем 22.09 —
+«гугл-запросов нет, спрос сезонный»). Колонка `pinterest_term` — формулировка, которую знает Pinterest Trends
+(fall cardigan → cardigan); кривая берётся по ней.
 После любых сборов: `run_radar.py` → `build_dashboard.py`.
 
 ## Логика решения (`src/processors/candidate_matrix.py`)
@@ -134,6 +138,12 @@ YouTube) с зелёной полосой «последние 8 недель» 
   ищут «fall outfit ideas / how to style», а не «roll neck sweater».
 - Google 2y по редким фразам — много нулей (bandana cardigan «+1512%» был артефактом).
 - Aritzia отдаёт ~10 товаров (подгрузка при прокрутке).
+- **Pinterest `/metrics/` → 400**, если end_date = сегодня (данных ещё нет) или в пачке незнакомая фраза:
+  брать end_date из собственного запроса страницы, иначе неделя назад; при 400 спрашивать по одной фразе.
+- **Google Shopping по узким фразам** почти пустой (нули у ~половины) — такие ряды не учитываются (MIN_NONZERO).
+- **Amazon «bought in past month»** — нижняя граница («1K+» = 1000), только 1-я страница (48 товаров),
+  раздел `i=fashion`, к фразе дописывается «women». Капча 2 раза → стоп, не обходить. 22.09 капчи не было.
+- **bandana cardigan**: ни одной формулировки в Pinterest Trends (bandana/paisley × cardigan/sweater, gap…).
 - **Pinterest Trends ≠ поиск Pinterest.** bandana cardigan на pinterest.com ищется отлично (много пинов),
   но раздел трендов по ней ничего не вернул (кривые есть только у достаточно частых запросов) —
   нужна другая формулировка или сигнал из самого поиска Pinterest.

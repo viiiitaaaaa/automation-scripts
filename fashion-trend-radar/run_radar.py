@@ -37,6 +37,11 @@ def main():
     if not youtube_history.empty:
         youtube_history = (youtube_history.sort_values("date")
                            .drop_duplicates(subset=["date", "keyword", "region"], keep="last"))
+    sh_root = Path("data/normalized/google_trends_shopping")
+    shopping_history = pd.read_parquet(sh_root) if sh_root.exists() else pd.DataFrame()
+    if not shopping_history.empty:
+        shopping_history = (shopping_history.sort_values("date")
+                            .drop_duplicates(subset=["date", "keyword", "region"], keep="last"))
     pinterest = load("data/processed/pinterest_metrics.csv", pd.read_csv)
     pinterest = pinterest[pinterest["source"] == "our_candidates"] if not pinterest.empty else pinterest
     tiktok = load("data/processed/candidates_tiktok_cc.csv", pd.read_csv)
@@ -48,7 +53,9 @@ def main():
     m = build_matrix(candidates, google_rising, google_history, pinterest, tiktok, amazon, retailers,
                      pinterest_series=pin_series, youtube_history=youtube_history,
                      youtube_api=load("data/processed/youtube_api.csv", pd.read_csv),
-                     trendsmcp=load("data/processed/trendsmcp.csv", pd.read_csv))
+                     trendsmcp=load("data/processed/trendsmcp.csv", pd.read_csv),
+                     shopping_history=shopping_history,
+                     amazon_bought=load("data/processed/amazon_bought.csv", pd.read_csv))
 
     out = Path("data/reports/radar_candidates.csv")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -67,6 +74,10 @@ def main():
             note.append(f"Amazon {r['amazon_items']} шт, ~${r['amazon_median_price']}")
         if pd.notna(r["amazon_monthly_searches"]):
             note.append(f"поиск Amazon {r['amazon_monthly_searches']:,.0f}/мес ({r['amazon_mcp_lift_pct']:+.0f}%)")
+        if pd.notna(r["amazon_bought_sum"]):
+            note.append(f"купили ≥{r['amazon_bought_sum']:,.0f}/мес")
+        if pd.notna(r["google_shop_yoy_pct"]):
+            note.append(f"Shopping {r['google_shop_yoy_pct']:+.0f}%")
         if pd.notna(r["tiktok_mcp_lift_pct"]):
             note.append(f"TikTok {r['tiktok_mcp_lift_pct']:+.0f}% за 2 нед")
         print(f"{r['candidate']:<24} {mark(r['check_google'])}  {mark(r['check_pinterest'])}  "

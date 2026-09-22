@@ -15,16 +15,31 @@ from src.processors.candidate_matrix import MIN_NONZERO
 WEEKS = 52
 
 
-def _pinterest_series():
-    files = sorted(Path("data/raw/pinterest_trends").glob("metrics_*.json"))
-    if not files:
+def pinterest_aliases() -> dict:
+    """candidate -> wording Pinterest Trends knows (config/candidates.csv, column pinterest_term)."""
+    c = pd.read_csv("config/candidates.csv")
+    if "pinterest_term" not in c:
         return {}
+    return {r.candidate: r.pinterest_term for r in c.itertuples() if isinstance(r.pinterest_term, str) and r.pinterest_term}
+
+
+def _pinterest_series():
+    """term -> weekly points, keyed by CANDIDATE: latest metrics_*.json plus variants_*.json
+    (other wordings, run_extra_signals.py); a candidate with an alias gets its alias's curve."""
+    root = Path("data/raw/pinterest_trends")
+    files = sorted(root.glob("metrics_*.json"))[-1:] + sorted(root.glob("variants_*.json"))
     out = {}
-    for batch in json.loads(files[-1].read_text(encoding="utf-8")).values():
-        for t in batch:
-            pts = [(c["date"], c["normalizedCount"]) for c in t["counts"]
-                   if c.get("normalizedCount") is not None]
-            out[t["term"]] = pts
+    for f in files:   # later files win
+        for batch in json.loads(f.read_text(encoding="utf-8")).values():
+            for t in batch:
+                if not t:
+                    continue
+                pts = [(c["date"], c["normalizedCount"]) for c in t.get("counts", [])
+                       if c.get("normalizedCount") is not None]
+                out[t["term"]] = pts
+    for cand, alias in pinterest_aliases().items():
+        if alias in out:
+            out[cand] = out[alias]
     return out
 
 
@@ -69,16 +84,20 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
                 gaps=None) -> str:
     pin, goo = _pinterest_series(), _google_series()
     yt = _google_series("data/normalized/google_trends_youtube")
+    shop = _google_series("data/normalized/google_trends_shopping")
+    aliases = pinterest_aliases()
     rows = []
     for _, r in cand.iterrows():
         name = r["candidate"]
         rec = json.loads(r.to_json(force_ascii=False))
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
+        rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
+        rec["shop_curve"] = _split(shop[name]) if name in shop else None
         rec["youtube_curve"] = _split(yt[name]) if name in yt else None
         rows.append(rec)
     data = json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
-    n_curves = sum(1 for x in rows if x["pin_curve"] or x["google_curve"] or x["youtube_curve"])
+    n_curves = sum(1 for x in rows if x["pin_curve"] or x["google_curve"] or x["shop_curve"] or x["youtube_curve"])
     header = f"""
   <div class="rd-eyebrow">Новый радар · 6 каналов · данные на {date_str}</div>
   <h1 class="rd-h1">Кривые по каждому кандидату</h1>
@@ -271,12 +290,18 @@ __HEADER__
       const chips = CH.map(([k, s, nm]) => `<span class="rd-chk ${r[k] ? "on" : "off"}" title="${nm}: ${r[k] ? "подтверждает" : "не видит"}">${s}</span>`).join("");
       const pinNums = r.pin_yoy_pct === null && r.pin_mom_pct === null ? "нет на Pinterest"
         : `месяц <span class="${cls(r.pin_mom_pct)}">${signed(r.pin_mom_pct)}</span> · к году <span class="${cls(r.pin_yoy_pct)}" title="среднее за 8 недель против тех же недель прошлого года">${signed(r.pin_yoy_pct)}</span>`;
-      const curves = chart(r.pin_curve, "Pinterest · интерес 0–100") + chart(r.google_curve, "Google · интерес 0–100")
+      const curves = chart(r.pin_curve, "Pinterest · интерес 0–100" + (r.pin_alias ? ` · по фразе «${esc(r.pin_alias)}»` : ""))
+        + chart(r.google_curve, "Google · интерес 0–100")
+        + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100");
       const foot = [];
       if (r.amazon_items) foot.push(`<b>AMAZON</b> ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`);
       if (r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
         + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);
+      if (r.amazon_bought_sum) foot.push(`<b>КУПИЛИ НА AMAZON</b> за месяц ≥ ${Number(r.amazon_bought_sum).toLocaleString("ru-RU")} шт. `
+        + `(у ${r.amazon_bought_items} товаров с первой страницы поиска есть пометка «bought in past month»)`);
+      if (r.google_shop_yoy_pct !== null && r.google_shop_yoy_pct !== undefined)
+        foot.push(`<b>GOOGLE SHOPPING</b> 8 недель к прошлому году: ${r.google_shop_yoy_pct > 0 ? "+" : ""}${Math.round(r.google_shop_yoy_pct)}%`);
       if (r.retailer_brands) foot.push(`<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`);
       if (r.google_rising_top) foot.push(`<b>GOOGLE</b> ${esc(String(r.google_rising_top).split(" | ")[0])}`);
       if (r.tiktok_hashtags) foot.push(`<b>TIKTOK</b> ${esc(r.tiktok_hashtags)}`);
@@ -305,7 +330,7 @@ __HEADER__
         ${foot.length ? `<div class="rd-foot">${foot.join("<br>")}</div>` : ""}`;
       grid.appendChild(card);
       const svgs = card.querySelectorAll("svg[role=img]");
-      [r.pin_curve, r.google_curve, r.youtube_curve].filter(Boolean).forEach((c, i) => wire(svgs[i], c));
+      [r.pin_curve, r.google_curve, r.shop_curve, r.youtube_curve].filter(Boolean).forEach((c, i) => wire(svgs[i], c));
     });
     if (!grid.children.length) grid.innerHTML = '<p class="rd-lead">Нет кандидатов в этой группе.</p>';
   }

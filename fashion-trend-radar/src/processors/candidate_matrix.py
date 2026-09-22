@@ -101,12 +101,14 @@ MIN_SEASON_WEEKS = 8   # user rule: seasonal items are fine, but the season must
 # year over year but has big, non-shrinking demand is not a REJECT -- it is "спрос есть".
 STEADY_SEARCHES = 5000   # Amazon searches per month (trendsmcp)
 STEADY_ITEMS = 5         # or this many matching items in Amazon best sellers / new releases
+STEADY_BOUGHT = 1000     # or Amazon search page 1 shows >= this many bought in the past month
 STEADY_MIN_YOY = -10     # Pinterest may dip this much and still count as "not shrinking"
 
 
 def steady_demand(r: dict) -> bool:
     big = ((r.get("amazon_monthly_searches") or 0) >= STEADY_SEARCHES
-           or (r.get("amazon_items") or 0) >= STEADY_ITEMS)
+           or (r.get("amazon_items") or 0) >= STEADY_ITEMS
+           or (r.get("amazon_bought_sum") or 0) >= STEADY_BOUGHT)
     pin_ok = r.get("pin_yoy_pct") is None or r["pin_yoy_pct"] >= STEADY_MIN_YOY
     amz_ok = r.get("amazon_mcp_lift_pct") is None or r["amazon_mcp_lift_pct"] >= 0
     return bool(big and pin_ok and amz_ok)
@@ -183,7 +185,10 @@ def build_matrix(
     youtube_history: pd.DataFrame | None = None,  # same shape as google_history, YouTube search
     youtube_api: pd.DataFrame | None = None,      # run_youtube_api.py output, one row per candidate
     trendsmcp: pd.DataFrame | None = None,        # run_trendsmcp.py output: candidate, source, lift_pct, ...
+    shopping_history: pd.DataFrame | None = None, # same shape as google_history, Google Shopping (gprop=froogle)
+    amazon_bought: pd.DataFrame | None = None,    # run_extra_signals.py --amazon: candidate, bought_sum, ...
 ) -> pd.DataFrame:
+    bought = amazon_bought.set_index("candidate") if amazon_bought is not None and not amazon_bought.empty else pd.DataFrame()
     yt_api = youtube_api.set_index("candidate") if youtube_api is not None and not youtube_api.empty else pd.DataFrame()
     mcp = {}
     if trendsmcp is not None and not trendsmcp.empty:
@@ -213,8 +218,16 @@ def build_matrix(
             g_st = window_stats(h[~h["is_partial"].astype(bool)].sort_values("date")["interest"].tolist())
         r["google_yoy_pct"] = g_st["yoy_pct"] if g_st else None
         r["google_season_lift_prev"] = g_st["lift_prev"] if g_st else None
+        # Google Shopping: buying intent, same 8-weeks-vs-last-year comparison (sparse series are skipped)
+        s_st = None
+        if shopping_history is not None and not shopping_history.empty:
+            h = shopping_history[shopping_history["keyword"] == phrase]
+            s_st = window_stats(h[~h["is_partial"].astype(bool)].sort_values("date")["interest"].tolist())
+        r["google_shop_yoy_pct"] = s_st["yoy_pct"] if s_st else None
         # +1..3% over 8 weeks is noise, not growth -- same bar as Pinterest
-        r["check_google"] = bool(len(g_hits)) or (r["google_yoy_pct"] is not None and r["google_yoy_pct"] >= MIN_YOY)
+        r["check_google"] = (bool(len(g_hits))
+                             or (r["google_yoy_pct"] is not None and r["google_yoy_pct"] >= MIN_YOY)
+                             or (r["google_shop_yoy_pct"] is not None and r["google_shop_yoy_pct"] >= MIN_YOY))
 
         # Pinterest: grew vs the same 8 weeks last year (not just the season)
         p_st = window_stats(pinterest_series[phrase]) if phrase in pinterest_series else None
@@ -269,6 +282,9 @@ def build_matrix(
         r["amazon_items"] = len(a_hits)
         r["amazon_new_releases"] = int((a_hits["list"] == "new_releases").sum()) if len(a_hits) else 0
         r["amazon_median_price"] = round(float(a_hits["price"].median()), 2) if len(a_hits) and a_hits["price"].notna().any() else None
+        b = bought.loc[phrase] if phrase in bought.index else None
+        r["amazon_bought_sum"] = int(b["bought_sum"]) if b is not None else None
+        r["amazon_bought_items"] = int(b["items_with_bought"]) if b is not None else None
         r["amazon_mcp_lift_pct"], vol = mcp_lift(phrase, "amazon")
         r["amazon_monthly_searches"] = int(vol) if vol else None
         r["check_amazon"] = len(a_hits) >= 2 or (r["amazon_mcp_lift_pct"] is not None
