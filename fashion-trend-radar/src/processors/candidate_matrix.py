@@ -187,7 +187,9 @@ def build_matrix(
     trendsmcp: pd.DataFrame | None = None,        # run_trendsmcp.py output: candidate, source, lift_pct, ...
     shopping_history: pd.DataFrame | None = None, # same shape as google_history, Google Shopping (gprop=froogle)
     amazon_bought: pd.DataFrame | None = None,    # run_extra_signals.py --amazon: candidate, bought_sum, ...
+    manual: dict | None = None,                   # candidate -> (decision, reason): user's own call, shown as such
 ) -> pd.DataFrame:
+    manual = manual or {}
     bought = amazon_bought.set_index("candidate") if amazon_bought is not None and not amazon_bought.empty else pd.DataFrame()
     yt_api = youtube_api.set_index("candidate") if youtube_api is not None and not youtube_api.empty else pd.DataFrame()
     mcp = {}
@@ -319,6 +321,11 @@ def build_matrix(
             r["decision"] = "WATCH"
         else:
             r["decision"], r["reject_reason"] = "REJECT", "мало подтверждений"
+        # User's manual decision overrides the vote, but stays visible as manual (checks are not touched)
+        r["auto_decision"], r["manual_reason"] = r["decision"], ""
+        if phrase in manual:
+            r["decision"], r["manual_reason"] = manual[phrase]
+            r["reject_reason"] = "" if r["decision"] != "REJECT" else r["reject_reason"]
         rows.append(r)
 
     return sort_candidates(pd.DataFrame(rows))

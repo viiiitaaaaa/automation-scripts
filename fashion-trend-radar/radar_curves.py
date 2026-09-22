@@ -168,6 +168,7 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
   .rd-why { font-size: 12px; color: var(--rd-hot); background: var(--rd-hot-bg); border-radius: 6px; padding: 5px 8px; }
   .rd-sparse { color: var(--rd-hot); text-transform: none; letter-spacing: 0; }
+  .rd-manual { font-size: 12px; color: var(--rd-warn); background: var(--rd-warn-bg); border-radius: 6px; padding: 5px 8px; }
   .rd-band-now { fill: var(--rd-good-bg); }
   .rd-band-prev { fill: var(--rd-prev); fill-opacity: .28; }
   .rd-year { stroke: var(--rd-prev); stroke-dasharray: 2 2; }
@@ -326,6 +327,7 @@ __HEADER__
         ${r.pin_quarters ? `<div class="rd-sub">Pinterest по кварталам к прошлому году: <span class="rd-q">${esc(r.pin_quarters)}</span></div>` : ""}
         ${r.reject_reason ? `<div class="rd-why">Почему отказ: ${esc(r.reject_reason)}</div>` : ""}
         ${r.watch_reason ? `<div class="rd-sub">Почему наблюдать: ${esc(r.watch_reason)}</div>` : ""}
+        ${r.manual_reason ? `<div class="rd-manual">Ручное решение: ${esc(r.manual_reason)} · автоматически было бы «${DEC[r.auto_decision] || r.auto_decision}»</div>` : ""}
         ${curves || '<div class="rd-nocurve">Кривой нет: ни Pinterest, ни Google, ни YouTube не дали 2-летней истории по этому запросу.</div>'}
         ${foot.length ? `<div class="rd-foot">${foot.join("<br>")}</div>` : ""}`;
       grid.appendChild(card);

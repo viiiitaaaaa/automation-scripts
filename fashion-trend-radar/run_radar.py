@@ -23,7 +23,11 @@ def load(pattern, reader, **kw):
 
 
 def main():
-    candidates = pd.read_csv("config/candidates.csv")["candidate"].tolist()
+    cfg = pd.read_csv("config/candidates.csv", keep_default_na=False)
+    candidates = cfg["candidate"].tolist()
+    # manual_decision / manual_reason: the user's own call (e.g. an early trend the channels can't see yet)
+    manual = {r.candidate: (r.manual_decision, r.manual_reason) for r in cfg.itertuples()
+              if "manual_decision" in cfg and r.manual_decision in ("TEST", "WATCH", "REJECT")}
 
     google_rising = load("data/processed/candidates_google_rising.csv", pd.read_csv)
     hist_root = Path("data/normalized/google_trends")
@@ -55,7 +59,8 @@ def main():
                      youtube_api=load("data/processed/youtube_api.csv", pd.read_csv),
                      trendsmcp=load("data/processed/trendsmcp.csv", pd.read_csv),
                      shopping_history=shopping_history,
-                     amazon_bought=load("data/processed/amazon_bought.csv", pd.read_csv))
+                     amazon_bought=load("data/processed/amazon_bought.csv", pd.read_csv),
+                     manual=manual)
 
     out = Path("data/reports/radar_candidates.csv")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -66,6 +71,8 @@ def main():
     for _, r in m.iterrows():
         yoy = "" if pd.isna(r["pin_yoy_pct"]) else f"{r['pin_yoy_pct']:+.0f}%"
         note = []
+        if r["manual_reason"]:
+            note.append(f"РУЧНОЕ: {r['manual_reason']} (авто: {r['auto_decision']})")
         if r["seasonal_flag"]:
             note.append("СЕЗОН")
         if r["retailer_list"]:
