@@ -139,7 +139,7 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-filters button:focus-visible { outline: 2px solid var(--rd-line); outline-offset: 2px; }
   /* one wide card per row, charts two-up inside: the curves are the point of the page */
   .rd-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 16px; }
-  .rd-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px 22px; }
+  .rd-charts { display: grid; grid-template-columns: 1fr; gap: 18px; }   /* one chart per row, full card width */
   .rd-card { background: var(--rd-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px;
              display: flex; flex-direction: column; gap: 12px; }
   .rd-card.is-test { border-color: var(--rd-good); box-shadow: 0 0 0 1px var(--rd-good) inset; }
@@ -161,12 +161,12 @@ BLOCK = r"""<!-- RADAR:START (генерируется build_dashboard.py — п
   .rd-nums { margin-left: auto; font: 500 12px "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2);
              font-variant-numeric: tabular-nums; text-align: right; }
   .rd-nums .up { color: var(--rd-good); } .rd-nums .down { color: var(--rd-hot); }
-  .rd-chart-label { font: 600 11.5px "IBM Plex Mono", "JetBrains Mono", monospace; text-transform: uppercase;
+  .rd-chart-label { font: 600 13px "IBM Plex Mono", "JetBrains Mono", monospace; text-transform: uppercase;
                     letter-spacing: .05em; color: var(--rd-text-2); margin-bottom: 4px; }
   .rd-card svg { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; touch-action: pan-y; }
   .rd-g { stroke: var(--rd-grid); stroke-width: 1; }
-  .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 14px; }
-  .rd-now { fill: none; stroke: var(--rd-line); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .rd-t { fill: var(--muted); font-family: "IBM Plex Mono", "JetBrains Mono", monospace; font-size: 17px; }
+  .rd-now { fill: none; stroke: var(--rd-line); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
   .rd-q { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; color: var(--rd-text-2); }
   .rd-why { font-size: 12px; color: var(--rd-hot); background: var(--rd-hot-bg); border-radius: 6px; padding: 5px 8px; }
   .rd-sparse { color: var(--rd-hot); text-transform: none; letter-spacing: 0; }
@@ -223,7 +223,7 @@ __HEADER__
   const DEC = { TEST: "тестировать", WATCH: "наблюдать", LATER: "позже", REJECT: "отказ" };
   const CH = [["check_google","G","Google"],["check_pinterest","P","Pinterest"],["check_youtube","Y","YouTube"],["check_tiktok","T","TikTok"],
               ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"]];
-  const W = 600, H = 240, L = 40, R = 10, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
+  const W = 1100, H = 340, L = 52, R = 12, T = 14, B = 36, pw = W - L - R, ph = H - T - B;
   const x = (i, n) => L + (i / (n - 1)) * pw, y = (v) => T + (1 - v / 100) * ph;
   const fmtDate = (s) => { const [yy, mm, dd] = s.split("-"); return `${+dd} ${MON[+mm - 1]} ${yy}`; };
   const signed = (v) => v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${Math.round(v)}%`;
@@ -252,7 +252,7 @@ __HEADER__
       if (i < 2 || i > n - 3 || (m - 1) % 3 !== 0) return "";
       const tx = x(i, n).toFixed(1);
       const lab = m === 1 ? `янв’${d.slice(2, 4)}` : MON[m - 1];
-      return `<line class="rd-g${m === 1 ? " rd-year" : ""}" x1="${tx}" x2="${tx}" y1="${T}" y2="${T + ph}"/><text class="rd-t" x="${tx}" y="${H - 6}" text-anchor="middle">${lab}</text>`;
+      return `<line class="rd-g${m === 1 ? " rd-year" : ""}" x1="${tx}" x2="${tx}" y1="${T}" y2="${T + ph}"/><text class="rd-t" x="${tx}" y="${H - 9}" text-anchor="middle">${lab}</text>`;
     }).join("");
     // the two windows the radar compares: last 8 weeks and the same 8 weeks a year earlier
     const bands = n >= 60 ? band(n - 60, n - 52, n, "rd-band-prev") + band(n - 8, n - 1, n, "rd-band-now") : "";
@@ -263,10 +263,10 @@ __HEADER__
         <line class="rd-g" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>
         <line class="rd-g" x1="${L}" x2="${W - R}" y1="${y(50)}" y2="${y(50)}"/>
         <line class="rd-g" x1="${L}" x2="${W - R}" y1="${y(100)}" y2="${y(100)}"/>
-        <text class="rd-t" x="${L - 8}" y="${y(100) + 5}" text-anchor="end">100</text><text class="rd-t" x="${L - 8}" y="${y(50) + 5}" text-anchor="end">50</text><text class="rd-t" x="${L - 8}" y="${y(0) + 5}" text-anchor="end">0</text>
+        <text class="rd-t" x="${L - 10}" y="${y(100) + 6}" text-anchor="end">100</text><text class="rd-t" x="${L - 10}" y="${y(50) + 6}" text-anchor="end">50</text><text class="rd-t" x="${L - 10}" y="${y(0) + 6}" text-anchor="end">0</text>
         ${ticks}
         <path class="rd-now" d="${path(c.vals)}"/>
-        <line class="rd-hl" x1="0" x2="0" y1="${T}" y2="${T + ph}"/><circle class="rd-hd" r="6"/>
+        <line class="rd-hl" x1="0" x2="0" y1="${T}" y2="${T + ph}"/><circle class="rd-hd" r="8"/>
       </svg></div>`;
   }
   function wire(svg, c) {
