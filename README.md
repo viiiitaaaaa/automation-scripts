@@ -5,7 +5,7 @@
 ## Структура
 
 - `dolphin_anty/` — автоматизация антидетект-браузера Dolphin{anty}: профили, скрины магазинов, импорт в Dsers, поиск ссылок товаров, дашборды Instagram/TikTok
-- `fashion-trend-radar/` — парсинг трендов (Google Trends/Pinterest/TikTok через Bright Data) и подбор товаров AliExpress (Apify/Dolphin)
+- `fashion-trend-radar/` — мультиканальный тренд-радар женской одежды: Google Trends и YouTube-поиск за 2 года, Pinterest Trends, TikTok Creative Center, YouTube Data API, Amazon, новинки брендов, подсказки поиска → решение «тестировать / наблюдать / отказ» с меткой сезона и дашборд с кривыми. Логика и статусы — `fashion-trend-radar/TZ_trend_scoring.md` и скилл `claude-skills/trend-radar`
 - `tg_monitor/` — мониторинг публичных Telegram-каналов через веб-версию t.me/s/
 - `claude-skills/` — набор Claude Code skills, написанных для этих задач
 - `wb-tools/` — скрипты под Wildberries (парсинг, рейтинги, отчёты)

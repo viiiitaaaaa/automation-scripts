@@ -2,3 +2,8 @@ requests
 pandas
 python-dotenv
 playwright
+pytrends
+tenacity
+pyarrow
+numpy
+statsmodels

@@ -1,0 +1,34 @@
+﻿group,attribute,brands,items,brand_list,examples
+material,knit,3,17,"asos, freepeople, zara",STRIPED KNIT TOP - Ecru / Maroon | SOFT-KNIT JUMPER - Taupe gray | MINI KNIT SKIRT - Light beige
+silhouette,oversized,3,10,"aritzia, asos, freepeople",ASOS DESIGN tailored oversized blazer in black | ASOS DESIGN relaxed fluffy funnel neck sweater with wool in mocha | ASOS DESIGN wool blend relaxed v-neck cardigan in chocolate
+pattern,plaid,3,10,"asos, freepeople, zara",PLAID BOMBER JACKET - Brown | PLAID DOUBLE-BREASTED TRENCH COAT - Beige | PLAID PARACHUTE PANTS - Multicolored
+neckline,roll_neck,3,10,"aritzia, asos, freepeople",ASOS DESIGN volume detail funnel neck shacket in check | ASOS DESIGN funnel neck top in cream | ASOS DESIGN relaxed fluffy funnel neck sweater with wool in mocha
+pattern,stripe,3,8,"asos, freepeople, zara",STRIPED KNIT TOP - Ecru / Maroon | ASOS DESIGN knitted off-the-shoulder sweater in lilac stripe | COLLUSION hooded knitted cardigan in brown stripe
+material,faux_fur,3,7,"asos, freepeople, zara",FAUX FUR COMBINED JACKET - Brown | ASOS DESIGN longline belted faux fur coat in leopard | ASOS DESIGN patched longline faux fur coat in light brown
+neckline,v_neck,3,6,"aritzia, asos, freepeople",ASOS DESIGN floral embellished v neck mini dress with scarf | ASOS DESIGN wool blend relaxed v-neck cardigan in chocolate | SOFTSPOKE™ DEAR WRAP SWEATER Relaxed V-neck wrap sweater.
+material,leather,3,5,"asos, freepeople, zara",FAUX LEATHER-EFFECT MIDI A-LINE SKIRT - Black | FAUX LEATHER BELTED JACKET - MARSALA | LEATHER CROSSBODY BAG - Burgundy Red
+material,wool,3,5,"aritzia, asos, freepeople",ASOS DESIGN relaxed fluffy funnel neck sweater with wool in mocha | ASOS DESIGN wool blend relaxed v-neck cardigan in chocolate | ESSENTIAL WOOL CASHMERE OUTLINE DRESS Wool and cashmere turtleneck micro dress.
+neckline,boat_neck,3,4,"aritzia, freepeople, zara",BOAT NECK T-SHIRT - White | SOFTSPOKE™ RHODA SWEATER Relaxed boatneck sweater. | We The Free Next Level Boat Neck Tee
+silhouette,maxi,2,11,"asos, freepeople",ASOS DESIGN longline belted faux fur coat in leopard | ASOS DESIGN patched longline faux fur coat in light brown | ASOS DESIGN leather look longline jacket with faux fur trims in black
+material,lace,2,9,"asos, freepeople",Noughts & Kisses Dakota lace wide flared pants in black | ASOS DESIGN sheer lace cami mini dress with placement embellishment in black | ASOS DESIGN sheer lace cami maxi dress with placement embellishment in chocolate
+material,cashmere,2,8,"aritzia, freepeople",BARE CASHMERE NOTEWORTHY CARDIGAN Lightweight 100% cashmere crewneck cardigan. | BARE CASHMERE BLOOR SHORTSLEEVE SWEATER Lightweight 100% cashmere shortsleeve crewneck sweater. | ESSENTIAL CASHMERE IDYLLIC ZIP HOODIE Midweight 100% cashmere zip-up hoodie.
+material,mesh,2,6,"asos, freepeople",ASOS DESIGN embellished detail sheer midi skirt in black | ASOS DESIGN sheer lace cami mini dress with placement embellishment in black | ASOS DESIGN sheer lace cami maxi dress with placement embellishment in chocolate
+detail,drawstring,2,3,"asos, freepeople",ASOS DESIGN satin drawstring waist floaty shorts in teal with lace trim | ASOS DESIGN satin drawstring waist floaty shorts in purple with lace trim | On Repeat Drawstring PJ Pants
+audience_occasion,plus_size,2,3,"asos, freepeople",Topshop slash neck curve hem top in red | We The Free Reef Curved Twill Cargo Pants | We The Free Reef Curved Linen Cargo Pants
+detail,ruffle,2,2,"asos, freepeople",ASOS DESIGN plisse halter neck mini dress with ruffle hem in teal | Cloud Nine Ruffle Band Jacket
+material,sequin,1,10,asos,ASOS DESIGN diamond fringe halter embellished mini dress in gold | ASOS DESIGN bead embellished mini skirt in black | ASOS DESIGN disc sequin midi skirt in green
+neckline,halter,1,9,asos,ASOS DESIGN diamond fringe halter embellished mini dress in gold | ASOS DESIGN fringed draped halter top in black | ASOS DESIGN halter neck satin scarf top in black
+material,satin,1,7,asos,ASOS DESIGN halter neck satin scarf top in black | ASOS DESIGN cami satin romper with fringe in black | ASOS DESIGN satin drawstring waist floaty shorts in teal with lace trim
+detail,fringe,1,6,asos,ASOS DESIGN diamond fringe halter embellished mini dress in gold | ARRANGE vintage inspired embellished fringe tank top in gray | ASOS DESIGN fringed draped halter top in black
+pattern,leopard,1,5,asos,ASOS DESIGN longline belted faux fur coat in leopard | ASOS DESIGN leopard brushed crew neck sweater in brown | Topshop chiffon scarf detail mini dress in yellow animal print
+silhouette,flare,1,4,asos,Noughts & Kisses Dakota lace wide flared pants in black | ASOS DESIGN power stretch sculpt flare jeans in mid wash blue | ASOS DESIGN flocked flare sleeve top with asymmetric hem in black
+detail,lace_trim,1,4,asos,Noughts & Kisses Amaya lace trim keyhole detail shoulder pad asymmetric hem mini dress in black | ASOS DESIGN satin drawstring waist floaty shorts in teal with lace trim | ASOS DESIGN satin drawstring waist floaty shorts in purple with lace trim
+detail,bow,1,3,freepeople,We The Free Fable Low-Rise Twisted Bowed Jeans | We The Free Highland Low-Rise Twisted Bowed Jeans | We The Free Bold Bowery Cuff
+material,cotton,1,2,freepeople,Laguna Crew Neck Cotton Pullover | Ruby Cotton Cardi
+material,linen,1,2,freepeople,Selene Button Down Linen Shirt | We The Free Reef Curved Linen Cargo Pants
+pattern,floral,1,2,asos,ASOS DESIGN crew neck structured button down mini dress in gold floral | ASOS DESIGN floral embellished v neck mini dress with scarf
+silhouette,fitted,1,1,freepeople,Fitted Velvet Military Jacket
+material,suede,1,1,zara,SUEDE HEELED ANKLE BOOTS - Taupe Gray
+neckline,off_shoulder,1,1,asos,ASOS DESIGN knitted compact off shoulder asymmetric drape top in chocolate brown
+detail,pockets,1,1,asos,ASOS DESIGN peached cargo pants with pocket detail in khaki
+audience_occasion,going_out,1,1,freepeople,Petal Party Shapeless Cami
