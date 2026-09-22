@@ -107,8 +107,8 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     header = f"""
   <div class="rd-eyebrow">Новый радар · 6 каналов · данные на {date_str}</div>
   <h1 class="rd-h1">Кривые по каждому кандидату</h1>
-  <p class="rd-lead">Вся кривая интереса за 2 года, неделя за неделей. Зелёная полоса справа — последние 8 недель,
-  серая — те же 8 недель год назад: радар сравнивает именно их. Если справа горб выше, чем год назад, — вещь растёт по-настоящему;
+  <p class="rd-lead">Вся кривая интереса за 2 года, неделя за неделей. Радар сравнивает последние 8 недель с теми же неделями
+  год назад. Если справа горб выше, чем год назад, — вещь растёт по-настоящему;
   если горбы одинаковые — это сезон, который повторяется каждый год. Шкала 0–100: 100 — пик интереса к слову за 2 года.</p>""" if with_header else ""
     archive = gaps_html(gaps) + (f'<div class="rd-archive">{archive_note}</div>\n' if archive_note else "")
     return BLOCK.replace("__HEADER__", header).replace("__ARCHIVE__", archive).replace("__DATA__", data) \
@@ -213,8 +213,6 @@ __HEADER__
   <div class="rd-bar">
     <div class="rd-legend">
       <span><svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" class="rd-now"/></svg>интерес за 2 года</span>
-      <span><svg width="14" height="10" aria-hidden="true"><rect width="14" height="10" class="rd-band-now"/></svg>последние 8 недель</span>
-      <span><svg width="14" height="10" aria-hidden="true"><rect width="14" height="10" class="rd-band-prev"/></svg>те же недели год назад</span>
       <span>кривые есть у __NCURVES__ из __NTOTAL__</span>
     </div>
     <div class="rd-filters" role="group" aria-label="Фильтр по решению">
@@ -270,7 +268,7 @@ __HEADER__
       return `<line class="rd-g${m === 1 ? " rd-year" : ""}" x1="${tx}" x2="${tx}" y1="${T}" y2="${T + ph}"/><text class="rd-t" x="${tx}" y="${H - 9}" text-anchor="middle">${lab}</text>`;
     }).join("");
     // the two windows the radar compares: last 8 weeks and the same 8 weeks a year earlier
-    const bands = n >= 60 ? band(n - 60, n - 52, n, "rd-band-prev") + band(n - 8, n - 1, n, "rd-band-now") : "";
+    const bands = "";   // user 23.09.2026: no green/grey comparison bands on the charts
     const note = c.sparse ? ' <span class="rd-sparse">· мало поисков — не учитываем</span>' : "";
     return `<div><div class="rd-chart-label">${label}${note}</div>
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}: вся кривая за 2 года">
