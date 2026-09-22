@@ -217,6 +217,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .pill { font: 600 11.5px "JetBrains Mono", monospace; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
   .pill.TEST { background: var(--test-bg); color: var(--test); }
   .pill.WATCH { background: var(--watch-bg); color: var(--watch); }
+  .pill.STEADY { background: var(--bar); color: var(--page); }
   .pill.REJECT { background: var(--reject-bg); color: var(--reject); }
   .pill.season { background: var(--season-bg); color: var(--season); margin-left: 6px; }
   .yoy { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
@@ -266,6 +267,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <div class="rule">
     <span><b>4–6 проверок</b> — тестировать</span>
     <span><b>3</b> — наблюдать</span>
+    <span><b>Спрос есть</b> — роста к прошлому году нет, но спрос большой и не падает: от 5 тыс. поисков на Amazon в месяц или 5+ товаров в хитах, Pinterest не ниже −10%, поиск не в минусе</span>
     <span><b>0–2</b> — отказ</span>
     <span><b>Сезон</b> — в эти же недели прошлого года был такой же подъём</span>
     <span><b>Короткий сезон</b> — спрос держится меньше 2 месяцев: отказ в любом случае</span>
@@ -279,6 +281,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
       <button type="button" data-f="ALL" aria-pressed="true">Все</button>
       <button type="button" data-f="TEST" aria-pressed="false">Тестировать</button>
       <button type="button" data-f="WATCH" aria-pressed="false">Наблюдать</button>
+      <button type="button" data-f="STEADY" aria-pressed="false">Спрос есть</button>
       <button type="button" data-f="REJECT" aria-pressed="false">Отказ</button>
     </div>
     <div class="list" id="list"></div>
@@ -316,7 +319,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   const D = JSON.parse(document.getElementById("radar-data").textContent);
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const DEC = { TEST: "тестировать", WATCH: "наблюдать", REJECT: "отказ" };
+  const DEC = { TEST: "тестировать", WATCH: "наблюдать", STEADY: "спрос есть", REJECT: "отказ" };
   const GROUP = { material: "ткань", pattern: "принт", neckline: "ворот", silhouette: "силуэт", detail: "деталь", audience_occasion: "аудитория" };
   const ATTR = { knit: "трикотаж", oversized: "оверсайз", plaid: "клетка", roll_neck: "высокий ворот", stripe: "полоска",
                  faux_fur: "искусственный мех", v_neck: "V-вырез", leather: "кожа", wool: "шерсть", boat_neck: "лодочка",

@@ -97,6 +97,20 @@ def window_stats(values: list, w: int = WINDOW) -> dict | None:
 
 MIN_SEASON_WEEKS = 8   # user rule: seasonal items are fine, but the season must last >= 2 months
 
+# Second track (user decision 22.09.2026, on plaid mini skirt): an item that does not grow
+# year over year but has big, non-shrinking demand is not a REJECT -- it is "спрос есть".
+STEADY_SEARCHES = 5000   # Amazon searches per month (trendsmcp)
+STEADY_ITEMS = 5         # or this many matching items in Amazon best sellers / new releases
+STEADY_MIN_YOY = -10     # Pinterest may dip this much and still count as "not shrinking"
+
+
+def steady_demand(r: dict) -> bool:
+    big = ((r.get("amazon_monthly_searches") or 0) >= STEADY_SEARCHES
+           or (r.get("amazon_items") or 0) >= STEADY_ITEMS)
+    pin_ok = r.get("pin_yoy_pct") is None or r["pin_yoy_pct"] >= STEADY_MIN_YOY
+    amz_ok = r.get("amazon_mcp_lift_pct") is None or r["amazon_mcp_lift_pct"] >= 0
+    return bool(big and pin_ok and amz_ok)
+
 
 def season_weeks(values: list) -> tuple[int, bool] | None:
     """How many weeks the demand season lasts: around each year's peak (2 years of weekly
@@ -270,12 +284,17 @@ def build_matrix(
         r["checks_passed"] = int(sum(bool(r[c]) for c in checks))
         # Gates first (user rules), then the channel vote
         r["reject_reason"] = ""
+        r["steady_demand"] = steady_demand(r)
         if r["short_season"]:
             r["decision"], r["reject_reason"] = "REJECT", "короткий сезон"
         elif not r["stable_growth"]:
-            r["decision"] = "REJECT"
-            r["reject_reason"] = ("нет стабильного роста" if phrase in pinterest_series
-                                  else "рост не проверить: нет кривой Pinterest")
+            if r["steady_demand"] and r["checks_passed"] >= 2:
+                r["decision"] = "STEADY"          # роста нет, но спрос большой и не падает
+                r["reject_reason"] = ""
+            else:
+                r["decision"] = "REJECT"
+                r["reject_reason"] = ("нет стабильного роста" if phrase in pinterest_series
+                                      else "рост не проверить: нет кривой Pinterest")
         elif r["checks_passed"] >= 4:
             r["decision"] = "TEST"
         elif r["checks_passed"] == 3:

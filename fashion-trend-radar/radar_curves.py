@@ -197,7 +197,7 @@ __HEADER__
   const grid = document.getElementById("rd-grid"), tip = document.getElementById("rd-tip");
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const MON = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-  const DEC = { TEST: "тестировать", WATCH: "наблюдать", REJECT: "отказ" };
+  const DEC = { TEST: "тестировать", WATCH: "наблюдать", STEADY: "спрос есть", REJECT: "отказ" };
   const CH = [["check_google","G","Google"],["check_pinterest","P","Pinterest"],["check_youtube","Y","YouTube"],["check_tiktok","T","TikTok"],
               ["check_amazon","A","Amazon"],["check_retailers","R","Бренды"]];
   const W = 320, H = 118, L = 22, R = 6, T = 8, B = 16, pw = W - L - R, ph = H - T - B;
