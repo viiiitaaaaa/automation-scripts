@@ -441,12 +441,11 @@ def build_matrix(
         if phrase in manual:
             r["decision"], r["manual_reason"] = manual[phrase]
             r["reject_reason"] = "" if r["decision"] != "REJECT" else r["reject_reason"]
-        # Out of season: «наблюдать» only for the current or upcoming season, otherwise «позже»
+        # Not our season (user 23.09.2026): we sell autumn-winter only -> spring/summer items are rejected, not «позже»
         r["later_reason"] = ""
-        if r["decision"] == "WATCH" and not r["in_season"]:
-            r["decision"] = "LATER"
-            r["later_reason"] = (f"не наш сезон: сезон вещи {r['season_months']}, а мы продаём на {TARGET_LABEL} — "
-                                 f"вернуться к её сезону")
+        if r["decision"] in ("TEST", "WATCH") and not r["in_season"] and phrase not in manual:
+            r["decision"] = "REJECT"
+            r["reject_reason"] = f"не наш сезон: сезон вещи {r['season_months']}, а мы продаём на {TARGET_LABEL}"
         rows.append(r)
 
     return sort_candidates(pd.DataFrame(rows))
