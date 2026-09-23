@@ -145,6 +145,9 @@ def season_weeks(values: list) -> tuple[int, bool] | None:
 
 MONTHS_RU = "янв фев мар апр май июн июл авг сен окт ноя дек".split()
 SOON_MONTHS = 2     # «текущий или предстоящий сезон»: this month and the next two
+# User 23.09.2026: «мы продаём вещи на осенне-зимний сезон» -> an item fits if its season touches Sep–Feb
+TARGET_SEASON = {9, 10, 11, 12, 1, 2}
+TARGET_LABEL = "осень–зима (сен–фев)"
 
 
 def season_calendar(dates: list, values: list) -> set | None:
@@ -181,10 +184,11 @@ def months_label(months: set | None) -> str:
 
 
 def in_season_soon(months: set | None, today_month: int) -> bool:
-    """No calendar -> can't say it's off-season, so True."""
+    """Fits our selling season: the item's season overlaps the target (autumn-winter) season.
+    No calendar / all-year -> can't say it's off-season, so True. (today_month kept for the call signature.)"""
     if not months or len(months) >= 10:
         return True
-    return any(((today_month - 1 + k) % 12) + 1 in months for k in range(SOON_MONTHS + 1))
+    return bool(months & TARGET_SEASON)
 
 
 AHEAD_WEEKS = 8     # user 22.09.2026: a season that starts within ~2 months must be considered
@@ -441,7 +445,8 @@ def build_matrix(
         r["later_reason"] = ""
         if r["decision"] == "WATCH" and not r["in_season"]:
             r["decision"] = "LATER"
-            r["later_reason"] = f"не сезон: сезон {r['season_months']} — вернуться, когда он подойдёт"
+            r["later_reason"] = (f"не наш сезон: сезон вещи {r['season_months']}, а мы продаём на {TARGET_LABEL} — "
+                                 f"вернуться к её сезону")
         rows.append(r)
 
     return sort_candidates(pd.DataFrame(rows))

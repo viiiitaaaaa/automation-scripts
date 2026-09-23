@@ -49,13 +49,11 @@ def data_gaps(cand):
     amazon_days = sorted({p.stem[-10:] for p in Path("data/normalized/amazon").glob("amazon_*.parquet")})
     brand_days = sorted({p.stem[-10:] for p in Path("data/normalized/retailers").glob("retailers_*.parquet")})
     return [
-        {"what": "TikTok по каждому кандидату", "have": f"{int(cand['check_tiktok'].sum())} из {n}",
-         "why": "в топ-100 хэштегов наших вещей нет, страница хэштега в TikTok One не открывается; "
-                "Trends MCP знает только крупные хэштеги",
-         "fix": "поиск TikTok через Dolphin или Apify после 15.10 (бесплатные кредиты)"},
-        {"what": "Instagram", "have": "не подключён",
-         "why": "нет официального доступа; неофициальные библиотеки отвергнуты (логин, риск бана)",
-         "fix": "скрипт в Dolphin (бесплатно) или Instagram Graph API: аккаунт «Автор» + страница Facebook"},
+        {"what": "TikTok США по хэштегам", "have": f"живых {int(cand['check_tiktok'].sum())} из {n}",
+         "why": "собирается через treg.to по команде (~$0.003 на вещь); настоящей кривой интереса TikTok не отдаёт — "
+                "график строится по датам видео", "fix": "run_tiktok_tags.py по команде"},
+        {"what": "Instagram", "have": f"живых {int(cand['check_instagram'].sum())} из {n}" if "check_instagram" in cand else "—",
+         "why": "только весь мир (фильтра по стране нет), по ~36 свежим постам", "fix": "run_instagram_tags.py по команде"},
         {"what": "Pinterest-кривые", "have": f"{cnt('pin_yoy_pct')} из {n}",
          "why": "по редким фразам Pinterest данных не даёт", "fix": "подбирать формулировки, которые Pinterest знает"},
         {"what": "YouTube: видео и «где купить»", "have": f"{cnt('yt_views_90d')} из {n}",
@@ -282,7 +280,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
     <span><b>0–2</b> — отказ</span>
     <span><b>Сезон</b> — в эти же недели прошлого года был такой же подъём</span>
     <span><b>Короткий сезон</b> — спрос держится меньше 2 месяцев: отказ в любом случае</span>
-    <span><b>Позже</b> — вещь не в сезоне: её сезон (по Google Trends) не приходится ни на текущий, ни на два ближайших месяца</span>
+    <span><b>Позже</b> — не наш сезон: мы продаём на осень–зиму (сен–фев), а сезон вещи (по Google Trends) в эти месяцы не попадает</span>
     <span><b>Сезон вот-вот начнётся</b> — год назад в следующие 8 недель интерес рос на 20%+ (по Google Trends), а в этом году не ниже прошлого: наблюдать обязательно</span>
     <span><b>Только стабильный рост</b> — по Pinterest последние 8 недель и 3 из 4 кварталов выше прошлого года на 5%+</span>
   </div>
