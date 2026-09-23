@@ -97,7 +97,7 @@ PIN_THEME = (r"outfit|idea|aesthetic|inspo|look|styl|how to|diy|pattern|crochet|
 PIN_OURS = (r"coat|trench|jacket|puffer|parka|beanie|scarf|sweater|cardigan|knit|wool|flannel|fleece|fur|suede|leather|corduroy|"
             r"boots|turtleneck|roll neck|plaid|tartan|fall|autumn|winter|hoodie|blazer|vest|leggings")
 PIN_OFF = r"capri|shorts|swim|bikini|linen|summer|spring|sundress|prom|rain boots|crop top|tank|halter|beach|sandal"
-PIN_PICKS = {"trench coats", "long trench coat", "triangle scarf", "bandana scarf", "pea coat", "leather leggings"}
+PIN_PICKS = {"trench coats", "long trench coat", "triangle scarf", "bandana scarf", "pea coat"}  # leather leggings: only 19% women on Pinterest — star removed
 
 
 def pinterest_discovery():
