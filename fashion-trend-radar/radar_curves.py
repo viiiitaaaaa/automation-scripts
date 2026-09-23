@@ -236,6 +236,18 @@ def _extras():
             out.setdefault(r.candidate, {})["temu"] = {"products": int(r.products), "sold_total": int(r.sold_total),
                                                      "sold_top": int(r.sold_top), "top_link": r.top_link if isinstance(r.top_link, str) else "",
                                                      "price": None if pd.isna(r.price_median) else float(r.price_median)}
+    f = Path("data/processed/meta_web.csv")   # run_meta_adlib_web.py: US ads on the public Meta Ad Library site
+    if f.exists():
+        for r in pd.read_csv(f).itertuples():
+            out.setdefault(r.candidate, {})["meta"] = {"ads": int(r.active_ads), "sampled": int(r.sampled),
+                                                     "advertisers": int(r.advertisers), "long": int(r.running_30d_plus),
+                                                     "top": r.top_advertisers if isinstance(r.top_advertisers, str) else ""}
+    f = Path("data/processed/meta_ads.csv")   # run_meta_ads.py: official API, ads delivered in the EU/UK
+    if f.exists():
+        for r in pd.read_csv(f).itertuples():
+            out.setdefault(r.candidate, {})["meta_eu"] = {"ads": int(r.ads), "advertisers": int(r.advertisers),
+                                                        "long": int(r.running_30d_plus),
+                                                        "aud28": None if pd.isna(r.aud28_median) else int(r.aud28_median)}
     f = Path("data/processed/brand_history.csv")
     if f.exists():
         h = pd.read_csv(f)
@@ -638,6 +650,18 @@ __HEADER__
           + (r.aud28_pct >= 50 ? " — наша аудитория" : " — слишком молодая"));
       if (ex.pin_demo) foot.push(`<b>КТО ИЩЕТ В PINTEREST</b> ${ex.pin_demo.top.map(([a, v]) => `${esc(a)} лет — ${v}%`).join(", ")}`
         + (ex.pin_demo.female !== null ? `; женщины ${ex.pin_demo.female}%` : ""));
+      if (ex.meta) {
+        const m = ex.meta;
+        foot.push(`<b>РЕКЛАМА КОНКУРЕНТОВ (Meta, США)</b> активных объявлений ~${bigN(m.ads)}; в выборке ${m.sampled}: `
+          + `${m.advertisers} рекламодателей, ${m.long} идут 30+ дней (долгая реклама обычно окупается)`
+          + (m.top ? `<br>чаще всех: ${esc(m.top)}` : "")
+          + (m.ads > 10000 ? "<br>⚠ число завышено: фраза совпадает с чужой рекламой (не про одежду)" : ""));
+      }
+      if (ex.meta_eu) {
+        const m = ex.meta_eu;
+        foot.push(`<b>РЕКЛАМА В ЕВРОПЕ (Meta API)</b> ${m.ads} объявлений, ${m.advertisers} рекламодателей, ${m.long} идут 30+ дней`
+          + (m.aud28 !== null ? `; охват от 28 лет ~${m.aud28}%` : ""));
+      }
       if (ex.temu) {
         const t = ex.temu;
         foot.push(`<b>TEMU США</b> на 1-й странице поиска ${t.products} похожих товаров, продано ${bigN(t.sold_total)} шт., `
