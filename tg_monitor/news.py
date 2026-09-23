@@ -122,7 +122,10 @@ def build(conn, state, notes):
     since = (datetime.now(timezone.utc) - timedelta(days=WINDOW_DAYS)).isoformat()
     rows = conn.execute("SELECT channel, post_id, post_date, text, scraped_at FROM posts "
                         "WHERE post_date >= ? ORDER BY post_date DESC", (since,)).fetchall()
-    last_collect = state.get("last_collect_started", "")
+    # «новое» = in the DB since the PREVIOUS «новости» run: the hourly TG_Monitor task can scrape posts in between
+    last_collect = state.get("prev_collect_started") or state.get("last_collect_started", "")
+    if last_collect:   # posts saved BY that previous run carry its start time (+ms) -> they are not new
+        last_collect = (datetime.fromisoformat(last_collect) + timedelta(minutes=15)).isoformat()
     channels = tm.load_channels()
     color = {ch: COLORS[i % len(COLORS)] for i, ch in enumerate(channels)}
     readable = {r[0] for r in conn.execute("SELECT DISTINCT channel FROM posts")}
@@ -231,7 +234,9 @@ def main():
         print(f"Новых постов: {n}")
     notes = load_json(NOTES, {})
     rows, is_new = build(conn, state, notes)
-    todo = [r for r in rows if is_new(r) and f"{r[0]}/{r[1]}" not in notes]
+    # needs review = any post in the window without a note, whoever scraped it (23.09 bug: TG_Monitor
+    # had scraped 15 posts an hour earlier, they were not «new» for this run and got skipped)
+    todo = [r for r in rows if f"{r[0]}/{r[1]}" not in notes]
     if todo:
         print(f"\n=== НУЖЕН РАЗБОР: {len(todo)} новых постов без пересказа ===")
         for r in todo:
