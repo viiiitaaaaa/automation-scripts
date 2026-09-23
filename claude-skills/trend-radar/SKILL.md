@@ -55,8 +55,9 @@ description: Мультиканальный тренд-радар женской
 | TikTok тренды дня | `run_tiktok_trending.py [страниц]` | общемировая лента «Интересное» (~10 видео на запрос) + трендовые поисковые запросы; не про моду | `data/processed/tiktok_trending_<дата>.csv` |
 | Trends MCP | `run_trendsmcp.py ["<слово>" ...]` | Amazon: поиски в месяц (4 мес) + рост к прошлому месяцу; TikTok: объём хэштега по дням (только крупные хэштеги). 1 запрос = 1 вещь × 1 источник, кэш 7 дней | `data/processed/trendsmcp.csv` |
 
-Кандидаты — `config/candidates.csv` (22 шт., задаются вручную; сезонки не удаляются, а переводятся в
-«наблюдать» ручным решением). Колонка `pinterest_term` — формулировка, которую знает Pinterest Trends
+Кандидаты — `config/candidates.csv`: с 23.09 **6 шт.** (roll neck sweater, bandana cardigan, plaid skirt,
+faux fur coat, flannel shirt women, lace trim top) — пользователь оставила только их; прежние 22 — в
+`config/candidates_22_backup_2026-09-23.csv`. Сезонки переводятся в «наблюдать» ручным решением. Колонка `pinterest_term` — формулировка, которую знает Pinterest Trends
 (fall cardigan → cardigan); кривая берётся по ней.
 После любых сборов: `run_radar.py` → `build_dashboard.py`.
 
