@@ -169,6 +169,57 @@ def fashion_section():
   </section>"""
 
 
+def words_section():
+    """«Аналитика остальных слов» (run_word_analysis.py): fashion phrases + growing Pinterest items run through the
+    user's selection rules; a verdict and the reason for every word (user 23.09.2026)."""
+    import html as H
+    f = Path("data/processed/word_analysis.csv")
+    if not f.exists():
+        return ""
+    df = pd.read_csv(f)
+    curves = {}
+    for cf in ("data/processed/pinterest_discovery_curves.json", "data/processed/word_analysis_pinterest.json"):
+        if Path(cf).exists():
+            curves.update(json.loads(Path(cf).read_text(encoding="utf-8")))
+
+    def spark(vals):
+        vals = [v for v in (vals or []) if v is not None]
+        if len(vals) < 10 or not any(vals):
+            return '<span class="mono" style="color:var(--muted)">—</span>'
+        W, Hh, mx, n = 140, 26, max(vals), len(vals)
+        pts = " ".join(f"{i / (n - 1) * W:.1f},{Hh - 2 - v / mx * (Hh - 4):.1f}" for i, v in enumerate(vals))
+        mid = (n - 52) / (n - 1) * W
+        return (f'<svg width="{W}" height="{Hh}" viewBox="0 0 {W} {Hh}" role="img" aria-label="Pinterest за 2 года">'
+                f'<line x1="{mid:.1f}" x2="{mid:.1f}" y1="0" y2="{Hh}" stroke="var(--border)" stroke-dasharray="2 2"/>'
+                f'<polyline points="{pts}" fill="none" stroke="var(--bar)" stroke-width="1.5"/></svg>')
+
+    num = lambda v, suf="%": "—" if pd.isna(v) else f'<span class="{"up" if v > 0 else "down" if v < 0 else ""}">{v:+.0f}{suf}</span>'
+    cls = {"в кандидаты": "TEST", "наблюдать": "WATCH", "не проходит": "REJECT"}
+    rows = ""
+    for r in df.itertuples():
+        amz = "—" if pd.isna(r.amazon_searches) else f"{int(r.amazon_searches):,}".replace(",", " ")
+        rows += (f'<tr><td><b>{H.escape(r.word)}</b><br><span class="mono wa-src">{H.escape(r.source)}</span></td>'
+                 f'<td><span class="pill {cls.get(r.verdict, "REJECT")}">{H.escape(r.verdict)}</span></td>'
+                 f'<td>{spark((curves.get(r.word) or {}).get("values"))}</td>'
+                 f'<td class="r">{num(r.pin_yoy)}</td><td class="r">{num(r.google_yoy)}</td>'
+                 f'<td>{H.escape(str(r.season)) if pd.notna(r.season) else "—"}</td>'
+                 f'<td class="r">{"—" if pd.isna(r.aud28) else f"{r.aud28:.0f}%"}</td>'
+                 f'<td class="r">{amz}</td><td class="wa-why">{H.escape(r.why)}</td></tr>')
+    n = df["verdict"].value_counts()
+    return f"""<section id="words">
+    <h2>Аналитика остальных слов</h2>
+    <p class="note">Фразы из раздела «Мода — ориентиры» и растущие вещи Pinterest, прогнанные по вашим правилам отбора: рост к году
+    (Pinterest; если Pinterest фразу не знает — Google, 8 недель к тем же неделям год назад), сезон осень–зима (по Google),
+    аудитория 28+ и женщины, реальный объём (поиск на Amazon в месяц, от 2 000). Только бесплатные источники.
+    Итог: <b>в кандидаты — {n.get("в кандидаты", 0)}</b>, наблюдать — {n.get("наблюдать", 0)}, не проходит — {n.get("не проходит", 0)}.
+    Добавить в кандидаты радара решаете вы.</p>
+    <div class="tbl-wrap"><table class="pd wa">
+      <thead><tr><th>Слово</th><th>Итог</th><th>Pinterest 2 года</th><th class="r">Pinterest к году</th><th class="r">Google к году</th>
+      <th>Сезон</th><th class="r">28+</th><th class="r">Amazon поиск/мес</th><th>Почему</th></tr></thead>
+      <tbody>{rows}</tbody></table></div>
+  </section>"""
+
+
 def main():
     cand = pd.read_csv("data/reports/radar_candidates.csv")
     cand = sort_candidates(cand)   # тест → наблюдать → отказ → короткий сезон
@@ -200,7 +251,7 @@ def main():
     data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
 
     curves = build_block(cand, with_header=False, date_str=payload["date"])
-    html = TEMPLATE.replace("__FASHION__", fashion_section()).replace("__CURVES__", curves).replace("__DATA__", data_json)
+    html = TEMPLATE.replace("__FASHION__", fashion_section() + words_section()).replace("__CURVES__", curves).replace("__DATA__", data_json)
     out = Path("data/reports/trend_radar_dashboard.html")
     out.write_text(html, encoding="utf-8")
     print(f"Сохранено: {out} ({len(cand)} кандидатов), обновлено {payload['updated']}")
@@ -387,6 +438,11 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .fz-card p { margin: 0 0 6px; color: var(--text-2); }
   .fz-meta { font-size: 11px; color: var(--muted); }
   .fz-us { border-left: 3px solid var(--pass-bg); padding-left: 8px; }
+  table.wa td { white-space: normal; vertical-align: middle; }
+  table.wa td:first-child { min-width: 170px; }
+  .wa-src { font-size: 10.5px; color: var(--muted); }
+  .wa-why { font-size: 12.5px; color: var(--text-2); min-width: 220px; }
+  table.wa .pill { white-space: nowrap; }
   @media (max-width: 640px) {
     summary { grid-template-columns: 1fr auto; }
     .yoy { grid-column: 1 / -1; }
@@ -399,7 +455,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <h1>Какие вещи подтверждают сразу несколько каналов</h1>
   <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата независимыми «свидетелями» и считает, сколько из них видят рост.</p>
   <p class="updated">Обновлено <b class="mono" id="dt"></b> — если здесь старое время, нажмите F5</p>
-  <p class="updated"><a href="#fashion">Мода — ориентиры из Telegram ↓</a> — что повторяется в модных новостях и какие вещи проверить здесь</p>
+  <p class="updated"><a href="#fashion">Мода — ориентиры из Telegram ↓</a> · <a href="#words">Аналитика остальных слов ↓</a></p>
   <div class="stats" id="stats"></div>
   <details class="howto">
   <summary>Как читать радар: правила решений и буквы каналов</summary>
