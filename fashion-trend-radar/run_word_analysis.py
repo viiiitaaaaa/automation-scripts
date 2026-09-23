@@ -118,7 +118,7 @@ def amazon(ws):
     for w in ws:   # amazon only: 1 request per word (no_data answers are free)
         kw, data, err = tm.fetch("amazon", w)
         s = tm.summarize(w, "amazon", kw, data, err)
-        rows.append({"word": w, "last_volume": s["last_volume"], "lift_pct": s["lift_pct"], "error": s["error"]})
+        rows.append({"word": w, "last_volume": s["last_volume"], "lift_pct": s["lift_pct"], "last_date": s["last_date"], "error": s["error"]})
         time.sleep(1)
     pd.DataFrame(rows).to_csv("data/processed/word_analysis_amazon.csv", index=False, encoding="utf-8-sig")
 
@@ -155,7 +155,11 @@ def verdicts(ws):
             r["aud28"] = round((0.7 * float(d["age_25-34"]) + sum(float(d[a]) for a in ages[2:] if pd.notna(d[a]))) / tot * 100) if tot else None
             r["main_age"] = d.get("main_age")
             r["female"] = round(float(d["female"]) * 100) if pd.notna(d.get("female")) else None
-        if w in amz.index and pd.notna(amz.loc[w].get("last_volume")):
+        fresh_amz = w in amz.index and (pd.isna(amz.loc[w].get("last_date")) or
+                                        pd.Timestamp(amz.loc[w]["last_date"]) >= pd.Timestamp.today() - pd.Timedelta(days=62))
+        if w in amz.index and not fresh_amz and pd.notna(amz.loc[w].get("last_volume")):
+            r["amazon_stale"] = str(amz.loc[w]["last_date"])[:7]
+        if w in amz.index and fresh_amz and pd.notna(amz.loc[w].get("last_volume")):
             r["amazon_searches"] = int(amz.loc[w]["last_volume"])
             r["amazon_lift"] = amz.loc[w].get("lift_pct")
         # the user's rules, in her order

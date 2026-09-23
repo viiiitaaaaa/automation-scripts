@@ -105,6 +105,7 @@ def audience_28(phrase):
 
 
 # Amazon search volume (Trends MCP) doesn't know some phrases -> the closest wording it knows (checked 23.09)
+MCP_MAX_AGE_DAYS = 62   # Trends MCP monthly data older than ~2 months is stale
 AMAZON_SEARCH_ALIAS = {"roll neck sweater": "turtleneck sweater"}
 MIN_NONZERO = 0.5   # share of weeks with data; below this the series is too sparse to judge
 TT_MIN_FRESH = 5          # TikTok check: >= 5 US videos under our hashtag posted in the last 30 days
@@ -311,6 +312,9 @@ def build_matrix(
         Sparse curves (mostly zeros) are not evidence, same rule as window_stats."""
         m = mcp.get((phrase, source))
         if m is None or pd.isna(m["lift_pct"]) or (pd.notna(m["nonzero_share"]) and m["nonzero_share"] < MIN_NONZERO):
+            return None, None
+        # 23.09.2026: for rare phrases Trends MCP returns an old window (cashmere beanie: Dec–Mar) — not current demand
+        if pd.notna(m.get("last_date")) and pd.Timestamp(m["last_date"]) < pd.Timestamp.today() - pd.Timedelta(days=MCP_MAX_AGE_DAYS):
             return None, None
         return m["lift_pct"], (m["last_volume"] if pd.notna(m["last_volume"]) else None)
     rows = []

@@ -93,7 +93,10 @@ def _amazon_months():
                 continue
             pts = [(r["date"], r.get("volume")) for r in rows if isinstance(r, dict) and r.get("volume") is not None]
             if pts:
-                out[c] = [{"label": MONTHS[int(dt[5:7]) - 1], "v": int(v)} for dt, v in sorted(pts)]
+                pts = sorted(pts)
+                stale = pd.Timestamp(pts[-1][0]) < pd.Timestamp.today() - pd.Timedelta(days=62)
+                out[c] = [{"label": f"{MONTHS[int(dt[5:7]) - 1]} {dt[2:4]}" + (" (устарело)" if stale and i == len(pts) - 1 else ""),
+                           "v": int(v)} for i, (dt, v) in enumerate(pts)]
                 break
     return out
 
@@ -559,9 +562,11 @@ __HEADER__
         + chart(r.google_curve, "Google · интерес 0–100")
         + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100")
-        + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США"
+        + ((r.amz_months || []).some((m) => m.label.includes("устарело"))
+          ? bars(r.amz_months, "Amazon · сколько раз искали за месяц (США) — у сервиса только старые месяцы, свежее лето и осень он по этой фразе не отдаёт; в решениях радара не используется")
+          : bars(r.amz_months, "Amazon · сколько раз искали за месяц (США"
           + (r.amazon_search_phrase && r.amazon_search_phrase !== r.candidate ? `; по близкой фразе «${esc(r.amazon_search_phrase)}»` : "")
-          + "; последний полный месяц — сервис отдаёт месяц после его окончания)")
+          + "; последний полный месяц — сервис отдаёт месяц после его окончания)"))
         + bars(r.who && r.who.age, "Кто ищет в Google США · возраст (0–100, 100 — самая активная группа)")
         + bars(r.tt_weeks, `TikTok США · новых видео в неделю под #${esc(r.tt_hashtag || "")} (по выборке до 90 видео)`);
       const foot = [];
@@ -588,7 +593,10 @@ __HEADER__
       // Amazon lines are always shown: an empty source says why instead of silently disappearing
       foot.push(r.amazon_items ? `<b>AMAZON</b> в хитах и новинках ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`
         : `<b>AMAZON</b> в хитах и новинках женской одежды этой вещи нет`);
-      if (!r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> нет данных — Trends MCP не знает эту фразу и похожие`);
+      const stale = (r.amz_months || []).find((m) => m.label.includes("устарело"));
+      if (!r.amazon_monthly_searches) foot.push(stale
+        ? `<b>ПОИСК AMAZON</b> свежих данных нет — последние у сервиса за ${esc(stale.label.replace(" (устарело)", ""))}`
+        : `<b>ПОИСК AMAZON</b> нет данных — Trends MCP не знает эту фразу и похожие`);
       else if (r.amazon_search_phrase && r.amazon_search_phrase !== r.candidate)
         foot.push(`<b>ПОИСК AMAZON</b> по близкой фразе «${esc(r.amazon_search_phrase)}»: ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
           + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);

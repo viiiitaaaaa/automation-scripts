@@ -146,8 +146,21 @@ def fashion_section():
     a = lambda p: f'<a href="{H.escape(p["link"])}" target="_blank" rel="noopener">{H.escape(p["title"])}</a>'
     themes = "".join(f'<div class="fz-theme"><b>{H.escape(t["theme"])}</b> <span class="mono">{len(t["posts"])} постов</span><br>'
                      + " · ".join(a(p) for p in t["posts"][:5]) + "</div>" for t in d["themes"])
-    phrases = "".join(f'<tr><td><code>{H.escape(p["phrase"])}</code></td><td>' + " · ".join(a(x) for x in p["posts"]) + "</td></tr>"
-                      for p in d["phrases"])
+    wa_f = Path("data/processed/word_analysis.csv")
+    wa = pd.read_csv(wa_f).set_index("word") if wa_f.exists() else pd.DataFrame()
+    cands = set(pd.read_csv("config/candidates.csv")["candidate"])
+    cls = {"в кандидаты": "TEST", "наблюдать": "WATCH", "не проходит": "REJECT"}
+
+    def verdict(ph):
+        if ph in cands:
+            return '<span class="pill TEST">уже кандидат</span>'
+        if ph in wa.index:
+            v = wa.loc[ph]
+            return (f'<span class="pill {cls.get(v["verdict"], "REJECT")}">{H.escape(v["verdict"])}</span>'
+                    f'<br><span class="fz-why">{H.escape(str(v["why"]))}</span>')
+        return '<span class="fz-why">ещё не проверено</span>'
+    phrases = "".join(f'<tr><td><code>{H.escape(p["phrase"])}</code></td><td>{verdict(p["phrase"])}</td><td>'
+                      + " · ".join(a(x) for x in p["posts"]) + "</td></tr>" for p in d["phrases"])
     cards = ""
     for c in d["cards"]:
         body = "".join(f"<p>{H.escape(x)}</p>" for x in c["summary"])
@@ -164,8 +177,8 @@ def fashion_section():
     на спросе в США. Обновлено {H.escape(d["updated"])} (команда «новости»).</p>
     <h3 class="fz-h">Что повторяется <span class="mono">тема в 2+ постах</span></h3>
     <div class="fz-themes">{themes or '<p class="note">Пока ничего не повторяется.</p>'}</div>
-    <h3 class="fz-h">Проверить в радаре <span class="mono">{len(d["phrases"])} фраз, как ищут в США</span></h3>
-    <div class="tbl-wrap"><table class="fz-ph">{phrases}</table></div>
+    <h3 class="fz-h">Проверить в радаре <span class="mono">{len(d["phrases"])} фраз, как ищут в США — все проверены, графики в «Аналитике остальных слов» ниже</span></h3>
+    <div class="tbl-wrap"><table class="fz-ph"><thead><tr><th>Фраза</th><th>Результат проверки</th><th>Откуда</th></tr></thead>{phrases}</table></div>
     <details class="fz-news"><summary>Новости модных каналов ({len(d["cards"])})</summary><div class="fz-cards">{cards}</div></details>
   </section>"""
 
@@ -183,16 +196,22 @@ def words_section():
         if Path(cf).exists():
             curves.update(json.loads(Path(cf).read_text(encoding="utf-8")))
 
-    def spark(vals):
+    g = pd.read_parquet("data/normalized/google_trends")
+    g = g[(g["region"] == "US") & ~g["is_partial"].astype(bool)].sort_values("date").drop_duplicates(["date", "keyword"], keep="last")
+    gser = {k: list(x["interest"]) for k, x in g.groupby("keyword")}
+
+    def spark(vals, src=""):
         vals = [v for v in (vals or []) if v is not None]
         if len(vals) < 10 or not any(vals):
-            return '<span class="mono" style="color:var(--muted)">—</span>'
-        W, Hh, mx, n = 140, 26, max(vals), len(vals)
+            return '<span class="mono" style="color:var(--muted)">нет данных</span>'
+        W, Hh, mx, n = 340, 78, max(vals), len(vals)
         pts = " ".join(f"{i / (n - 1) * W:.1f},{Hh - 2 - v / mx * (Hh - 4):.1f}" for i, v in enumerate(vals))
         mid = (n - 52) / (n - 1) * W
-        return (f'<svg width="{W}" height="{Hh}" viewBox="0 0 {W} {Hh}" role="img" aria-label="Pinterest за 2 года">'
-                f'<line x1="{mid:.1f}" x2="{mid:.1f}" y1="0" y2="{Hh}" stroke="var(--border)" stroke-dasharray="2 2"/>'
-                f'<polyline points="{pts}" fill="none" stroke="var(--bar)" stroke-width="1.5"/></svg>')
+        return (f'<svg class="wa-chart" width="{W}" height="{Hh + 14}" viewBox="0 0 {W} {Hh + 14}" role="img" aria-label="{src} за 2 года">'
+                f'<line x1="{mid:.1f}" x2="{mid:.1f}" y1="0" y2="{Hh}" stroke="var(--muted)" stroke-dasharray="3 3"/>'
+                f'<polyline points="{pts}" fill="none" stroke="var(--bar)" stroke-width="2" stroke-linejoin="round"/>'
+                f'<text x="4" y="{Hh + 11}" font-size="10" fill="var(--muted)">{src} · год назад</text>'
+                f'<text x="{mid + 4:.1f}" y="{Hh + 11}" font-size="10" fill="var(--muted)">этот год</text></svg>')
 
     num = lambda v, suf="%": "—" if pd.isna(v) else f'<span class="{"up" if v > 0 else "down" if v < 0 else ""}">{v:+.0f}{suf}</span>'
     cls = {"в кандидаты": "TEST", "наблюдать": "WATCH", "не проходит": "REJECT"}
@@ -201,7 +220,7 @@ def words_section():
         amz = "—" if pd.isna(r.amazon_searches) else f"{int(r.amazon_searches):,}".replace(",", " ")
         rows += (f'<tr><td><b>{H.escape(r.word)}</b><br><span class="mono wa-src">{H.escape(r.source)}</span></td>'
                  f'<td><span class="pill {cls.get(r.verdict, "REJECT")}">{H.escape(r.verdict)}</span></td>'
-                 f'<td>{spark((curves.get(r.word) or {}).get("values"))}</td>'
+                 f'<td>{spark((curves.get(r.word) or {}).get("values"), "Pinterest") if any((curves.get(r.word) or {}).get("values") or []) else spark(gser.get(r.word), "Google")}</td>'
                  f'<td class="r">{num(r.pin_yoy)}</td><td class="r">{num(r.google_yoy)}</td>'
                  f'<td>{H.escape(str(r.season)) if pd.notna(r.season) else "—"}</td>'
                  f'<td class="r">{"—" if pd.isna(r.aud28) else f"{r.aud28:.0f}%"}</td>'
@@ -215,7 +234,7 @@ def words_section():
     Итог: <b>в кандидаты — {n.get("в кандидаты", 0)}</b>, наблюдать — {n.get("наблюдать", 0)}, не проходит — {n.get("не проходит", 0)}.
     Добавить в кандидаты радара решаете вы.</p>
     <div class="tbl-wrap"><table class="pd wa">
-      <thead><tr><th>Слово</th><th>Итог</th><th>Pinterest 2 года</th><th class="r">Pinterest к году</th><th class="r">Google к году</th>
+      <thead><tr><th>Слово</th><th>Итог</th><th>Интерес за 2 года</th><th class="r">Pinterest к году</th><th class="r">Google к году</th>
       <th>Сезон</th><th class="r">28+</th><th class="r">Amazon поиск/мес</th><th>Почему</th></tr></thead>
       <tbody>{rows}</tbody></table></div>
   </section>"""
@@ -408,7 +427,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .gap-fix { color: var(--muted); }
   .gap-fix::before { content: "→ "; }
 
-  .tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; max-height: 640px; overflow-y: auto; }
+  .tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; max-height: 1100px; overflow-y: auto; }
   table.pd { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   table.pd th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font: 600 11.5px "JetBrains Mono", monospace;
                 color: var(--text-2); padding: 8px 12px; cursor: pointer; white-space: nowrap; user-select: none; }
@@ -441,6 +460,9 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .fz-us { border-left: 3px solid var(--pass-bg); padding-left: 8px; }
   table.wa td { white-space: normal; vertical-align: middle; }
   table.wa td:first-child { min-width: 170px; }
+  .fz-why { font-size: 11.5px; color: var(--muted); }
+  table.fz-ph th { text-align: left; font: 600 11px "JetBrains Mono", monospace; color: var(--text-2); padding: 7px 12px; background: var(--surface-2); }
+  .wa-chart { display: block; }
   .wa-src { font-size: 10.5px; color: var(--muted); }
   .wa-why { font-size: 12.5px; color: var(--text-2); min-width: 220px; }
   table.wa .pill { white-space: nowrap; }
@@ -603,12 +625,12 @@ TEMPLATE = r"""<title>Trend Radar</title>
   // 2-year weekly Pinterest curve as a small line; the year boundary is marked so last year's bump is comparable
   const spark = (v) => {
     if (!v || v.length < 10) return '<span style="color:var(--muted)">—</span>';
-    const W = 150, H = 28, mx = Math.max(...v, 1), n = v.length;
+    const W = 300, H = 60, mx = Math.max(...v, 1), n = v.length;
     const pts = v.map((y, i) => `${(i / (n - 1) * W).toFixed(1)},${(H - 2 - y / mx * (H - 4)).toFixed(1)}`).join(" ");
     const mid = (n - 52) / (n - 1) * W;
     return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="кривая за 2 года">
-      <line x1="${mid}" x2="${mid}" y1="0" y2="${H}" stroke="var(--border)" stroke-dasharray="2 2"/>
-      <polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+      <line x1="${mid}" x2="${mid}" y1="0" y2="${H}" stroke="var(--muted)" stroke-dasharray="3 3"/>
+      <polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="2" stroke-linejoin="round"/></svg>`;
   };
   function renderPD() {
     const rows = PD.filter((r) => pdFilter === "all" || (r.kind === "item" && (r.yoy ?? 0) >= 5 && (pdFilter === "items" || (r.season === "ours" && !r.young))))
