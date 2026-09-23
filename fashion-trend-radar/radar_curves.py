@@ -587,6 +587,9 @@ __HEADER__
         foot.push(`<b>БРЕНДЫ ЗА 2 ГОДА (веб-архив)</b> доля в новинках за последние 3 месяца ${f1(bh.now)} (${bh.now_n} шт.), `
           + `год назад ${f1(bh.ago)} (${bh.ago_n} шт.)`);
       }
+      if (r.aud28_pct !== null && r.aud28_pct !== undefined)
+        foot.push(`<b>АУДИТОРИЯ 28+</b> ${r.aud28_pct}% интереса (${esc(r.aud28_source)})`
+          + (r.aud28_pct >= 50 ? " — наша аудитория" : " — слишком молодая"));
       if (ex.pin_demo) foot.push(`<b>КТО ИЩЕТ В PINTEREST</b> ${ex.pin_demo.top.map(([a, v]) => `${esc(a)} лет — ${v}%`).join(", ")}`
         + (ex.pin_demo.female !== null ? `; женщины ${ex.pin_demo.female}%` : ""));
       if (ex.sat) {

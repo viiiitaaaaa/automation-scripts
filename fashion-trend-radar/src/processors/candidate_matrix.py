@@ -15,6 +15,7 @@ TikTok hashtags, Google rising queries) uses the fashion taxonomy:
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from dataclasses import dataclass
 
 import pandas as pd
@@ -73,6 +74,36 @@ def hashtag_matches(spec: CandidateSpec, hashtag: str) -> bool:
 WINDOW = 8          # weeks compared against the same weeks a year earlier
 SEASON_LIFT = 20    # % rise last year in these weeks that marks a recurring season
 MIN_YOY = 5         # % growth for every growth check (user decision 22.09.2026: was 15)
+# Audience 28+ (user 23.09.2026): share of interest from people 28 and older = 35+ plus 7 of the 10 years of 25-34.
+# Google (DataForSEO demography) is closer to buyers and is used first; Pinterest skews young for every item
+# (median 46%, quartiles 43-51%), so for Pinterest-only items the bar is "younger than a typical Pinterest item".
+AUD28_MIN_GOOGLE = 50
+AUD28_MIN_PINTEREST = 43
+_AUD = {}
+
+
+def audience_28(phrase):
+    """-> (share of interest from people 28+ in %, source) or (None, "")."""
+    if not _AUD:
+        f = Path("data/processed/d4s_demography.csv")
+        if f.exists():
+            g = pd.read_csv(f)
+            g = g[g["group"] == "age"].pivot(index="candidate", columns="type", values="value").fillna(0)
+            old = [c for c in g.columns if c not in ("18-24", "25-34")]
+            share = (0.7 * g.get("25-34", 0) + g[old].sum(axis=1)) / g.sum(axis=1) * 100
+            _AUD.update({k: (round(v), "Google") for k, v in share.dropna().items()})
+        f = Path("data/processed/pinterest_demographics.csv")
+        if f.exists():
+            d = pd.read_csv(f).drop_duplicates("term").set_index("term")
+            ages = [c for c in d.columns if c.startswith("age_")]
+            old = [c for c in ages if c not in ("age_18-24", "age_25-34")]
+            share = (0.7 * d["age_25-34"] + d[old].sum(axis=1)) / d[ages].sum(axis=1) * 100
+            for k, v in share.dropna().items():
+                _AUD.setdefault(k, (round(v), "Pinterest"))
+        _AUD.setdefault("__loaded__", (None, ""))
+    return _AUD.get(phrase, (None, ""))
+
+
 # Amazon search volume (Trends MCP) doesn't know some phrases -> the closest wording it knows (checked 23.09)
 AMAZON_SEARCH_ALIAS = {"roll neck sweater": "turtleneck sweater"}
 MIN_NONZERO = 0.5   # share of weeks with data; below this the series is too sparse to judge
@@ -447,6 +478,12 @@ def build_matrix(
         if phrase in manual:
             r["decision"], r["manual_reason"] = manual[phrase]
             r["reject_reason"] = "" if r["decision"] != "REJECT" else r["reject_reason"]
+        # Audience 28+ (user 23.09.2026: 18-24 is a small audience that can't pay) -> younger items are not ours
+        r["aud28_pct"], r["aud28_source"] = audience_28(phrase)
+        if (r["decision"] in ("TEST", "WATCH") and phrase not in manual and r["aud28_pct"] is not None
+                and r["aud28_pct"] < (AUD28_MIN_GOOGLE if r["aud28_source"] == "Google" else AUD28_MIN_PINTEREST)):
+            r["decision"] = "REJECT"
+            r["reject_reason"] = f"не наша аудитория: от 28 лет только {r['aud28_pct']:.0f}% интереса ({r['aud28_source']})"
         # Not our season (user 23.09.2026): we sell autumn-winter only -> spring/summer items are rejected, not «позже»
         r["later_reason"] = ""
         if r["decision"] in ("TEST", "WATCH") and not r["in_season"] and phrase not in manual:

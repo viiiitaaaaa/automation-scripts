@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from radar_curves import build_block
-from src.processors.candidate_matrix import sort_candidates
+from src.processors.candidate_matrix import AUD28_MIN_PINTEREST, sort_candidates
 
 LOCAL = Path(r"C:\Users\User\dolphin_anty\trend_radar_dashboard.html")
 
@@ -97,7 +97,7 @@ PIN_THEME = (r"outfit|idea|aesthetic|inspo|look|styl|how to|diy|pattern|crochet|
 PIN_OURS = (r"coat|trench|jacket|puffer|parka|beanie|scarf|sweater|cardigan|knit|wool|flannel|fleece|fur|suede|leather|corduroy|"
             r"boots|turtleneck|roll neck|plaid|tartan|fall|autumn|winter|hoodie|blazer|vest|leggings")
 PIN_OFF = r"capri|shorts|swim|bikini|linen|summer|spring|sundress|prom|rain boots|crop top|tank|halter|beach|sandal"
-PIN_PICKS = {"trench coats", "long trench coat", "triangle scarf", "bandana scarf", "pea coat"}  # leather leggings: only 19% women on Pinterest — star removed
+PIN_PICKS = {"trench coats", "long trench coat", "triangle scarf", "bandana scarf"}  # removed: leather leggings (19% women), pea coat (28+ only 38%)
 
 
 def pinterest_discovery():
@@ -119,6 +119,12 @@ def pinterest_discovery():
     if dfile.exists():
         demo = pd.read_csv(dfile).drop_duplicates("term").set_index("term")
         df["age"] = df["term"].map(demo["main_age"])
+        ages = [c for c in demo.columns if c.startswith("age_")]
+        old = [c for c in ages if c not in ("age_18-24", "age_25-34")]
+        aud = (0.7 * demo["age_25-34"] + demo[old].sum(axis=1)) / demo[ages].sum(axis=1) * 100
+        df["aud28"] = df["term"].map(aud.round())
+        # user 23.09.2026: audience from 28; Pinterest skews young for everything -> "young" = below a typical Pinterest item
+        df["young"] = df["aud28"] < AUD28_MIN_PINTEREST
         df["female"] = df["term"].map((demo["female"] * 100).round())
     df = df.sort_values("yoy", ascending=False, na_position="last")
     stamp = datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y")
@@ -348,6 +354,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
     <span><b>Сезон</b> — в эти же недели прошлого года был такой же подъём</span>
     <span><b>Короткий сезон</b> — спрос держится меньше 2 месяцев: отказ в любом случае</span>
     <span><b>Не наш сезон — отказ</b>: мы продаём только на осень–зиму (сен–фев); если сезон вещи (по Google Trends) в эти месяцы не попадает, её не рассматриваем</span>
+    <span><b>Аудитория от 28 лет</b>: если больше половины интереса у людей младше 28 (по Google; нет Google — по Pinterest), вещь — отказ</span>
     <span><b>Сезон вот-вот начнётся</b> — год назад в следующие 8 недель интерес рос на 20%+ (по Google Trends), а в этом году не ниже прошлого: наблюдать обязательно</span>
     <span><b>Только стабильный рост</b> — по Pinterest последние 8 недель и 3 из 4 кварталов выше прошлого года на 5%+</span>
   </div>
@@ -361,15 +368,15 @@ TEMPLATE = r"""<title>Trend Radar</title>
 
   <section id="pin-disc">
     <h2>Новые вещи из Pinterest</h2>
-    <p class="note">Растущие запросы Pinterest среди женщин в США, в которых есть название вещи (свитер, юбка, пальто…). Собрано через бизнес-вход в Pinterest Trends <span class="mono" id="pd-date"></span>. Рост — по сравнению с неделей, месяцем и годом раньше; «спрос» — индекс Pinterest (больше — чаще ищут). Звёздочка — мой совет добавить в кандидаты; решение за вами.</p>
+    <p class="note">Растущие запросы Pinterest среди женщин в США, в которых есть название вещи (свитер, юбка, пальто…). Собрано через бизнес-вход в Pinterest Trends <span class="mono" id="pd-date"></span>. Рост — по сравнению с неделей, месяцем и годом раньше; «спрос» — индекс Pinterest (больше — чаще ищут). «28+» — доля интереса от людей 28 лет и старше; красным — аудитория моложе, чем у типичной вещи Pinterest (Pinterest в целом молодой: обычно 43–51%). Звёздочка — мой совет добавить в кандидаты; решение за вами.</p>
     <div class="filters" id="pd-filters">
-      <button data-f="ours" aria-pressed="true">Наш сезон, растут к году</button>
+      <button data-f="ours" aria-pressed="true">Наш сезон и аудитория 28+, растут к году</button>
       <button data-f="items" aria-pressed="false">Все вещи с ростом к году</button>
       <button data-f="all" aria-pressed="false">Все запросы</button>
     </div>
     <div class="tbl-wrap"><table class="pd">
       <thead><tr>
-        <th data-k="term">Запрос</th><th data-k="season">Сезон</th><th>2 года</th><th data-k="age">Возраст</th>
+        <th data-k="term">Запрос</th><th data-k="season">Сезон</th><th>2 года</th><th data-k="age">Чаще всего</th><th data-k="aud28" class="r">28+</th>
         <th data-k="female" class="r">Женщин</th><th data-k="wow" class="r">Неделя</th>
         <th data-k="mom" class="r">Месяц</th><th data-k="yoy" class="r">Год ▾</th><th data-k="volume_idx" class="r">Спрос</th>
         <th data-k="list">Список</th></tr></thead>
@@ -489,14 +496,14 @@ TEMPLATE = r"""<title>Trend Radar</title>
       <polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
   };
   function renderPD() {
-    const rows = PD.filter((r) => pdFilter === "all" || (r.kind === "item" && (r.yoy ?? 0) >= 5 && (pdFilter === "items" || r.season === "ours")))
+    const rows = PD.filter((r) => pdFilter === "all" || (r.kind === "item" && (r.yoy ?? 0) >= 5 && (pdFilter === "items" || (r.season === "ours" && !r.young))))
       .sort((a, b) => { const x = a[pdKey], y = b[pdKey]; return (typeof x === "string" ? String(x).localeCompare(y) : (x ?? -1e9) - (y ?? -1e9)) * pdDir; });
     $("pd-body").innerHTML = rows.map((r) => `<tr class="${r.pick ? "pick" : ""} ${r.kind === "theme" ? "theme" : ""}">
       <td>${esc(r.term)}</td><td><span class="sz ${r.season}">${SZ[r.season]}</span></td>
-      <td>${spark(r.curve)}</td><td>${r.age ? esc(r.age) : "—"}</td><td class="r">${r.female != null ? r.female + "%" : "—"}</td>
+      <td>${spark(r.curve)}</td><td>${r.age ? esc(r.age) : "—"}</td><td class="r"><span class="${r.young ? "down" : r.aud28 != null ? "up" : ""}">${r.aud28 != null ? r.aud28 + "%" : "—"}</span></td><td class="r">${r.female != null ? r.female + "%" : "—"}</td>
       <td class="r">${num(r.wow)}</td><td class="r">${num(r.mom)}</td><td class="r">${num(r.yoy)}</td>
       <td class="r">${r.volume_idx ?? "—"}</td><td>${LST[r.list] || r.list}</td></tr>`).join("")
-      || '<tr><td colspan="10">Нет данных — запустите run_pinterest_discovery.py</td></tr>';
+      || '<tr><td colspan="11">Нет данных — запустите run_pinterest_discovery.py</td></tr>';
     $("pd-count").textContent = `Показано ${rows.length} из ${PD.length} запросов.`;
   }
   $("pd-date").textContent = D.pin_discovery_date ? `(${D.pin_discovery_date})` : "";
