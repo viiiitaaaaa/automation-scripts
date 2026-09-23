@@ -181,6 +181,20 @@ def _who_where():
     return out
 
 
+def _variants(n=8):
+    """candidate -> [[phrase, volume]] most searched versions of the item (run_variant_volumes.py), seed excluded."""
+    f = Path("data/processed/variant_volumes.csv")
+    if not f.exists():
+        return {}
+    v = pd.read_csv(f).dropna(subset=["volume"])
+    out = {}
+    for c, g in v.groupby("candidate"):
+        g = g[~g["phrase"].isin([c, c.replace(" women", ""), f"{c} women", f"{c} for women"])]
+        g = g.sort_values("volume", ascending=False).drop_duplicates("volume").head(n)   # same volume = same phrase variant
+        out[c] = [[p, int(x)] for p, x in zip(g["phrase"], g["volume"])]
+    return out
+
+
 MONTHS = "янв фев мар апр май июн июл авг сен окт ноя дек".split()
 
 
@@ -217,6 +231,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     amz, ttw, ig = _amazon_months(), _tiktok_weeks(), _instagram()
     gvol, ttshop = _google_volume(), _tiktok_shop()
     who = _who_where()
+    variants = _variants()
     # colour follows the item (color_slot 1-8 in config/candidates.csv, else its place there), never its rank on the page
     cfg = pd.read_csv("config/candidates.csv")
     order = {c: i for i, c in enumerate(cfg["candidate"])}
@@ -243,6 +258,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
         rec["gvol"] = gvol.get(name)
         rec["shop"] = ttshop.get(name)
         rec["who"] = who.get(name)
+        rec["variants"] = variants.get(name, [])
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -490,6 +506,9 @@ __HEADER__
         foot.push(`<b>GOOGLE США</b> в среднем ${bigN(g.avg)} поисков в месяц, в последний месяц ${bigN(g.last)}`
           + (g.last_vs_avg !== null ? ` (${g.last_vs_avg > 0 ? "+" : ""}${g.last_vs_avg}% к среднему за год)` : "")
           + (g.cpc ? `; клик в рекламе ~$${g.cpc.toFixed(2)}` : ""));
+      }
+      if (r.variants && r.variants.length) {
+        foot.push(`<b>КАКИЕ ВАРИАНТЫ ИЩУТ (Google США, в месяц)</b> ` + r.variants.map((v) => `${esc(v[0])} — ${bigN(v[1])}`).join(" · "));
       }
       if (r.who) {
         const w = r.who, tot = w.female + w.male;

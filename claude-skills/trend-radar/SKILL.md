@@ -67,6 +67,7 @@ description: Мультиканальный тренд-радар женской
 | Объём поиска Google (США) | `run_google_volume.py` | DataForSEO через treg: **$0.09 за ОДИН запрос на все слова** (не запускать дважды!) — реальные поиски в месяц за 12 мес, CPC; на карточке столбики + «последний месяц к среднему» | `data/processed/google_volume.csv`, `google_volume_monthly.csv` |
 | TikTok Shop (США) | `run_tiktok_shop.py [--from-raw]` | TikHub через treg, $0.001: 1-я страница поиска (до 30 товаров) — **сколько продано**, цены, продавцы, ссылки. `--from-raw` перечитывает сегодняшние ответы бесплатно. Ответ TikHub обёрнут дважды: `data.data.products` | `data/processed/tiktok_shop.csv`, `tiktok_shop_products.csv` |
 | Кто и где ищет (США) | `run_d4s_trends.py [--from-raw]` | DataForSEO Trends через treg (эндпоинты `…-trends-subregion-interests-live`, `…-trends-demography-live`, $0.0024 на 5 слов каждый; в каталоге treg не показаны, но вызываются): интерес по штатам, возраст, пол; на карточке — столбики возраста и строка «кто и где» | `data/processed/d4s_states.csv`, `d4s_demography.csv` |
+| Варианты вещи (цвет, фасон) | `run_variant_volumes.py` | подсказки поиска (бесплатно) → объёмы Google США всех фраз ОДНИМ запросом DataForSEO ($0.09 до 1000 фраз); фразы >10 слов/со спецсимволами валят весь запрос (ошибка 40501, бесплатно) — фильтруются | `data/processed/variant_volumes.csv` |
 | TikTok тренды дня | `run_tiktok_trending.py [страниц]` | общемировая лента «Интересное» (~10 видео на запрос) + трендовые поисковые запросы; не про моду | `data/processed/tiktok_trending_<дата>.csv` |
 | Trends MCP | `run_trendsmcp.py ["<слово>" ...]` | Amazon: поиски в месяц (4 мес) + рост к прошлому месяцу; TikTok: объём хэштега по дням (только крупные хэштеги). 1 запрос = 1 вещь × 1 источник, кэш 7 дней | `data/processed/trendsmcp.csv` |
 
@@ -188,6 +189,11 @@ YouTube) с зелёной полосой «последние 8 недель» 
 - **TikTok Creative Center «Top Products» больше нет** (23.09): после переезда в TikTok One — только Hashtag
   (Creator «coming soon»), и в TikTok One пользователь не залогинена. **trendsapi.ai = тот же Trends MCP**,
   тем же ключом те же 90 дней. Официальный Google Trends API (альфа) — только по заявкам.
+- **Выдача TikTok Shop плавает от запроса к запросу** (утром plaid skirt 30 товаров, днём 3; roll neck 5 → 35).
+  Одному запросу не верить: `run_tiktok_shop.py` берёт 3 страницы, а `--from-raw` объединяет ВСЕ ответы за день.
+- **Спрос бывает брендовым** (23.09): «j crew roll neck sweater» 33 тыс./мес против 6,6 тыс. у «roll neck sweater»,
+  bandana cardigan — от Gap. Для дропшиппинга это риск: смотреть строку «какие варианты ищут» и описывать фасон, не бренд.
+- **DataForSEO related_keywords** для редких вещей даёт 2–3 фразы; SE Ranking related тарифицирует построчно — дорого.
 - **Pinterest-поиск через treg (scrapecreators)** отдаёт только id/ссылки пинов, без дат и сохранений — бесполезен, не подключать.
 - **Ответы TikHub обёрнуты дважды** (`data.data.…`) — у Instagram, TikTok Shop; парсить через `data.get("data") or data`.
 - **Instagram «recent» у редких хэштегов** отдаёт и старые посты (2017–2021) — частота тогда ≈ 0, это «хэштег мёртвый».

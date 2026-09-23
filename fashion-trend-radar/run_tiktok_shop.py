@@ -24,17 +24,28 @@ RAW = Path("data/raw/treg")
 spent = 0.0
 
 
+PAGES = 3   # 30 products a page; pages 2-3 via load_more_params (offset + page_token)
+
+
 def search(word):
     global spent
-    r = requests.get(f"https://treg.to/call/{ENDPOINT}", headers=H,
-                     params={"search_word": word, "region": "US", "offset": 0}, timeout=90)
-    spent += int(r.headers.get("X-Treg-Cost-Micro") or 0) / 1e6
-    d = r.json()
-    (RAW / f"{datetime.now():%Y%m%d_%H%M%S}_tiktokshop_{word.replace(' ', '-')}.json").write_text(
-        json.dumps(d, ensure_ascii=False), encoding="utf-8")
-    if r.status_code != 200:
-        raise RuntimeError(f"HTTP {r.status_code} {str(d)[:200]}")
-    return parse(d)
+    out, params = [], {"search_word": word, "region": "US", "offset": 0}
+    for page in range(PAGES):
+        r = requests.get(f"https://treg.to/call/{ENDPOINT}", headers=H, params=params, timeout=90)
+        spent += int(r.headers.get("X-Treg-Cost-Micro") or 0) / 1e6
+        d = r.json()
+        (RAW / f"{datetime.now():%Y%m%d_%H%M%S}_tiktokshop_{word.replace(' ', '-')}_p{page + 1}.json").write_text(
+            json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code} {str(d)[:200]}")
+        out += parse(d)
+        inner = (d.get("data") or {}).get("data") or {}
+        more = inner.get("load_more_params") or {}
+        if str(inner.get("has_more")).lower() != "true" or not more.get("page_token"):
+            break
+        params = {"search_word": word, "region": "US", "offset": more.get("offset", 30 * (page + 1)),
+                  "page_token": more["page_token"]}
+    return list({p["product_id"]: p for p in out}.values())   # pages can repeat a product
 
 
 def parse(d):
@@ -62,8 +73,8 @@ def main():
     for c in cands:
         try:
             if from_raw:
-                f = sorted(RAW.glob(f"{date.today():%Y%m%d}_*_tiktokshop_{c.replace(' ', '-')}.json"))
-                ps = parse(json.loads(f[-1].read_text(encoding="utf-8"))) if f else []
+                f = sorted(RAW.glob(f"{date.today():%Y%m%d}_*_tiktokshop_{c.replace(' ', '-')}*.json"))
+                ps = list({p["product_id"]: p for x in f for p in parse(json.loads(x.read_text(encoding="utf-8")))}.values())
             else:
                 ps = search(c)
         except (RuntimeError, ValueError) as e:
