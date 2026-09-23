@@ -45,8 +45,9 @@ description: Новости из Telegram-каналов одной команд
    `setdefault(key, {"cat": "skip"})` для остальных новых постов (`scraped_at >= last_collect_started`
    из `panel_state.json`).
 3. `python news.py --build` — пересобрать панель с пересказами.
-4. Опубликовать `news_panel.html` в Artifact с `url` панели (выше), без `icon`.
-   Если Artifact отвечает 403 — открыть локально `Start-Process news_panel.html` и сказать об этом.
+4. **Всегда** открыть свежую локальную копию `Start-Process C:\Users\User\tg_monitor\news_panel.html`
+   (у пользователя просмотрщик claude.ai часто показывает старую копию — решение 23.09), затем опубликовать
+   `news_panel.html` в Artifact с `url` панели (выше), без `icon`, и открыть его.
 5. Коротко в чате: сколько новых постов, 3–5 главных новостей одной строкой каждая, ссылка.
 
 ## Файлы
