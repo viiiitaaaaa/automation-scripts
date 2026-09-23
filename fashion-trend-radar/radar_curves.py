@@ -229,6 +229,12 @@ def _extras():
                 top = sorted(ages.items(), key=lambda kv: -kv[1])[:2]
                 out.setdefault(c, {})["pin_demo"] = {"top": [[a, round(v * 100)] for a, v in top],
                                                      "female": None if pd.isna(x["female"]) else round(x["female"] * 100)}
+    f = Path("data/processed/temu.csv")   # run_temu.py: Temu US search, page 1 (user logged in 23.09.2026)
+    if f.exists():
+        for r in pd.read_csv(f).itertuples():
+            out.setdefault(r.candidate, {})["temu"] = {"products": int(r.products), "sold_total": int(r.sold_total),
+                                                     "sold_top": int(r.sold_top), "top_link": r.top_link if isinstance(r.top_link, str) else "",
+                                                     "price": None if pd.isna(r.price_median) else float(r.price_median)}
     f = Path("data/processed/brand_history.csv")
     if f.exists():
         h = pd.read_csv(f)
@@ -632,6 +638,12 @@ __HEADER__
           + (r.aud28_pct >= 50 ? " — наша аудитория" : " — слишком молодая"));
       if (ex.pin_demo) foot.push(`<b>КТО ИЩЕТ В PINTEREST</b> ${ex.pin_demo.top.map(([a, v]) => `${esc(a)} лет — ${v}%`).join(", ")}`
         + (ex.pin_demo.female !== null ? `; женщины ${ex.pin_demo.female}%` : ""));
+      if (ex.temu) {
+        const t = ex.temu;
+        foot.push(`<b>TEMU США</b> на 1-й странице поиска ${t.products} похожих товаров, продано ${bigN(t.sold_total)} шт., `
+          + `лидер — ${bigN(t.sold_top)} шт.` + (t.top_link ? ` (<a href="${esc(t.top_link)}" target="_blank" rel="noopener">товар</a>)` : "")
+          + (t.price ? `, цена обычно $${t.price.toFixed(2)}` : ""));
+      }
       if (ex.sat) {
         const s = ex.sat;
         foot.push(`<b>НАСЫЩЕНИЕ AMAZON</b> ${s.results ? `больше ${bigN(s.results)} товаров` : "товаров —"}, `

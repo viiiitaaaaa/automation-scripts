@@ -103,6 +103,8 @@ def us_videos(cid, n=30):
 def save_merged(df_new, path, key="candidate"):
     """Partial runs (a few candidates) must not wipe the others: replace only the rows of the candidates just collected."""
     path = Path(path)
+    if df_new.empty and path.exists():
+        return   # nothing collected (provider error) — keep what is there
     if path.exists() and not df_new.empty and key in df_new:
         old = pd.read_csv(path)
         if key in old:

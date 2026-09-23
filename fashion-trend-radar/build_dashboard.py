@@ -35,13 +35,16 @@ CHANNELS = [
     {"key": "check_instagram", "short": "I", "name": "Instagram", "status": "ok",
      "note": "свежие посты под хэштегом вещи (весь мир, treg.to): засчитывается при ≥1 посте в день и последнем посте не старше недели"},
 ]
+INFO_CHANNELS = [   # shown on the card, not a vote in the 7 checks
+    ("Temu", "поиск Temu США через ваш вход в профиле Dolphin 3: сколько похожих товаров и продаж на 1-й странице (run_temu.py)"),
+    ("Насыщение Amazon", "товаров, брендов и отзывов на 1-й странице поиска (run_saturation.py)"),
+]
 PENDING = [
     ("Etsy", "Etsy заблокировал ключ (Banned) — канал закрыт"),
     ("Reddit", "для коммерческого использования нужно письменное одобрение Reddit — пока исключён"),
     ("Meta Ad Library", "нужна платёжка"),
     ("Google Merchant Center", "Best Sellers Google Shopping; регистрация просит карту — отложено"),
     ("Keyword Tool", "платный тариф"),
-    ("Temu", "поиск открывается только после входа в аккаунт; в treg.to Temu нет — нужно, чтобы вы вошли в Temu в профиле Dolphin 3"),
 ]
 
 
@@ -151,14 +154,24 @@ def fashion_section():
     cands = set(pd.read_csv("config/candidates.csv")["candidate"])
     cls = {"в кандидаты": "TEST", "наблюдать": "WATCH", "не проходит": "REJECT"}
 
+    rank = {"в кандидаты": 0, "наблюдать": 1, "не проходит": 2}
+
+    def one(word, label=""):
+        v = wa.loc[word]
+        return (f'{label}<span class="pill {cls.get(v["verdict"], "REJECT")}">{H.escape(v["verdict"])}</span>'
+                f'<br><span class="fz-why">{H.escape(str(v["why"]))}</span>')
+
     def verdict(ph):
         if ph in cands:
             return '<span class="pill TEST">уже кандидат</span>'
-        if ph in wa.index:
-            v = wa.loc[ph]
-            return (f'<span class="pill {cls.get(v["verdict"], "REJECT")}">{H.escape(v["verdict"])}</span>'
-                    f'<br><span class="fz-why">{H.escape(str(v["why"]))}</span>')
-        return '<span class="fz-why">ещё не проверено</span>'
+        out = one(ph) if ph in wa.index else '<span class="fz-why">ещё не проверено</span>'
+        # US wordings of the same item (run_word_analysis.REPHRASE): show the best one
+        alts = wa[wa["source"] == f"перефразировка «{ph}»"] if "source" in wa else wa.iloc[0:0]
+        if len(alts):
+            best = alts.assign(_r=alts["verdict"].map(rank)).sort_values("_r").index[0]
+            out += (f'<div class="fz-alt">как ищут в США: <code>{H.escape(best)}</code> — '
+                    + one(best).replace("<br>", " ") + "</div>")
+        return out
     phrases = "".join(f'<tr><td><code>{H.escape(p["phrase"])}</code></td><td>{verdict(p["phrase"])}</td><td>'
                       + " · ".join(a(x) for x in p["posts"]) + "</td></tr>" for p in d["phrases"])
     cards = ""
@@ -177,7 +190,7 @@ def fashion_section():
     на спросе в США. Обновлено {H.escape(d["updated"])} (команда «новости»).</p>
     <h3 class="fz-h">Что повторяется <span class="mono">тема в 2+ постах</span></h3>
     <div class="fz-themes">{themes or '<p class="note">Пока ничего не повторяется.</p>'}</div>
-    <h3 class="fz-h">Проверить в радаре <span class="mono">{len(d["phrases"])} фраз, как ищут в США — все проверены, графики в «Аналитике остальных слов» ниже</span></h3>
+    <h3 class="fz-h">Проверить в радаре <span class="mono">{len(d["phrases"])} фраз — каждая проверена; если в США так не ищут, проверена американская формулировка той же вещи (графики — в «Аналитике остальных слов» ниже)</span></h3>
     <div class="tbl-wrap"><table class="fz-ph"><thead><tr><th>Фраза</th><th>Результат проверки</th><th>Откуда</th></tr></thead>{phrases}</table></div>
     <details class="fz-news"><summary>Новости модных каналов ({len(d["cards"])})</summary><div class="fz-cards">{cards}</div></details>
   </section>"""
@@ -262,6 +275,7 @@ def main():
         "updated": datetime.now().strftime("%d.%m.%Y в %H:%M"),
         "channels": CHANNELS,
         "pending": [{"name": n, "why": w} for n, w in PENDING],
+        "info": [{"name": n, "note": w} for n, w in INFO_CHANNELS],
         "gaps": data_gaps(cand),
         "candidates": json.loads(cand.to_json(orient="records", force_ascii=False)),
         "attributes": json.loads(attrs.to_json(orient="records", force_ascii=False)) if not attrs.empty else [],
@@ -461,6 +475,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   table.wa td { white-space: normal; vertical-align: middle; }
   table.wa td:first-child { min-width: 170px; }
   .fz-why { font-size: 11.5px; color: var(--muted); }
+  .fz-alt { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); font-size: 12px; }
   table.fz-ph th { text-align: left; font: 600 11px "JetBrains Mono", monospace; color: var(--text-2); padding: 7px 12px; background: var(--surface-2); }
   .wa-chart { display: block; }
   .wa-src { font-size: 10.5px; color: var(--muted); }
@@ -657,6 +672,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
 
   $("channels").innerHTML =
     D.channels.map((ch) => `<div class="ch"><span class="dot ${ch.status}"></span><div><b>${ch.name}</b><small>${esc(ch.note)}</small></div></div>`).join("") +
+    (D.info || []).map((c) => `<div class="ch"><span class="dot ok"></span><div><b>${c.name}</b> <small style="display:inline">(в карточках, не голос)</small><small>${esc(c.note)}</small></div></div>`).join("") +
     D.pending.map((p) => `<div class="ch"><span class="dot wait"></span><div><b>${p.name}</b><small>не подключено — ${esc(p.why)}</small></div></div>`).join("");
 
   $("gaps").innerHTML = (D.gaps || []).map((g) => `<div class="gap">

@@ -30,6 +30,37 @@ DEMO = Path("data/processed/pinterest_demographics.csv")
 AGES = ["18-24", "25-34", "35-44", "45-49", "50-54", "55-64", "65+"]
 
 
+# Russian channels name things their own way; the same item as people search it in the US (user 23.09.2026:
+# «перефразируй и посмотри, пройдут ли они в поиске»). original phrase -> US wordings to check
+REPHRASE = {
+    "bambi print": ["deer print", "fawn print sweater"],
+    "brown shearling jacket": ["shearling jacket women", "brown shearling coat"],
+    "burgundy ankle boots": ["burgundy boots", "burgundy boots women"],
+    "collared cardigan women": ["collared cardigan", "polo cardigan"],
+    "contrast collar jacket women": ["faux fur collar jacket", "collared jacket women"],
+    "deer print sweater": ["deer sweater", "reindeer sweater"],
+    "frog closure jacket": ["frog button jacket", "toggle coat women"],
+    "lace trim sweater": ["lace trim cardigan", "lace cardigan"],
+    "mandarin collar blouse": ["mandarin collar shirt", "mandarin collar top"],
+    "oxblood loafers": ["burgundy loafers", "oxblood boots"],
+    "pink leather jacket": ["pink jacket women"],
+    "plaid cuff jeans": ["cuffed jeans", "plaid jeans"],
+    "plaid overshirt women": ["plaid shacket", "flannel shacket"],
+    "polka dot bomber jacket": ["polka dot jacket", "bomber jacket women"],
+    "ribbed beanie": ["ribbed knit beanie", "knit beanie", "beanie women"],
+    "rust faux fur coat": ["brown faux fur coat", "faux fur jacket"],
+    "shearling lined boots women": ["shearling boots", "shearling lined boots"],
+    "western boots women": ["cowboy boots women", "western boots"],
+    "chocolate brown boots": ["brown boots women", "brown knee high boots"],
+    "suede jacket women": ["suede jacket", "suede jacket women brown"],
+    "argyle sweater women": ["argyle sweater"],
+    "utility jacket women": ["utility jacket"],
+    "wool cardigan women": ["wool cardigan"],
+    "snake print boots": ["snakeskin boots", "snake print boots women"],
+    "brown shearling jacket ": [],
+}
+
+
 def words():
     """-> {word: source}"""
     out = {}
@@ -40,6 +71,9 @@ def words():
     for r in disc:
         if r["kind"] == "item" and (r.get("yoy") or 0) >= MIN_YOY and r["season"] == "ours" and not r.get("young"):
             out.setdefault(r["term"], "Pinterest растущие")
+    for orig in list(out):
+        for alt in REPHRASE.get(orig, []):
+            out.setdefault(alt, f"перефразировка «{orig}»")
     cands = set(pd.read_csv("config/candidates.csv")["candidate"])
     return {w: s for w, s in out.items() if w not in cands}
 
