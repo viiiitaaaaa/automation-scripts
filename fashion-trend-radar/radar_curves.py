@@ -23,6 +23,22 @@ def pinterest_aliases() -> dict:
     return {r.candidate: r.pinterest_term for r in c.itertuples() if isinstance(r.pinterest_term, str) and r.pinterest_term}
 
 
+def use_short_phrase(hist: pd.DataFrame, min_weeks: int = 3) -> pd.DataFrame:
+    """Google/YouTube history: a candidate whose own phrase is almost never searched (< min_weeks non-zero US weeks)
+    gets the curve of its shorter wording (pinterest_term, e.g. flannel shirt women -> flannel shirt)."""
+    if hist.empty:
+        return hist
+    us = hist[hist["region"] == "US"]
+    alive = lambda k: int((us[us["keyword"] == k]["interest"] > 0).sum()) >= min_weeks
+    extra = []
+    for cand, short in pinterest_aliases().items():
+        if not alive(cand) and alive(short):
+            extra.append(hist[hist["keyword"] == short].assign(keyword=cand))
+    if not extra:
+        return hist
+    return pd.concat([hist[~hist["keyword"].isin([e["keyword"].iloc[0] for e in extra])]] + extra, ignore_index=True)
+
+
 def _pinterest_series():
     """term -> weekly points, keyed by CANDIDATE: latest metrics_*.json plus variants_*.json
     (other wordings, run_extra_signals.py); a candidate with an alias gets its alias's curve."""
@@ -48,6 +64,7 @@ def _google_series(root="data/normalized/google_trends"):
     if not root.exists():
         return {}
     g = pd.read_parquet(root).sort_values("date").drop_duplicates(["date", "keyword", "region"], keep="last")
+    g = use_short_phrase(g)
     g = g[(g["region"] == "US") & ~g["is_partial"].astype(bool)]
     out = {}
     for k, grp in g.groupby("keyword"):
@@ -62,18 +79,22 @@ def _amazon_months():
     raw = Path("data/raw/trendsmcp")
     if not raw.exists():
         return out
+    from src.processors.candidate_matrix import AMAZON_SEARCH_ALIAS
     for c in pd.read_csv("config/candidates.csv")["candidate"]:
-        files = sorted(raw.glob(f"*_get_time_series_amazon_{c.replace(' ', '-')}.json"))
-        if not files:
-            continue
-        d = json.loads(files[-1].read_text(encoding="utf-8"))
-        body = d.get("body") if isinstance(d, dict) else None
-        rows = json.loads(body) if isinstance(body, str) else (d if isinstance(d, list) else [])
-        if not isinstance(rows, list):   # {"error": "no_data", ...}
-            continue
-        pts = [(r["date"], r.get("volume")) for r in rows if isinstance(r, dict) and r.get("volume") is not None]
-        if pts:
-            out[c] = [{"label": MONTHS[int(dt[5:7]) - 1], "v": int(v)} for dt, v in sorted(pts)]
+        # the exact phrase first; if Trends MCP doesn't know it — the closest phrase (same as the radar uses)
+        for phrase in [c] + ([AMAZON_SEARCH_ALIAS[c]] if c in AMAZON_SEARCH_ALIAS else []):
+            files = sorted(raw.glob(f"*_get_time_series_amazon_{phrase.replace(' ', '-')}.json"))
+            if not files:
+                continue
+            d = json.loads(files[-1].read_text(encoding="utf-8"))
+            body = d.get("body") if isinstance(d, dict) else None
+            rows = json.loads(body) if isinstance(body, str) else (d if isinstance(d, list) else [])
+            if not isinstance(rows, list):   # {"error": "no_data", ...}
+                continue
+            pts = [(r["date"], r.get("volume")) for r in rows if isinstance(r, dict) and r.get("volume") is not None]
+            if pts:
+                out[c] = [{"label": MONTHS[int(dt[5:7]) - 1], "v": int(v)} for dt, v in sorted(pts)]
+                break
     return out
 
 
@@ -195,10 +216,12 @@ def _extras():
                 "price": None if pd.isna(r.median_price) else float(r.median_price)}
     f = Path("data/processed/pinterest_demographics.csv")
     if f.exists():
-        d = pd.read_csv(f).set_index("term")
+        d = pd.read_csv(f).drop_duplicates("term").set_index("term")
+        alias = pinterest_aliases()
         for c in pd.read_csv("config/candidates.csv")["candidate"]:
-            if c in d.index:
-                x = d.loc[c]
+            t = c if c in d.index else alias.get(c)   # wording Pinterest knows (flannel shirt women -> flannel shirt)
+            if t in d.index:
+                x = d.loc[t]
                 ages = {k[4:]: x[k] for k in d.columns if k.startswith("age_") and pd.notna(x[k])}
                 top = sorted(ages.items(), key=lambda kv: -kv[1])[:2]
                 out.setdefault(c, {})["pin_demo"] = {"top": [[a, round(v * 100)] for a, v in top],
@@ -536,7 +559,9 @@ __HEADER__
         + chart(r.google_curve, "Google · интерес 0–100")
         + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100")
-        + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США; последний полный месяц — сервис отдаёт месяц после его окончания)")
+        + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США"
+          + (r.amazon_search_phrase && r.amazon_search_phrase !== r.candidate ? `; по близкой фразе «${esc(r.amazon_search_phrase)}»` : "")
+          + "; последний полный месяц — сервис отдаёт месяц после его окончания)")
         + bars(r.who && r.who.age, "Кто ищет в Google США · возраст (0–100, 100 — самая активная группа)")
         + bars(r.tt_weeks, `TikTok США · новых видео в неделю под #${esc(r.tt_hashtag || "")} (по выборке до 90 видео)`);
       const foot = [];
@@ -580,7 +605,14 @@ __HEADER__
         foot.push(`<b>INSTAGRAM #${esc(ig.tag)}</b> ${rate} (последние ${ig.sampled} постов с ${esc(ig.oldest)}, весь мир)`
           + (ig.likes_median !== null ? `, обычно ${bigN(ig.likes_median)} лайков` : "") + (links ? `<br>самые залайканные свежие: ${links}` : ""));
       }
-      if (r.retailer_brands) foot.push(`<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`);
+      foot.push(r.retailer_brands ? `<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`
+        : `<b>БРЕНДЫ</b> сейчас ни один из 8 брендов (Zara, ASOS, H&M, Mango, Aritzia, Free People, Urban Outfitters, Abercrombie) эту вещь в новинках не выпускает`);
+      // a missing chart is a real answer, not a forgotten source — say why
+      const none = [];
+      if (!r.pin_curve) none.push("Pinterest — фразы нет в Pinterest Trends: он ведёт статистику только по запросам выше своего порога популярности (искали все формулировки)");
+      if (!r.shop_curve) none.push("Google Shopping — покупательских запросов слишком мало, Google отдаёт нули");
+      if (!r.youtube_curve) none.push("YouTube — фразу почти не ищут на YouTube (за 2 года 1–2 ненулевые недели)");
+      if (none.length) foot.push(`<b>НЕТ ГРАФИКА</b> ${none.map(esc).join("; ")}`);
       const ex = r.extra || {};
       if (ex.brands_hist && (ex.brands_hist.now_n || ex.brands_hist.ago_n)) {
         const bh = ex.brands_hist, f1 = (v) => v === null || v === undefined ? "—" : v.toFixed(1) + "%";

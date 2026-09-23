@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from radar_curves import _pinterest_series as pinterest_series
+from radar_curves import _pinterest_series as pinterest_series, use_short_phrase
 from src.processors.candidate_matrix import build_matrix
 
 
@@ -44,6 +44,7 @@ def main():
     if not youtube_history.empty:
         youtube_history = (youtube_history.sort_values("date")
                            .drop_duplicates(subset=["date", "keyword", "region"], keep="last"))
+        youtube_history = use_short_phrase(youtube_history)
     sh_root = Path("data/normalized/google_trends_shopping")
     shopping_history = pd.read_parquet(sh_root) if sh_root.exists() else pd.DataFrame()
     if not shopping_history.empty:
