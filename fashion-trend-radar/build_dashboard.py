@@ -4,7 +4,9 @@ radar outputs. Re-run after run_radar.py, then publish the file.
 Output: data/reports/trend_radar_dashboard.html
 """
 import json
-from datetime import date
+import os
+import sys
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -101,6 +103,8 @@ def main():
 
     payload = {
         "date": date.today().strftime("%d.%m.%Y"),
+        # exact build time in the header: tells at a glance whether the viewer shows a stale copy
+        "updated": datetime.now().strftime("%d.%m.%Y в %H:%M"),
         "channels": CHANNELS,
         "pending": [{"name": n, "why": w} for n, w in PENDING],
         "gaps": data_gaps(cand),
@@ -113,9 +117,12 @@ def main():
     html = TEMPLATE.replace("__CURVES__", curves).replace("__DATA__", data_json)
     out = Path("data/reports/trend_radar_dashboard.html")
     out.write_text(html, encoding="utf-8")
-    print(f"Сохранено: {out} ({len(cand)} кандидатов)")
+    print(f"Сохранено: {out} ({len(cand)} кандидатов), обновлено {payload['updated']}")
 
     update_local(cand, payload["date"], payload["gaps"])
+    # --open: show the fresh local copy right away (instant, never a stale cached version)
+    if "--open" in sys.argv:
+        os.startfile(out.resolve())
 
 
 def update_local(cand, date_str, gaps=None):
@@ -178,6 +185,9 @@ TEMPLATE = r"""<title>Trend Radar</title>
   body { margin: 0; background: var(--page); color: var(--text);
          font-family: "Work Sans", system-ui, sans-serif; font-size: 14.5px; line-height: 1.5; }
   .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 72px; }
+  .updated { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+  .updated b { color: var(--text); font-size: 14px; background: var(--surface); border: 1px solid var(--border);
+               border-radius: 8px; padding: 2px 8px; }
   details.howto { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; }
   details.howto summary { display: list-item; list-style: disclosure-closed; padding: 0; cursor: pointer;
                           font-weight: 600; font-size: 13.5px; color: var(--text-2); }
@@ -270,7 +280,8 @@ TEMPLATE = r"""<title>Trend Radar</title>
 <div class="wrap">
   <div class="eyebrow">Trend Radar · женская одежда · США</div>
   <h1>Какие вещи подтверждают сразу несколько каналов</h1>
-  <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата шестью независимыми «свидетелями» и считает, сколько из них видят рост. Данные на <span class="mono" id="dt"></span>.</p>
+  <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата независимыми «свидетелями» и считает, сколько из них видят рост.</p>
+  <p class="updated">Обновлено <b class="mono" id="dt"></b> — если здесь старое время, нажмите F5</p>
   <div class="stats" id="stats"></div>
   <details class="howto">
   <summary>Как читать радар: правила решений и буквы каналов</summary>
@@ -326,7 +337,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
                  plus_size: "plus size", ruffle: "рюши", bow: "бант", satin: "атлас", suede: "замша", sequin: "пайетки",
                  flannel: "фланель", leopard: "леопард", floral: "цветы", ribbed: "рубчик", denim: "деним", halter: "халтер" };
 
-  $("dt").textContent = D.date;
+  $("dt").textContent = D.updated || D.date;
   const c = D.candidates, n = (d) => c.filter((x) => x.decision === d).length;
   $("stats").innerHTML = [
     [c.length, "кандидатов проверено"], [n("TEST"), "тестировать"], [n("WATCH"), "наблюдать"],
