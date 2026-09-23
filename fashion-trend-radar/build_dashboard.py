@@ -29,7 +29,7 @@ CHANNELS = [
      "note": "новинки + хиты продаж в 8 разделах женской одежды; "
              "Trends MCP: сколько раз вещь искали на Amazon за месяц и рост к прошлому месяцу"},
     {"key": "check_retailers", "short": "R", "name": "Бренды", "status": "ok",
-     "note": "новинки Zara, ASOS, Aritzia, Free People"},
+     "note": "новинки Zara, ASOS, Aritzia, Free People, H&M, Urban Outfitters, Abercrombie (Mango не отдаёт)"},
     {"key": "check_instagram", "short": "I", "name": "Instagram", "status": "ok",
      "note": "свежие посты под хэштегом вещи (весь мир, treg.to): засчитывается при ≥1 посте в день и последнем посте не старше недели"},
 ]
@@ -64,7 +64,7 @@ def data_gaps(cand):
          "why": "рост мест в рейтинге и цен виден только за несколько снимков", "fix": "снимать раз в неделю по команде"},
         {"what": "История брендов", "have": f"{len(brand_days)} снимок; Aritzia ~10 товаров",
          "why": "не видно, что бренды добавляют от недели к неделе; Aritzia грузит не всё",
-         "fix": "снимать раз в неделю; догрузка Aritzia прокруткой; добавить H&M, Mango, Urban Outfitters"},
+         "fix": "снимать раз в неделю; догрузка Aritzia прокруткой; найти рабочий адрес новинок Mango"},
         {"what": "Поиск на Amazon (Trends MCP)", "have": f"{cnt('amazon_monthly_searches')} из {n}",
          "why": "бесплатно только 90 дней и 100 запросов в месяц; редкие фразы сервис не знает",
          "fix": "run_trendsmcp.py по команде; 2 года истории — платный тариф Pro"},

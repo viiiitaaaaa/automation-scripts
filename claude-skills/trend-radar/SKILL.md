@@ -58,7 +58,7 @@ description: Мультиканальный тренд-радар женской
 | Pinterest | `run_pinterest_trends.py` (Dolphin) | рост wow/mom/yoy + 2 года по неделям для кандидатов | `data/processed/pinterest_metrics.csv`, сырые кривые `data/raw/pinterest_trends/metrics_*.json` |
 | TikTok CC | `run_tiktok_cc.py` (Dolphin) | топ-100 хэштегов США за 90 дн, мода фильтруется по словам | `data/processed/candidates_tiktok_cc.csv` |
 | Amazon | `run_amazon.py` (Dolphin) | Best Sellers + New Releases, 8 женских разделов, снимки | `data/normalized/amazon/amazon_<дата>.parquet` |
-| Бренды | `run_retailers.py` (Dolphin) | новинки Zara/ASOS/Aritzia/Free People → признаки | `data/processed/retailer_attributes.csv` |
+| Бренды | `run_retailers.py` (Dolphin, подключается к ОТКРЫТОМУ профилю без перезапуска) | новинки Zara/ASOS/Aritzia/Free People/H&M/Urban Outfitters/Abercrombie (с 23.09; Mango — адрес не найден, 0 товаров) → признаки | `data/processed/retailer_attributes.csv` |
 | Подсказки | `run_autocomplete.py "<слово>" ...` | что дописывают в Google/YouTube/Amazon (цвет, фасон) | `data/processed/autocomplete_summary.csv` |
 | Google Shopping | `run_trends_bootstrap.py --shopping --all` | 2 года покупательского интереса (gprop=froogle); входит в проверку G | `data/normalized/google_trends_shopping/` |
 | Доп. сигналы (Dolphin) | `run_extra_signals.py --pinterest --amazon` | другие формулировки для Pinterest Trends (`VARIANTS`); Amazon: сумма «N+ bought in past month» на 1-й странице поиска | `data/raw/pinterest_trends/variants_*.json`, `data/processed/amazon_bought.csv` |

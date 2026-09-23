@@ -30,7 +30,13 @@ SITES = {
     "asos": ("https://www.asos.com/us/women/new-in/new-in-clothing/cat/?cid=2623", r"/prd/\d+"),
     "aritzia": ("https://www.aritzia.com/us/en/new", r"/product/"),
     "freepeople": ("https://www.freepeople.com/new-clothes/", r"/shop/"),
+    # added 23.09.2026 (user: «да давай») — more brands, so the supply-side signal covers more items
+    "hm": ("https://www2.hm.com/en_us/women/new-arrivals/view-all.html", r"productpage\.\d+"),
+    "mango": ("https://shop.mango.com/us/en/c/women/new-now_56b5c5ed", r"/p/women/|_\d{8}"),
+    "urbanoutfitters": ("https://www.urbanoutfitters.com/womens-new-arrivals", r"/shop/"),
+    "abercrombie": ("https://www.abercrombie.com/shop/us/womens-new-arrivals", r"/shop/us/p/"),
 }
+DATA_DIR = Path(r"C:\Users\User\AppData\Roaming\dolphin_anty\browser_profiles\859648353\data_dir")
 SNAP_DIR = Path("data/normalized/retailers")
 SNAP_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -70,13 +76,27 @@ def parse(site, html, pattern, base):
     return rows
 
 
-def main():
-    only = sys.argv[1:]
+def cdp_endpoint():
+    """Attach to the ALREADY OPEN profile (keeps the user's tabs); start it only if it is not running."""
+    f = DATA_DIR / "DevToolsActivePort"
+    if f.exists():
+        port, ws = f.read_text().split()[:2]
+        try:
+            import requests
+            requests.get(f"http://127.0.0.1:{port}/json/version", timeout=5).raise_for_status()
+            return f"ws://127.0.0.1:{port}{ws}"
+        except Exception:
+            pass
     api = DolphinLocal(port=DolphinLocal.discover() or 3001)
     auto = start_with_retry(api, PROFILE, no_tabs=True)["automation"]
+    return f"ws://127.0.0.1:{auto['port']}{auto['wsEndpoint']}"
+
+
+def main():
+    only = sys.argv[1:]
     rows = []
     with sync_playwright() as p:
-        browser = p.chromium.connect_over_cdp(f"ws://127.0.0.1:{auto['port']}{auto['wsEndpoint']}")
+        browser = p.chromium.connect_over_cdp(cdp_endpoint())
         ctx = browser.contexts[0] if browser.contexts else browser.new_context()
         for site, (url, pattern) in SITES.items():
             if only and site not in only:
