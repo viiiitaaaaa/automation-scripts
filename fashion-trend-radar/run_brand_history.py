@@ -31,6 +31,18 @@ ITEMS = {
     "pea coat": r"pea ?coat|peacoat|double[- ]breasted (wool )?coat",
     "leather leggings": r"(leather|faux leather|pu|lthr).*(legging|lggng)",
     "scarf": r"scarf|scrf",
+    # radar candidates added 23.09 (names must match config/candidates.csv)
+    "triangle scarf": r"triangle.*(scarf|scrf)|(scarf|scrf).*triangle",
+    "bandana scarf": r"bandana",
+    "cashmere beanie": r"cashmere.*(beanie|hat)|(beanie|hat).*cashmere",
+    "knit poncho": r"poncho|pnch|cape",
+    "quilt coat": r"quilt(ed)?.*(coat|jacket|jckt)|qltd",
+    "utility jacket women": r"utility.*(jacket|jckt)|cargo (jacket|jckt)",
+    "knit hat": r"(knit|kn).*(hat|beanie)|beanie",
+    "ribbed beanie": r"rib(bed)?.*beanie",
+    "leather trench coat": r"(leather|lthr|faux leather).*trench|trench.*(leather|lthr)",
+    "blazer with patches": r"(blazer|blzr).*patch|patch.*(blazer|blzr)",
+    "leather leggings": r"(leather|faux leather|pu|lthr).*(legging|lggng)",
 }
 
 

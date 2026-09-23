@@ -17,7 +17,6 @@ from pathlib import Path
 import pandas as pd
 from playwright.sync_api import sync_playwright
 
-from build_dashboard import pinterest_discovery
 from run_retailers import cdp_endpoint
 
 BATCH = 10
@@ -38,8 +37,10 @@ def terms_to_fetch():
     cand = pd.read_csv("config/candidates.csv")
     col = "pinterest_term" if "pinterest_term" in cand else "candidate"
     ours = [t for t in cand[col].fillna(cand["candidate"]).tolist() if t]
-    disc, _ = pinterest_discovery()
-    items = [r["term"] for r in disc if r["kind"] == "item"]
+    # ALL concrete items of the discovery file (pinterest_discovery() already hides 18-24 items — that needs these ages)
+    from build_dashboard import PIN_THEME
+    d = pd.read_csv("data/processed/pinterest_discovery.csv")
+    items = d[~d["term"].str.contains(PIN_THEME, case=False, regex=True)]["term"].tolist()
     return list(dict.fromkeys(ours + items))
 
 
@@ -83,6 +84,9 @@ def main():
             page.close()
     CURVES.write_text(json.dumps(curves, ensure_ascii=False), encoding="utf-8")
     df = pd.DataFrame(demo_rows)
+    if DEMO.exists() and not df.empty:   # merge: never drop ages of terms not in this run
+        old = pd.read_csv(DEMO)
+        df = pd.concat([old[~old["term"].isin(df["term"])].drop(columns=["main_age"], errors="ignore"), df], ignore_index=True)
     if not df.empty:
         top = df[[f"age_{k}" for k in AGES]].astype(float)
         df["main_age"] = top.idxmax(axis=1).str.replace("age_", "")

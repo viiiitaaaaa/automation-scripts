@@ -64,7 +64,7 @@ def modifiers(cand, suggestion):
 
 
 def main():
-    cands = sys.argv[1:] or ["roll neck sweater", "hoco dress", "lace trim top"]
+    cands = sys.argv[1:] or pd.read_csv("config/candidates.csv")["candidate"].tolist()   # was a hardcoded old list (23.09 fix)
     rows = []
     for cand in cands:
         for src, fn in SOURCES.items():

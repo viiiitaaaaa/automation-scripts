@@ -135,7 +135,8 @@ def _instagram():
             top = [{"link": x.link, "likes": int(x.likes or 0), "date": str(x.taken_at)[:10]} for x in g.itertuples()]
         out[c] = {"tag": r["hashtag"], "per_day": None if pd.isna(r["posts_per_day"]) else float(r["posts_per_day"]),
                   "sampled": int(r["posts_sampled"]), "oldest": str(r["oldest"]),
-                  "likes_median": None if pd.isna(r["likes_median"]) else int(r["likes_median"]), "top": top}
+                  "likes_median": None if pd.isna(r["likes_median"]) else int(r["likes_median"]), "top": top,
+                  "sample": r["sample"] if "sample" in r and isinstance(r["sample"], str) else "recent"}
     return out
 
 
@@ -333,7 +334,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
-        rec["shop_curve"] = _split(shop[name]) if name in shop else None
+        rec["shop_curve"] = None   # Google Shopping removed 24.09.2026
         rec["youtube_curve"] = _split(yt[name]) if name in yt else None
         rows.append(rec)
     data = json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
@@ -566,7 +567,6 @@ __HEADER__
       const curves = bars(r.gvol && r.gvol.months, "Google · сколько раз искали за месяц (США, реальные числа; текущий месяц — оценка по неделям Google Trends)")
         + chart(r.pin_curve, "Pinterest · интерес 0–100" + (r.pin_alias ? ` · по фразе «${esc(r.pin_alias)}»` : ""))
         + chart(r.google_curve, "Google · интерес 0–100")
-        + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100")
         + ((r.amz_months || []).some((m) => m.label.includes("устарело"))
           ? bars(r.amz_months, "Amazon · сколько раз искали за месяц (США) — у сервиса только старые месяцы, свежее лето и осень он по этой фразе не отдаёт; в решениях радара не используется")
@@ -610,21 +610,21 @@ __HEADER__
         + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);
       if (r.amazon_bought_sum) foot.push(`<b>КУПИЛИ НА AMAZON</b> за месяц ≥ ${Number(r.amazon_bought_sum).toLocaleString("ru-RU")} шт. `
         + `(у ${r.amazon_bought_items} товаров с первой страницы поиска есть пометка «bought in past month»)`);
-      if (r.google_shop_yoy_pct !== null && r.google_shop_yoy_pct !== undefined)
-        foot.push(`<b>GOOGLE SHOPPING</b> 8 недель к прошлому году: ${r.google_shop_yoy_pct > 0 ? "+" : ""}${Math.round(r.google_shop_yoy_pct)}%`);
       if (r.ig && r.ig.sampled) {
         const ig = r.ig, pd = ig.per_day;
         const rate = pd === null ? "" : pd >= 1 ? `≈ ${pd} постов в день` : `≈ ${Math.round(pd * 7 * 10) / 10} постов в неделю`;
         const links = (ig.top || []).map((p) => `<a href="${esc(p.link)}" target="_blank" rel="noopener">${bigN(p.likes)} лайков, ${esc(p.date.slice(5))}</a>`).join(" · ");
-        foot.push(`<b>INSTAGRAM #${esc(ig.tag)}</b> ${rate} (последние ${ig.sampled} постов с ${esc(ig.oldest)}, весь мир)`
-          + (ig.likes_median !== null ? `, обычно ${bigN(ig.likes_median)} лайков` : "") + (links ? `<br>самые залайканные свежие: ${links}` : ""));
+        foot.push(ig.sample === "top"
+          ? `<b>INSTAGRAM #${esc(ig.tag)}</b> ${ig.sampled} лучших постов с ${esc(ig.oldest)} (свежие посты сервис сейчас не отдаёт — частоту не посчитать, проверка Instagram не засчитана)`
+            + (links ? `<br>самые залайканные: ${links}` : "")
+          : `<b>INSTAGRAM #${esc(ig.tag)}</b> ${rate} (последние ${ig.sampled} постов с ${esc(ig.oldest)}, весь мир)`
+            + (ig.likes_median !== null ? `, обычно ${bigN(ig.likes_median)} лайков` : "") + (links ? `<br>самые залайканные свежие: ${links}` : ""));
       }
       foot.push(r.retailer_brands ? `<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`
         : `<b>БРЕНДЫ</b> сейчас ни один из 8 брендов (Zara, ASOS, H&M, Mango, Aritzia, Free People, Urban Outfitters, Abercrombie) эту вещь в новинках не выпускает`);
       // a missing chart is a real answer, not a forgotten source — say why
       const none = [];
       if (!r.pin_curve) none.push("Pinterest — фразы нет в Pinterest Trends: он ведёт статистику только по запросам выше своего порога популярности (искали все формулировки)");
-      if (!r.shop_curve) none.push("Google Shopping — покупательских запросов слишком мало, Google отдаёт нули");
       if (!r.youtube_curve) none.push("YouTube — фразу почти не ищут на YouTube (за 2 года 1–2 ненулевые недели)");
       if (none.length) foot.push(`<b>НЕТ ГРАФИКА</b> ${none.map(esc).join("; ")}`);
       const ex = r.extra || {};

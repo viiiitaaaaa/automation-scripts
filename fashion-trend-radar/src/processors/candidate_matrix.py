@@ -334,16 +334,11 @@ def build_matrix(
             g_st = window_stats(h[~h["is_partial"].astype(bool)].sort_values("date")["interest"].tolist())
         r["google_yoy_pct"] = g_st["yoy_pct"] if g_st else None
         r["google_season_lift_prev"] = g_st["lift_prev"] if g_st else None
-        # Google Shopping: buying intent, same 8-weeks-vs-last-year comparison (sparse series are skipped)
-        s_st = None
-        if shopping_history is not None and not shopping_history.empty:
-            h = shopping_history[shopping_history["keyword"] == phrase]
-            s_st = window_stats(h[~h["is_partial"].astype(bool)].sort_values("date")["interest"].tolist())
-        r["google_shop_yoy_pct"] = s_st["yoy_pct"] if s_st else None
+        # Google Shopping removed 24.09.2026 (user: «там редко ищут» — mostly zeros for our items)
+        r["google_shop_yoy_pct"] = None
         # +1..3% over 8 weeks is noise, not growth -- same bar as Pinterest
         r["check_google"] = (bool(len(g_hits))
-                             or (r["google_yoy_pct"] is not None and r["google_yoy_pct"] >= MIN_YOY)
-                             or (r["google_shop_yoy_pct"] is not None and r["google_shop_yoy_pct"] >= MIN_YOY))
+                             or (r["google_yoy_pct"] is not None and r["google_yoy_pct"] >= MIN_YOY))
 
         # Pinterest: grew vs the same 8 weeks last year (not just the season)
         p_st = window_stats(pinterest_series[phrase]) if phrase in pinterest_series else None

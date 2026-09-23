@@ -93,8 +93,6 @@ def main():
             note.append(f"поиск Amazon {r['amazon_monthly_searches']:,.0f}/мес ({r['amazon_mcp_lift_pct']:+.0f}%)")
         if pd.notna(r["amazon_bought_sum"]):
             note.append(f"купили ≥{r['amazon_bought_sum']:,.0f}/мес")
-        if pd.notna(r["google_shop_yoy_pct"]):
-            note.append(f"Shopping {r['google_shop_yoy_pct']:+.0f}%")
         if pd.notna(r["tt_us_fresh"]):
             note.append(f"TikTok #{r['tt_hashtag']}: США свежих {r['tt_us_fresh']:.0f}/{r['tt_us_sampled']:.0f}")
         if pd.notna(r["tiktok_mcp_lift_pct"]):

@@ -75,29 +75,53 @@ def save_merged(df_new, path, key="candidate"):
     df_new.to_csv(path, index=False, encoding="utf-8-sig")
 
 
+def top_posts(tag):
+    """Routed treg endpoint (best of 4 providers, capped at $0.003/call so the $1 provider is never used)."""
+    global spent
+    h = dict(H, **{"Content-Type": "application/json", "X-Treg-Route-Max-Cost": "0.003"})
+    r = requests.post("https://treg.to/call/treg.instagram.hashtag.posts", headers=h, json={"hashtag": tag}, timeout=120)
+    spent += int(r.headers.get("X-Treg-Cost-Micro") or 0) / 1e6
+    d = r.json()
+    (RAW / f"{datetime.now():%Y%m%d_%H%M%S}_instagram-top_{tag}.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    out = []
+    for x in ((d.get("output") or {}).get("posts") or []):
+        if not x.get("taken_at") or not x.get("shortcode"):
+            continue
+        out.append({"link": f"https://www.instagram.com/p/{x['shortcode']}/",
+                    "taken_at": pd.Timestamp(x["taken_at"]).strftime("%Y-%m-%d %H:%M"),
+                    "likes": x.get("like_count"), "comments": x.get("comment_count"),
+                    "user": (x.get("owner") or {}).get("username", "") if isinstance(x.get("owner"), dict) else "",
+                    "caption": (x.get("caption") or "").replace("\n", " ")[:150]})
+    return out
+
+
 def main():
     cands = sys.argv[1:] or pd.read_csv("config/candidates.csv")["candidate"].tolist()
     summary, allposts = [], []
     for c in cands:
         tag = TAGS.get(c, c.replace(" ", "").lower())
+        sample = "recent"
         try:
             posts = recent_posts(tag)
         except (RuntimeError, ValueError) as e:
-            print(f"  {c}: {e}")
+            print(f"  {c}: {str(e)[:80]}")
             posts = []
+        if not posts:   # 23.09.2026: the TikHub «recent» route broke -> treg's routed endpoint (TOP posts, not recent)
+            posts, sample = top_posts(tag), "top"
+            print(f"  #{tag}: запасной вход — лучшие посты ({len(posts)})")
         for p in posts:
             p.update(candidate=c, hashtag=tag)
         allposts += posts
         times = sorted(datetime.strptime(p["taken_at"], "%Y-%m-%d %H:%M") for p in posts)
         span = (times[-1] - times[0]).total_seconds() / 86400 if len(times) > 1 else None
-        per_day = round(len(times) / max(span, 1 / 24), 1) if span is not None else None
+        per_day = round(len(times) / max(span, 1 / 24), 1) if span is not None and sample == "recent" else None
         likes = [p["likes"] for p in posts if p["likes"] is not None]
         summary.append({
             "candidate": c, "hashtag": tag, "posts_sampled": len(posts),
             "newest": times[-1].strftime("%Y-%m-%d") if times else "",
             "oldest": times[0].strftime("%Y-%m-%d") if times else "",
             "posts_per_day": per_day,
-            "likes_median": int(pd.Series(likes).median()) if likes else None,
+            "likes_median": int(pd.Series(likes).median()) if likes else None, "sample": sample,
             "date": str(date.today()),
         })
         s = summary[-1]
