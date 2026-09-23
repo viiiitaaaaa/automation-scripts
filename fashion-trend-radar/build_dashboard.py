@@ -79,11 +79,40 @@ def data_gaps(cand):
         {"what": "Насыщение рынка", "have": "нет",
          "why": "не собираем, сколько продавцов продают одно и то же", "fix": "отзывы и продавцы на Amazon по кандидату"},
         {"what": "Новые кандидаты", "have": f"{n} слов вручную",
-         "why": "радар проверяет только наш список, сам новое не ищет",
-         "fix": "автоподбор из Google rising, Pinterest Trends и признаков брендов"},
+         "why": "радар проверяет только наш список; новые вещи из Pinterest — в разделе «Новые вещи из Pinterest»",
+         "fix": "выбрать из раздела Pinterest, кого добавить в кандидаты; дальше — автоподбор из Google rising и брендов"},
         {"what": "Поставщики и маржа", "have": "нет", "why": "намеренно позже — только для прошедших радар",
          "fix": "после выбора вещи для теста"},
     ]
+
+
+# Pinterest discovery (run_pinterest_discovery.py): every growing term among US women with a garment word.
+# kind: item = a concrete thing (her rule «вещь, а не тема»), theme = outfit/ideas/aesthetic/noise.
+# season: ours = autumn-winter garment words, off = spring/summer or events, check = decide by the curve.
+PIN_THEME = (r"outfit|idea|aesthetic|inspo|look|styl|how to|diy|pattern|crochet|kids|\bmen\b|mens|boy|girl|baby|wedding|party|"
+             r"halloween|christmas|photo|pose|hoco|homecoming|school|senior|bleach|frutti|blonde blazer|supreme|silly|funny|yeet|"
+             r"vestidos|lab coat|straight jacket|marble hornets|masky|cat in the hat|white lies|danielle|toph|boots with out")
+PIN_OURS = (r"coat|trench|jacket|puffer|parka|beanie|scarf|sweater|cardigan|knit|wool|flannel|fleece|fur|suede|leather|corduroy|"
+            r"boots|turtleneck|roll neck|plaid|tartan|fall|autumn|winter|hoodie|blazer|vest|leggings")
+PIN_OFF = r"capri|shorts|swim|bikini|linen|summer|spring|sundress|prom|rain boots|crop top|tank|halter|beach|sandal"
+PIN_PICKS = {"trench coats", "long trench coat", "triangle scarf", "bandana scarf", "pea coat", "leather leggings"}
+
+
+def pinterest_discovery():
+    f = Path("data/processed/pinterest_discovery.csv")
+    if not f.exists():
+        return [], ""
+    df = pd.read_csv(f)
+    df["kind"] = df["term"].str.contains(PIN_THEME, case=False, regex=True).map({True: "theme", False: "item"})
+    ours = df["term"].str.contains(PIN_OURS, case=False, regex=True)
+    off = df["term"].str.contains(PIN_OFF, case=False, regex=True)
+    df["season"] = "check"
+    df.loc[ours, "season"] = "ours"
+    df.loc[off, "season"] = "off"
+    df["pick"] = df["term"].isin(PIN_PICKS)
+    df = df.sort_values("yoy", ascending=False, na_position="last")
+    stamp = datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y")
+    return json.loads(df.to_json(orient="records", force_ascii=False)), stamp
 
 
 def main():
@@ -101,6 +130,7 @@ def main():
     attrs = pd.read_csv(attrs_f) if attrs_f.exists() else pd.DataFrame()
     attrs = attrs[attrs["brands"] >= 2] if not attrs.empty else attrs
 
+    pin_disc, pin_disc_date = pinterest_discovery()
     payload = {
         "date": date.today().strftime("%d.%m.%Y"),
         # exact build time in the header: tells at a glance whether the viewer shows a stale copy
@@ -110,6 +140,8 @@ def main():
         "gaps": data_gaps(cand),
         "candidates": json.loads(cand.to_json(orient="records", force_ascii=False)),
         "attributes": json.loads(attrs.to_json(orient="records", force_ascii=False)) if not attrs.empty else [],
+        "pin_discovery": pin_disc,
+        "pin_discovery_date": pin_disc_date,
     }
     data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
 
@@ -270,6 +302,20 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .gap-fix { color: var(--muted); }
   .gap-fix::before { content: "→ "; }
 
+  .tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; max-height: 640px; overflow-y: auto; }
+  table.pd { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.pd th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font: 600 11.5px "JetBrains Mono", monospace;
+                color: var(--text-2); padding: 8px 12px; cursor: pointer; white-space: nowrap; user-select: none; }
+  table.pd td { padding: 7px 12px; border-top: 1px solid var(--border); white-space: nowrap; }
+  table.pd .r { text-align: right; font-variant-numeric: tabular-nums; font-family: "JetBrains Mono", monospace; font-size: 12.5px; }
+  table.pd tr.pick td:first-child { font-weight: 700; }
+  table.pd tr.pick td:first-child::before { content: "★ "; color: var(--watch); }
+  table.pd tr.theme td:first-child { color: var(--muted); }
+  .up { color: var(--pass); } .down { color: var(--bar-neg); }
+  .sz { font: 600 11px "JetBrains Mono", monospace; padding: 2px 8px; border-radius: 999px; }
+  .sz.ours { background: var(--test-bg); color: var(--test); }
+  .sz.off { background: var(--reject-bg); color: var(--reject); }
+  .sz.check { background: var(--watch-bg); color: var(--watch); }
   @media (max-width: 640px) {
     summary { grid-template-columns: 1fr auto; }
     .yoy { grid-column: 1 / -1; }
@@ -301,6 +347,24 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <section class="cands">
     __CURVES__
     <div class="list" id="list" hidden></div>
+  </section>
+
+  <section id="pin-disc">
+    <h2>Новые вещи из Pinterest</h2>
+    <p class="note">Растущие запросы Pinterest среди женщин в США, в которых есть название вещи (свитер, юбка, пальто…). Собрано через бизнес-вход в Pinterest Trends <span class="mono" id="pd-date"></span>. Рост — по сравнению с неделей, месяцем и годом раньше; «спрос» — индекс Pinterest (больше — чаще ищут). Звёздочка — мой совет добавить в кандидаты; решение за вами.</p>
+    <div class="filters" id="pd-filters">
+      <button data-f="ours" aria-pressed="true">Наш сезон, растут к году</button>
+      <button data-f="items" aria-pressed="false">Все вещи с ростом к году</button>
+      <button data-f="all" aria-pressed="false">Все запросы</button>
+    </div>
+    <div class="tbl-wrap"><table class="pd">
+      <thead><tr>
+        <th data-k="term">Запрос</th><th data-k="season">Сезон</th><th data-k="wow" class="r">Неделя</th>
+        <th data-k="mom" class="r">Месяц</th><th data-k="yoy" class="r">Год ▾</th><th data-k="volume_idx" class="r">Спрос</th>
+        <th data-k="list">Список</th></tr></thead>
+      <tbody id="pd-body"></tbody>
+    </table></div>
+    <p class="note" id="pd-count"></p>
   </section>
 
   <section class="grid2">
@@ -396,6 +460,34 @@ TEMPLATE = r"""<title>Trend Radar</title>
     document.querySelectorAll(".filters button").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
     render(b.dataset.f);
   }));
+
+  // Pinterest discovery table: filter buttons + click-to-sort headers
+  const PD = D.pin_discovery || [];
+  const SZ = { ours: "осень–зима", off: "не наш", check: "проверить" };
+  const LST = { growing: "растущие", seasonal: "сезонные" };
+  let pdFilter = "ours", pdKey = "yoy", pdDir = -1;
+  const num = (v) => v === null || v === undefined ? "—" : `<span class="${v > 0 ? "up" : v < 0 ? "down" : ""}">${v > 0 ? "+" : ""}${v >= 10000 ? "10000%+" : v + "%"}</span>`;
+  function renderPD() {
+    const rows = PD.filter((r) => pdFilter === "all" || (r.kind === "item" && (r.yoy ?? 0) >= 5 && (pdFilter === "items" || r.season === "ours")))
+      .sort((a, b) => { const x = a[pdKey], y = b[pdKey]; return (typeof x === "string" ? String(x).localeCompare(y) : (x ?? -1e9) - (y ?? -1e9)) * pdDir; });
+    $("pd-body").innerHTML = rows.map((r) => `<tr class="${r.pick ? "pick" : ""} ${r.kind === "theme" ? "theme" : ""}">
+      <td>${esc(r.term)}</td><td><span class="sz ${r.season}">${SZ[r.season]}</span></td>
+      <td class="r">${num(r.wow)}</td><td class="r">${num(r.mom)}</td><td class="r">${num(r.yoy)}</td>
+      <td class="r">${r.volume_idx ?? "—"}</td><td>${LST[r.list] || r.list}</td></tr>`).join("")
+      || '<tr><td colspan="7">Нет данных — запустите run_pinterest_discovery.py</td></tr>';
+    $("pd-count").textContent = `Показано ${rows.length} из ${PD.length} запросов.`;
+  }
+  $("pd-date").textContent = D.pin_discovery_date ? `(${D.pin_discovery_date})` : "";
+  document.querySelectorAll("#pd-filters button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("#pd-filters button").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+    pdFilter = b.dataset.f; renderPD();
+  }));
+  document.querySelectorAll("table.pd th").forEach((th) => th.addEventListener("click", () => {
+    const k = th.dataset.k; pdDir = pdKey === k ? -pdDir : (["term", "season", "list"].includes(k) ? 1 : -1); pdKey = k;
+    document.querySelectorAll("table.pd th").forEach((o) => o.textContent = o.textContent.replace(/ [▾▴]$/, ""));
+    th.textContent += pdDir < 0 ? " ▾" : " ▴"; renderPD();
+  }));
+  renderPD();
 
   $("channels").innerHTML =
     D.channels.map((ch) => `<div class="ch"><span class="dot ${ch.status}"></span><div><b>${ch.name}</b><small>${esc(ch.note)}</small></div></div>`).join("") +
