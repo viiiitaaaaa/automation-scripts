@@ -168,6 +168,13 @@ YouTube) с зелёной полосой «последние 8 недель» 
 
 ## Грабли
 
+- **Pinterest-поиск новых вещей** — `run_pinterest_discovery.py` (23.09, без API, через бизнес-вход в открытом
+  Dolphin 3): `/top_trends_filtered/` с фильтрами страницы `keywordsToInclude=<вещь>`, `gender=2` (женщины),
+  `trendsPreset` 3 = растущие, 1 = сезонные; ещё есть `ageBucket` (AGE_25_34…), `keywordsToExclude`,
+  `l1InterestIds` (948967005229 = женская мода, этот endpoint его пока игнорирует). `keywordsToInclude` ищет
+  кусок слова («coat» → «coating») — отбирать по целому слову. Результат `data/processed/pinterest_discovery.csv`
+  → кандидатов добавляет пользователь (список кандидатов она ведёт сама).
+
 - **Pinterest `/metrics/`** отдаёт рост долями (0.3 = +30%); обязательные параметры country,
   end_date, days=730, aggregation=2, normalize_against_group=false, predicted_days=0.
 - **TikTok CC**: URL-параметр периода игнорируется — переписывать `timeRange` в теле
