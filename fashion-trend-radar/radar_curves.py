@@ -163,6 +163,24 @@ def _tiktok_shop():
     return out
 
 
+def _who_where():
+    """candidate -> {age:[{label, v}], female, male, states:[(state, value)]} (DataForSEO Trends, US, 12 months)."""
+    fd, fs = Path("data/processed/d4s_demography.csv"), Path("data/processed/d4s_states.csv")
+    if not fd.exists():
+        return {}
+    d = pd.read_csv(fd)
+    s = pd.read_csv(fs) if fs.exists() else pd.DataFrame(columns=["candidate", "state", "value"])
+    out = {}
+    for c, g in d.groupby("candidate"):
+        age = g[g["group"] == "age"]
+        gen = g[g["group"] == "gender"].set_index("type")["value"]
+        top = s[s["candidate"] == c].sort_values("value", ascending=False).head(5)
+        out[c] = {"age": [{"label": t, "v": int(v)} for t, v in zip(age["type"], age["value"])],
+                  "female": int(gen.get("female", 0)), "male": int(gen.get("male", 0)),
+                  "states": [[x.state, int(x.value)] for x in top.itertuples()]}
+    return out
+
+
 MONTHS = "янв фев мар апр май июн июл авг сен окт ноя дек".split()
 
 
@@ -198,6 +216,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     aliases = pinterest_aliases()
     amz, ttw, ig = _amazon_months(), _tiktok_weeks(), _instagram()
     gvol, ttshop = _google_volume(), _tiktok_shop()
+    who = _who_where()
     # colour follows the item (color_slot 1-8 in config/candidates.csv, else its place there), never its rank on the page
     cfg = pd.read_csv("config/candidates.csv")
     order = {c: i for i, c in enumerate(cfg["candidate"])}
@@ -223,6 +242,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
         rec["ig"] = ig.get(name)
         rec["gvol"] = gvol.get(name)
         rec["shop"] = ttshop.get(name)
+        rec["who"] = who.get(name)
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -462,6 +482,7 @@ __HEADER__
         + chart(r.shop_curve, "Google Shopping · покупательский интерес 0–100")
         + chart(r.youtube_curve, "YouTube · поиск 0–100")
         + bars(r.amz_months, "Amazon · сколько раз искали за месяц (США; последний полный месяц — сервис отдаёт месяц после его окончания)")
+        + bars(r.who && r.who.age, "Кто ищет в Google США · возраст (0–100, 100 — самая активная группа)")
         + bars(r.tt_weeks, `TikTok США · новых видео в неделю под #${esc(r.tt_hashtag || "")} (по выборке до 90 видео)`);
       const foot = [];
       if (r.gvol && r.gvol.avg !== null) {
@@ -469,6 +490,11 @@ __HEADER__
         foot.push(`<b>GOOGLE США</b> в среднем ${bigN(g.avg)} поисков в месяц, в последний месяц ${bigN(g.last)}`
           + (g.last_vs_avg !== null ? ` (${g.last_vs_avg > 0 ? "+" : ""}${g.last_vs_avg}% к среднему за год)` : "")
           + (g.cpc ? `; клик в рекламе ~$${g.cpc.toFixed(2)}` : ""));
+      }
+      if (r.who) {
+        const w = r.who, tot = w.female + w.male;
+        foot.push(`<b>КТО И ГДЕ ИЩЕТ</b> женщины ${tot ? Math.round(w.female / tot * 100) : "—"}%, мужчины ${tot ? Math.round(w.male / tot * 100) : "—"}%`
+          + (w.states.length ? `; больше всего интереса в штатах: ${w.states.map((s) => esc(s[0]) + " " + s[1]).join(", ")}` : ""));
       }
       if (r.shop && r.shop.products) {
         const s = r.shop;

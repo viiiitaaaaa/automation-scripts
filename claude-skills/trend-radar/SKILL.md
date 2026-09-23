@@ -66,6 +66,7 @@ description: Мультиканальный тренд-радар женской
 | Instagram по нашим хэштегам | `run_instagram_tags.py ["<слово>" ...]` | treg → TikHub v2 `feed_type=recent`, $0.002/запрос, 3 страницы по 12 постов (~$0.124 за 22); страны нет — весь мир; частота «постов в день» по последним ~36 постам + самые залайканные свежие. Пока только информация на карточке, не голос | `data/processed/instagram_tags.csv`, `instagram_tag_posts.csv` |
 | Объём поиска Google (США) | `run_google_volume.py` | DataForSEO через treg: **$0.09 за ОДИН запрос на все слова** (не запускать дважды!) — реальные поиски в месяц за 12 мес, CPC; на карточке столбики + «последний месяц к среднему» | `data/processed/google_volume.csv`, `google_volume_monthly.csv` |
 | TikTok Shop (США) | `run_tiktok_shop.py [--from-raw]` | TikHub через treg, $0.001: 1-я страница поиска (до 30 товаров) — **сколько продано**, цены, продавцы, ссылки. `--from-raw` перечитывает сегодняшние ответы бесплатно. Ответ TikHub обёрнут дважды: `data.data.products` | `data/processed/tiktok_shop.csv`, `tiktok_shop_products.csv` |
+| Кто и где ищет (США) | `run_d4s_trends.py [--from-raw]` | DataForSEO Trends через treg (эндпоинты `…-trends-subregion-interests-live`, `…-trends-demography-live`, $0.0024 на 5 слов каждый; в каталоге treg не показаны, но вызываются): интерес по штатам, возраст, пол; на карточке — столбики возраста и строка «кто и где» | `data/processed/d4s_states.csv`, `d4s_demography.csv` |
 | TikTok тренды дня | `run_tiktok_trending.py [страниц]` | общемировая лента «Интересное» (~10 видео на запрос) + трендовые поисковые запросы; не про моду | `data/processed/tiktok_trending_<дата>.csv` |
 | Trends MCP | `run_trendsmcp.py ["<слово>" ...]` | Amazon: поиски в месяц (4 мес) + рост к прошлому месяцу; TikTok: объём хэштега по дням (только крупные хэштеги). 1 запрос = 1 вещь × 1 источник, кэш 7 дней | `data/processed/trendsmcp.csv` |
 
@@ -181,6 +182,12 @@ YouTube) с зелёной полосой «последние 8 недель» 
   месяца × (среднее полных недель текущего месяца / среднее недель прошлого) по Google Trends. У Amazon — подпись.
 - **Instagram седьмой свидетель** (23.09): I = ≥1 пост в день и последний пост ≤7 дней. Пороги на 7 проверок:
   5–7 тестировать, 3–4 наблюдать, 0–2 отказ (`TEST_MIN`, `WATCH_MIN`).
+- **Профиль 3 можно открыть БЕЗ перезапуска** (вкладки пользователя остаются): порт отладки лежит в
+  `…\dolphin_anty\browser_profiles\859648353\data_dir\DevToolsActivePort` → `connect_over_cdp`, открывать свою
+  вкладку и закрывать только её (`run_tiktok_top_products.py`).
+- **TikTok Creative Center «Top Products» больше нет** (23.09): после переезда в TikTok One — только Hashtag
+  (Creator «coming soon»), и в TikTok One пользователь не залогинена. **trendsapi.ai = тот же Trends MCP**,
+  тем же ключом те же 90 дней. Официальный Google Trends API (альфа) — только по заявкам.
 - **Pinterest-поиск через treg (scrapecreators)** отдаёт только id/ссылки пинов, без дат и сохранений — бесполезен, не подключать.
 - **Ответы TikHub обёрнуты дважды** (`data.data.…`) — у Instagram, TikTok Shop; парсить через `data.get("data") or data`.
 - **Instagram «recent» у редких хэштегов** отдаёт и старые посты (2017–2021) — частота тогда ≈ 0, это «хэштег мёртвый».
