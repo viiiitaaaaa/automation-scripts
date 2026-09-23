@@ -93,7 +93,7 @@ def data_gaps(cand):
 # season: ours = autumn-winter garment words, off = spring/summer or events, check = decide by the curve.
 PIN_THEME = (r"outfit|idea|aesthetic|inspo|look|styl|how to|diy|pattern|crochet|kids|\bmen\b|mens|boy|girl|baby|wedding|party|"
              r"halloween|christmas|photo|pose|hoco|homecoming|school|senior|bleach|frutti|blonde blazer|supreme|silly|funny|yeet|"
-             r"vestidos|lab coat|straight jacket|marble hornets|masky|cat in the hat|white lies|danielle|toph|boots with out")
+             r"vestidos|lab coat|straight jacket|coat of arms|marble hornets|masky|cat in the hat|white lies|danielle|toph|boots with out")
 PIN_OURS = (r"coat|trench|jacket|puffer|parka|beanie|scarf|sweater|cardigan|knit|wool|flannel|fleece|fur|suede|leather|corduroy|"
             r"boots|turtleneck|roll neck|plaid|tartan|fall|autumn|winter|hoodie|blazer|vest|leggings")
 PIN_OFF = r"capri|shorts|swim|bikini|linen|summer|spring|sundress|prom|rain boots|crop top|tank|halter|beach|sandal"
@@ -126,9 +126,47 @@ def pinterest_discovery():
         # user 23.09.2026: audience from 28; Pinterest skews young for everything -> "young" = below a typical Pinterest item
         df["young"] = df["aud28"] < AUD28_MIN_PINTEREST
         df["female"] = df["term"].map((demo["female"] * 100).round())
+        # user 23.09.2026: items whose main audience is 18-24 are removed completely, not just marked
+        df = df[df["age"] != "18-24"]
     df = df.sort_values("yoy", ascending=False, na_position="last")
-    stamp = datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y")
+    stamp =datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y")
     return json.loads(df.to_json(orient="records", force_ascii=False)), stamp
+
+
+FASHION_DATA = Path("C:/Users/User/tg_monitor/fashion_data.json")   # written by tg_monitor/news.py --build
+
+
+def fashion_section():
+    """«Мода — ориентиры»: fashion Telegram channels as a guide for the radar (merged into this page 23.09.2026)."""
+    import html as H
+    if not FASHION_DATA.exists():
+        return ""
+    d = json.loads(FASHION_DATA.read_text(encoding="utf-8"))
+    a = lambda p: f'<a href="{H.escape(p["link"])}" target="_blank" rel="noopener">{H.escape(p["title"])}</a>'
+    themes = "".join(f'<div class="fz-theme"><b>{H.escape(t["theme"])}</b> <span class="mono">{len(t["posts"])} постов</span><br>'
+                     + " · ".join(a(p) for p in t["posts"][:5]) + "</div>" for t in d["themes"])
+    phrases = "".join(f'<tr><td><code>{H.escape(p["phrase"])}</code></td><td>' + " · ".join(a(x) for x in p["posts"]) + "</td></tr>"
+                      for p in d["phrases"])
+    cards = ""
+    for c in d["cards"]:
+        body = "".join(f"<p>{H.escape(x)}</p>" for x in c["summary"])
+        if c["for_us"]:
+            body += f'<p class="fz-us"><b>Для нас:</b> {H.escape(c["for_us"])}</p>'
+        if c["radar"]:
+            body += '<p class="fz-us"><b>Проверить в радаре:</b> ' + ", ".join(f"<code>{H.escape(r)}</code>" for r in c["radar"]) + "</p>"
+        cards += (f'<article class="fz-card"><div class="fz-meta mono">{H.escape(c["channel"])} · {c["date"]}</div>'
+                  f'<h3>{H.escape(c["headline"])}</h3>{body}'
+                  f'<a href="{H.escape(c["link"])}" target="_blank" rel="noopener">Открыть пост в Telegram ↗</a></article>')
+    return f"""<section id="fashion">
+    <h2>Мода — ориентиры из Telegram</h2>
+    <p class="note">Новости модных Telegram-каналов — не сами по себе, а как подсказка, какие вещи, цвета и детали проверить здесь
+    на спросе в США. Обновлено {H.escape(d["updated"])} (команда «новости»).</p>
+    <h3 class="fz-h">Что повторяется <span class="mono">тема в 2+ постах</span></h3>
+    <div class="fz-themes">{themes or '<p class="note">Пока ничего не повторяется.</p>'}</div>
+    <h3 class="fz-h">Проверить в радаре <span class="mono">{len(d["phrases"])} фраз, как ищут в США</span></h3>
+    <div class="tbl-wrap"><table class="fz-ph">{phrases}</table></div>
+    <details class="fz-news"><summary>Новости модных каналов ({len(d["cards"])})</summary><div class="fz-cards">{cards}</div></details>
+  </section>"""
 
 
 def main():
@@ -162,7 +200,7 @@ def main():
     data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
 
     curves = build_block(cand, with_header=False, date_str=payload["date"])
-    html = TEMPLATE.replace("__CURVES__", curves).replace("__DATA__", data_json)
+    html = TEMPLATE.replace("__FASHION__", fashion_section()).replace("__CURVES__", curves).replace("__DATA__", data_json)
     out = Path("data/reports/trend_radar_dashboard.html")
     out.write_text(html, encoding="utf-8")
     print(f"Сохранено: {out} ({len(cand)} кандидатов), обновлено {payload['updated']}")
@@ -332,6 +370,23 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .sz.ours { background: var(--test-bg); color: var(--test); }
   .sz.off { background: var(--reject-bg); color: var(--reject); }
   .sz.check { background: var(--watch-bg); color: var(--watch); }
+  .fz-h { font: 600 15px "Work Sans", sans-serif; margin: 18px 0 8px; }
+  .fz-h .mono { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .fz-themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 8px; }
+  .fz-theme { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 13px; }
+  .fz-theme b { font-size: 15px; }
+  .fz-theme .mono { font-size: 11px; color: var(--muted); }
+  table.fz-ph { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.fz-ph td { padding: 7px 12px; border-top: 1px solid var(--border); vertical-align: top; }
+  details.fz-news { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; }
+  details.fz-news summary { display: list-item; list-style: disclosure-closed; padding: 0; font-weight: 600; cursor: pointer; }
+  details.fz-news[open] summary { list-style: disclosure-open; margin-bottom: 10px; }
+  .fz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 10px; }
+  .fz-card { background: var(--page); border-radius: 12px; padding: 12px 14px; font-size: 13px; }
+  .fz-card h3 { font: 700 14.5px "Work Sans", sans-serif; margin: 4px 0 6px; }
+  .fz-card p { margin: 0 0 6px; color: var(--text-2); }
+  .fz-meta { font-size: 11px; color: var(--muted); }
+  .fz-us { border-left: 3px solid var(--pass-bg); padding-left: 8px; }
   @media (max-width: 640px) {
     summary { grid-template-columns: 1fr auto; }
     .yoy { grid-column: 1 / -1; }
@@ -344,7 +399,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <h1>Какие вещи подтверждают сразу несколько каналов</h1>
   <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата независимыми «свидетелями» и считает, сколько из них видят рост.</p>
   <p class="updated">Обновлено <b class="mono" id="dt"></b> — если здесь старое время, нажмите F5</p>
-  <p class="updated"><a href="https://claude.ai/artifact/YJuHzoABX1RT98tBBLzWSU" target="_blank" rel="noopener">Мода — ориентиры из Telegram-каналов ↗</a> — что повторяется в модных новостях и какие вещи проверить здесь</p>
+  <p class="updated"><a href="#fashion">Мода — ориентиры из Telegram ↓</a> — что повторяется в модных новостях и какие вещи проверить здесь</p>
   <div class="stats" id="stats"></div>
   <details class="howto">
   <summary>Как читать радар: правила решений и буквы каналов</summary>
@@ -367,9 +422,11 @@ TEMPLATE = r"""<title>Trend Radar</title>
     <div class="list" id="list" hidden></div>
   </section>
 
+  __FASHION__
+
   <section id="pin-disc">
     <h2>Новые вещи из Pinterest</h2>
-    <p class="note">Растущие запросы Pinterest среди женщин в США, в которых есть название вещи (свитер, юбка, пальто…). Собрано через бизнес-вход в Pinterest Trends <span class="mono" id="pd-date"></span>. Рост — по сравнению с неделей, месяцем и годом раньше; «спрос» — индекс Pinterest (больше — чаще ищут). «28+» — доля интереса от людей 28 лет и старше; красным — аудитория моложе, чем у типичной вещи Pinterest (Pinterest в целом молодой: обычно 43–51%). Звёздочка — мой совет добавить в кандидаты; решение за вами.</p>
+    <p class="note">Растущие запросы Pinterest среди женщин в США, в которых есть название вещи (свитер, юбка, пальто…). Вещи, которыми больше всего интересуются 18–24-летние, убраны совсем (решение 23.09: не наша аудитория). Собрано через бизнес-вход в Pinterest Trends <span class="mono" id="pd-date"></span>. Рост — по сравнению с неделей, месяцем и годом раньше; «спрос» — индекс Pinterest (больше — чаще ищут). «28+» — доля интереса от людей 28 лет и старше; красным — аудитория моложе, чем у типичной вещи Pinterest (Pinterest в целом молодой: обычно 43–51%). Звёздочка — мой совет добавить в кандидаты; решение за вами.</p>
     <div class="filters" id="pd-filters">
       <button data-f="ours" aria-pressed="true">Наш сезон и аудитория 28+, растут к году</button>
       <button data-f="items" aria-pressed="false">Все вещи с ростом к году</button>

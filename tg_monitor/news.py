@@ -49,8 +49,9 @@ TREND_CHANNELS = {"now_trends", "moda_po_sprosu", "odezhda_stil_moda", "shop_sek
                   "runtobuy", "svetlana_nechego_nadet", "moda_vtelege", "my_image_and_style", "valeri_bloc", "pro_reelss",
                   "promty_by_irri", "photopingvin_ai", "BrandAnalytics", "thetrends_journal"}
 COLORS = ["#4F7358", "#43618A", "#A97A45", "#3E6E6B", "#7A5C8A", "#8A5A4F", "#5C6E3E"]
-FASHION_OUT = BASE / "fashion_panel.html"
-FASHION_URL = "https://claude.ai/artifact/YJuHzoABX1RT98tBBLzWSU"
+FASHION_OUT = BASE / "fashion_panel.html"   # old separate page, kept only as a local copy
+FASHION_DATA = BASE / "fashion_data.json"   # -> «Мода — ориентиры» section of the radar dashboard
+FASHION_URL = "https://claude.ai/artifact/7XN5rKYANe4QX8HwRHKNZF#fashion"   # merged into the radar 23.09
 RADAR_URL = "https://claude.ai/artifact/7XN5rKYANe4QX8HwRHKNZF"
 
 
@@ -74,6 +75,19 @@ def build_fashion(rows, notes, t_biz, t_tool, t_soft):
         f'<tr><td><code class="inline">{html.escape(p)}</code></td><td>'
         + " · ".join(f'<a href="{u}" target="_blank" rel="noopener">{html.escape(h)}</a>' for h, u in s) + "</td></tr>"
         for p, s in sorted(phrases.items(), key=lambda x: (-len(x[1]), x[0])))
+    # data for the «Мода — ориентиры» section of the trend radar dashboard (user 23.09.2026: merge the two pages)
+    cards = []
+    for r in rows:
+        n = notes[f"{r[0]}/{r[1]}"]
+        cards.append({"channel": r[0], "date": local(r[2]).strftime("%d.%m"), "cat": n.get("cat"),
+                      "headline": n.get("headline", ""), "summary": n.get("summary", []), "for_us": n.get("for_us", ""),
+                      "radar": n.get("radar", []), "link": f"https://t.me/{r[0]}/{r[1]}"})
+    FASHION_DATA.write_text(json.dumps({
+        "updated": datetime.now().astimezone().strftime("%d.%m.%Y %H:%M"),
+        "themes": [{"theme": t, "posts": [{"title": h, "link": u} for h, u in s]} for t, s in rep],
+        "phrases": [{"phrase": p, "posts": [{"title": h, "link": u} for h, u in s]}
+                    for p, s in sorted(phrases.items(), key=lambda x: (-len(x[1]), x[0]))],
+        "cards": cards}, ensure_ascii=False, indent=1), encoding="utf-8")
     style = re.search(r"<style>.*?</style>", TEMPLATE, re.S).group(0)
     fonts = re.search(r'<link rel="stylesheet"[^>]+>', TEMPLATE).group(0)
     upd = datetime.now().astimezone()
@@ -237,7 +251,7 @@ def build(conn, state, notes):
     fashion_rows = [r for r in rows if r[0] in TREND_CHANNELS and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in ("biz", "tool", "soft")]
     build_fashion(fashion_rows, notes, t_biz, t_tool, t_soft)
     main_html.append(f'<a class="fashion-link" href="{FASHION_URL}" target="_blank" rel="noopener">'
-                     f'<b>Мода и тренды — отдельная страница ↗</b><span>{len(fashion_rows)} новостей из модных каналов '
+                     f'<b>Мода и тренды — в дашборде радара трендов ↗</b><span>{len(fashion_rows)} новостей из модных каналов '
                      'и что из них проверить в радаре трендов</span></a>')
     # posts the site hides ("Please open Telegram"): never silently skipped — shown until retold in notes
     hidden = [r for r in rows if r[3] == tm.HIDDEN and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in (None, "skip")]
