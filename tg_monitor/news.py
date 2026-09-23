@@ -165,6 +165,13 @@ def build(conn, state, notes):
 
     biz, tool, soft = column("biz"), column("tool"), column("soft")
     main_html = [f'<div class="cols"><div class="col">{biz}</div><div class="col">{tool}</div></div>', soft]
+    # posts the site hides ("Please open Telegram"): never silently skipped — shown until retold in notes
+    hidden = [r for r in rows if r[3] == tm.HIDDEN and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in (None, "skip")]
+    if hidden:
+        main_html.insert(0, '<div class="hidden-posts"><b>Не прочитала — Telegram не показывает эти посты на сайте, откройте в приложении:</b> '
+                         + " · ".join(f'<a href="https://t.me/{r[0]}/{r[1]}" target="_blank" rel="noopener">'
+                                      f'{html.escape(r[0])}, {ru_date(local(r[2]))} {local(r[2]):%H:%M} ↗</a>' for r in hidden)
+                         + "</div>")
 
     # Свежие курсы из канала-каталога: название, цена, размер; пометка «зачем», если есть в notes
     courses = []
@@ -343,6 +350,10 @@ TEMPLATE = """<title>Рабочая панель</title>
   .installed { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--biz-bg);
                border: 1px solid var(--biz-border); border-radius: 12px; padding: 10px 14px; }
   .installed b { color: var(--biz); }
+  .hidden-posts { margin-bottom: 16px; font-size: 14px; color: var(--ink-soft); background: var(--soft-bg);
+                  border: 1px solid var(--soft-border); border-radius: 12px; padding: 10px 14px; line-height: 1.7; }
+  .hidden-posts b { color: var(--ink); }
+  .hidden-posts a { color: var(--tool); font-weight: 600; white-space: nowrap; }
   .installed span { font-weight: 600; color: var(--ink); }
   .src { font-size: 12px; text-decoration: none; }
   code.inline { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--border-soft); padding: 1px 6px;

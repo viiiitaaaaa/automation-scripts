@@ -34,6 +34,7 @@ HEADERS = {
 
 REQUEST_TIMEOUT = 20
 REQUEST_DELAY = 2  # пауза между запросами, чтобы не долбить сайт часто
+HIDDEN = "[Telegram не показывает этот пост на сайте — открыть в приложении]"
 
 
 def init_db():
@@ -90,6 +91,8 @@ def parse_posts(html):
 
         text_tag = wrap.select_one("div.tgme_widget_message_text")
         text = text_tag.get_text("\n").strip() if text_tag else ""
+        if not text and wrap.select_one(".message_media_not_supported"):
+            text = HIDDEN  # Telegram shows "Please open Telegram to view this post" instead of the content
 
         photos = []
         for photo_wrap in wrap.select(".tgme_widget_message_photo_wrap"):
