@@ -73,6 +73,8 @@ def hashtag_matches(spec: CandidateSpec, hashtag: str) -> bool:
 WINDOW = 8          # weeks compared against the same weeks a year earlier
 SEASON_LIFT = 20    # % rise last year in these weeks that marks a recurring season
 MIN_YOY = 5         # % growth for every growth check (user decision 22.09.2026: was 15)
+# Amazon search volume (Trends MCP) doesn't know some phrases -> the closest wording it knows (checked 23.09)
+AMAZON_SEARCH_ALIAS = {"roll neck sweater": "turtleneck sweater"}
 MIN_NONZERO = 0.5   # share of weeks with data; below this the series is too sparse to judge
 TT_MIN_FRESH = 5          # TikTok check: >= 5 US videos under our hashtag posted in the last 30 days
 TT_MIN_FRESH_SHARE = 0.4  # ... and they are >= 40% of the US videos TikTok returns for the tag
@@ -391,6 +393,10 @@ def build_matrix(
         r["amazon_bought_sum"] = int(b["bought_sum"]) if b is not None else None
         r["amazon_bought_items"] = int(b["items_with_bought"]) if b is not None else None
         r["amazon_mcp_lift_pct"], vol = mcp_lift(phrase, "amazon")
+        r["amazon_search_phrase"] = phrase
+        if not vol and phrase in AMAZON_SEARCH_ALIAS:   # Trends MCP doesn't know the phrase -> the closest one it knows
+            r["amazon_mcp_lift_pct"], vol = mcp_lift(AMAZON_SEARCH_ALIAS[phrase], "amazon")
+            r["amazon_search_phrase"] = AMAZON_SEARCH_ALIAS[phrase]
         r["amazon_monthly_searches"] = int(vol) if vol else None
         r["check_amazon"] = len(a_hits) >= 2 or (r["amazon_mcp_lift_pct"] is not None
                                                   and r["amazon_mcp_lift_pct"] >= MIN_YOY)

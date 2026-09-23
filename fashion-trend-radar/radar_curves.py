@@ -560,8 +560,14 @@ __HEADER__
         foot.push(`<b>TIKTOK SHOP США</b> у ${s.products} похожих товаров продано ${bigN(s.sold_total)} шт., продавцов ${s.sellers}`
           + (s.price_median ? `, цена обычно $${s.price_median.toFixed(0)}` : "") + (links ? `<br>самые продаваемые: ${links}` : ""));
       }
-      if (r.amazon_items) foot.push(`<b>AMAZON</b> ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`);
-      if (r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
+      // Amazon lines are always shown: an empty source says why instead of silently disappearing
+      foot.push(r.amazon_items ? `<b>AMAZON</b> в хитах и новинках ${r.amazon_items} шт, медиана $${Number(r.amazon_median_price).toFixed(2)}`
+        : `<b>AMAZON</b> в хитах и новинках женской одежды этой вещи нет`);
+      if (!r.amazon_monthly_searches) foot.push(`<b>ПОИСК AMAZON</b> нет данных — Trends MCP не знает эту фразу и похожие`);
+      else if (r.amazon_search_phrase && r.amazon_search_phrase !== r.candidate)
+        foot.push(`<b>ПОИСК AMAZON</b> по близкой фразе «${esc(r.amazon_search_phrase)}»: ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
+          + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);
+      else foot.push(`<b>ПОИСК AMAZON</b> ${Math.round(r.amazon_monthly_searches / 1000)} тыс./мес, `
         + `${r.amazon_mcp_lift_pct > 0 ? "+" : ""}${Math.round(r.amazon_mcp_lift_pct)}% к прошлому месяцу`);
       if (r.amazon_bought_sum) foot.push(`<b>КУПИЛИ НА AMAZON</b> за месяц ≥ ${Number(r.amazon_bought_sum).toLocaleString("ru-RU")} шт. `
         + `(у ${r.amazon_bought_items} товаров с первой страницы поиска есть пометка «bought in past month»)`);
