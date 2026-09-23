@@ -181,6 +181,43 @@ def _who_where():
     return out
 
 
+def _extras():
+    """candidate -> {sat, pin_demo, brands_hist}: Amazon saturation (run_saturation.py), Pinterest age/gender
+    (run_pinterest_extra.py) and brand new-arrivals over 2 years from the web archive (run_brand_history.py)."""
+    out = {}
+    f = Path("data/processed/amazon_saturation.csv")
+    if f.exists():
+        for r in pd.read_csv(f).itertuples():
+            out.setdefault(r.candidate, {})["sat"] = {
+                "results": None if pd.isna(r.results) else int(r.results), "brands": int(r.brands_page1),
+                "median_reviews": None if pd.isna(r.median_reviews) else int(r.median_reviews),
+                "share_1000": None if pd.isna(r.share_1000_reviews) else float(r.share_1000_reviews),
+                "price": None if pd.isna(r.median_price) else float(r.median_price)}
+    f = Path("data/processed/pinterest_demographics.csv")
+    if f.exists():
+        d = pd.read_csv(f).set_index("term")
+        for c in pd.read_csv("config/candidates.csv")["candidate"]:
+            if c in d.index:
+                x = d.loc[c]
+                ages = {k[4:]: x[k] for k in d.columns if k.startswith("age_") and pd.notna(x[k])}
+                top = sorted(ages.items(), key=lambda kv: -kv[1])[:2]
+                out.setdefault(c, {})["pin_demo"] = {"top": [[a, round(v * 100)] for a, v in top],
+                                                     "female": None if pd.isna(x["female"]) else round(x["female"] * 100)}
+    f = Path("data/processed/brand_history.csv")
+    if f.exists():
+        h = pd.read_csv(f)
+        h["month"] = pd.to_datetime(h["month"])
+        last = h["month"].max()
+        now = h[h["month"] > last - pd.DateOffset(months=3)]
+        ago = h[(h["month"] > last - pd.DateOffset(months=15)) & (h["month"] <= last - pd.DateOffset(months=12))]
+        for c in [col for col in h.columns if col not in ("brand", "month", "items")]:
+            share = lambda g: g[c].sum() / g["items"].sum() * 100 if g["items"].sum() else None
+            out.setdefault(c, {})["brands_hist"] = {"now": share(now), "ago": share(ago),
+                                                    "now_n": int(now[c].sum()), "ago_n": int(ago[c].sum()),
+                                                    "months": int(h["month"].nunique())}
+    return out
+
+
 def _variants(n=8):
     """candidate -> [[phrase, volume]] most searched versions of the item (run_variant_volumes.py), seed excluded."""
     f = Path("data/processed/variant_volumes.csv")
@@ -232,6 +269,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
     gvol, ttshop = _google_volume(), _tiktok_shop()
     who = _who_where()
     variants = _variants()
+    extras = _extras()
     # colour follows the item (color_slot 1-8 in config/candidates.csv, else its place there), never its rank on the page
     cfg = pd.read_csv("config/candidates.csv")
     order = {c: i for i, c in enumerate(cfg["candidate"])}
@@ -259,6 +297,7 @@ def build_block(cand: pd.DataFrame, with_header: bool, date_str: str, archive_no
         rec["shop"] = ttshop.get(name)
         rec["who"] = who.get(name)
         rec["variants"] = variants.get(name, [])
+        rec["extra"] = extras.get(name, {})
         rec["pin_curve"] = _split(pin[name]) if name in pin else None
         rec["pin_alias"] = aliases.get(name, "")
         rec["google_curve"] = _split(goo[name]) if name in goo else None
@@ -536,6 +575,21 @@ __HEADER__
           + (ig.likes_median !== null ? `, обычно ${bigN(ig.likes_median)} лайков` : "") + (links ? `<br>самые залайканные свежие: ${links}` : ""));
       }
       if (r.retailer_brands) foot.push(`<b>БРЕНДЫ</b> ${esc(r.retailer_list)}`);
+      const ex = r.extra || {};
+      if (ex.brands_hist && (ex.brands_hist.now_n || ex.brands_hist.ago_n)) {
+        const bh = ex.brands_hist, f1 = (v) => v === null || v === undefined ? "—" : v.toFixed(1) + "%";
+        foot.push(`<b>БРЕНДЫ ЗА 2 ГОДА (веб-архив)</b> доля в новинках за последние 3 месяца ${f1(bh.now)} (${bh.now_n} шт.), `
+          + `год назад ${f1(bh.ago)} (${bh.ago_n} шт.)`);
+      }
+      if (ex.pin_demo) foot.push(`<b>КТО ИЩЕТ В PINTEREST</b> ${ex.pin_demo.top.map(([a, v]) => `${esc(a)} лет — ${v}%`).join(", ")}`
+        + (ex.pin_demo.female !== null ? `; женщины ${ex.pin_demo.female}%` : ""));
+      if (ex.sat) {
+        const s = ex.sat;
+        foot.push(`<b>НАСЫЩЕНИЕ AMAZON</b> ${s.results ? `больше ${bigN(s.results)} товаров` : "товаров —"}, `
+          + `на 1-й странице ${s.brands} брендов, медиана отзывов ${s.median_reviews ?? "—"}, `
+          + `с 1000+ отзывов ${s.share_1000 !== null ? Math.round(s.share_1000 * 100) + "%" : "—"}`
+          + (s.share_1000 !== null ? (s.share_1000 >= 0.4 ? " — ниша занята старыми продавцами" : s.share_1000 <= 0.1 ? " — ниша свободная" : "") : ""));
+      }
       if (r.google_rising_top) foot.push(`<b>GOOGLE</b> ${esc(String(r.google_rising_top).split(" | ")[0])}`);
       if (r.tiktok_hashtags) foot.push(`<b>TIKTOK</b> ${esc(r.tiktok_hashtags)}`);
       if (r.tt_hashtag && r.tt_total_videos !== null && r.tt_total_videos !== undefined) {

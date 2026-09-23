@@ -31,7 +31,7 @@ CHANNELS = [
      "note": "новинки + хиты продаж в 8 разделах женской одежды; "
              "Trends MCP: сколько раз вещь искали на Amazon за месяц и рост к прошлому месяцу"},
     {"key": "check_retailers", "short": "R", "name": "Бренды", "status": "ok",
-     "note": "новинки Zara, ASOS, Aritzia, Free People, H&M, Urban Outfitters, Abercrombie (Mango не отдаёт)"},
+     "note": "новинки Zara, ASOS, Aritzia, Free People, H&M, Urban Outfitters, Abercrombie + Mango"},
     {"key": "check_instagram", "short": "I", "name": "Instagram", "status": "ok",
      "note": "свежие посты под хэштегом вещи (весь мир, treg.to): засчитывается при ≥1 посте в день и последнем посте не старше недели"},
 ]
@@ -63,10 +63,11 @@ def data_gaps(cand):
         {"what": "Подсказки поиска", "have": f"{cnt('ac_modifiers')} из {n}",
          "why": "собрано только для лидеров", "fix": "run_autocomplete.py по остальным (бесплатно)"},
         {"what": "История Amazon", "have": f"{len(amazon_days)} снимка ({', '.join(d[5:] for d in amazon_days)})",
-         "why": "рост мест в рейтинге и цен виден только за несколько снимков", "fix": "снимать раз в неделю по команде"},
-        {"what": "История брендов", "have": f"{len(brand_days)} снимок; Aritzia ~10 товаров",
-         "why": "не видно, что бренды добавляют от недели к неделе; Aritzia грузит не всё",
-         "fix": "снимать раз в неделю; догрузка Aritzia прокруткой; найти рабочий адрес новинок Mango"},
+         "why": "2 года продаж и цен есть только в платных сервисах; в веб-архиве хитов Amazon почти нет",
+         "fix": "Keepa API (от €49/мес) — когда будем выбирать товар для закупки; пока снимать раз в неделю"},
+        {"what": "История брендов", "have": "веб-архив, 2 года" if Path("data/processed/brand_history.csv").exists() else f"{len(brand_days)} снимок",
+         "why": "архив хранит страницы новинок раз в месяц; у Free People, Mango, Urban Outfitters копий мало",
+         "fix": "run_brand_history.py по команде; живые снимки — run_retailers.py"},
         {"what": "Поиск на Amazon (Trends MCP)", "have": f"{cnt('amazon_monthly_searches')} из {n}",
          "why": "бесплатно только 90 дней и 100 запросов в месяц; редкие фразы сервис не знает",
          "fix": "run_trendsmcp.py по команде; 2 года истории — платный тариф Pro"},
@@ -76,8 +77,9 @@ def data_gaps(cand):
          "fix": "после появления карты"},
         {"what": "Реклама конкурентов", "have": "нет", "why": "Meta Ad Library требует платёжку",
          "fix": "после появления карты"},
-        {"what": "Насыщение рынка", "have": "нет",
-         "why": "не собираем, сколько продавцов продают одно и то же", "fix": "отзывы и продавцы на Amazon по кандидату"},
+        {"what": "Насыщение рынка", "have": "Amazon, 1-я страница" if Path("data/processed/amazon_saturation.csv").exists() else "нет",
+         "why": "видно число товаров, брендов и отзывов; доля рекламы Amazon этому профилю не показывает",
+         "fix": "run_saturation.py по команде; позже — TikTok Shop продавцы по кандидату"},
         {"what": "Новые кандидаты", "have": f"{n} слов вручную",
          "why": "радар проверяет только наш список; новые вещи из Pinterest — в разделе «Новые вещи из Pinterest»",
          "fix": "выбрать из раздела Pinterest, кого добавить в кандидаты; дальше — автоподбор из Google rising и брендов"},
@@ -110,6 +112,14 @@ def pinterest_discovery():
     df.loc[ours, "season"] = "ours"
     df.loc[off, "season"] = "off"
     df["pick"] = df["term"].isin(PIN_PICKS)
+    # 2-year weekly curve + who searches (run_pinterest_extra.py)
+    cf, dfile = Path("data/processed/pinterest_discovery_curves.json"), Path("data/processed/pinterest_demographics.csv")
+    curves = json.loads(cf.read_text(encoding="utf-8")) if cf.exists() else {}
+    df["curve"] = df["term"].map(lambda t: (curves.get(t) or {}).get("values"))
+    if dfile.exists():
+        demo = pd.read_csv(dfile).drop_duplicates("term").set_index("term")
+        df["age"] = df["term"].map(demo["main_age"])
+        df["female"] = df["term"].map((demo["female"] * 100).round())
     df = df.sort_values("yoy", ascending=False, na_position="last")
     stamp = datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y")
     return json.loads(df.to_json(orient="records", force_ascii=False)), stamp
@@ -306,7 +316,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   table.pd { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   table.pd th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font: 600 11.5px "JetBrains Mono", monospace;
                 color: var(--text-2); padding: 8px 12px; cursor: pointer; white-space: nowrap; user-select: none; }
-  table.pd td { padding: 7px 12px; border-top: 1px solid var(--border); white-space: nowrap; }
+  table.pd td { padding: 5px 12px; vertical-align: middle; border-top: 1px solid var(--border); white-space: nowrap; }
   table.pd .r { text-align: right; font-variant-numeric: tabular-nums; font-family: "JetBrains Mono", monospace; font-size: 12.5px; }
   table.pd tr.pick td:first-child { font-weight: 700; }
   table.pd tr.pick td:first-child::before { content: "★ "; color: var(--watch); }
@@ -359,7 +369,8 @@ TEMPLATE = r"""<title>Trend Radar</title>
     </div>
     <div class="tbl-wrap"><table class="pd">
       <thead><tr>
-        <th data-k="term">Запрос</th><th data-k="season">Сезон</th><th data-k="wow" class="r">Неделя</th>
+        <th data-k="term">Запрос</th><th data-k="season">Сезон</th><th>2 года</th><th data-k="age">Возраст</th>
+        <th data-k="female" class="r">Женщин</th><th data-k="wow" class="r">Неделя</th>
         <th data-k="mom" class="r">Месяц</th><th data-k="yoy" class="r">Год ▾</th><th data-k="volume_idx" class="r">Спрос</th>
         <th data-k="list">Список</th></tr></thead>
       <tbody id="pd-body"></tbody>
@@ -467,14 +478,25 @@ TEMPLATE = r"""<title>Trend Radar</title>
   const LST = { growing: "растущие", seasonal: "сезонные" };
   let pdFilter = "ours", pdKey = "yoy", pdDir = -1;
   const num = (v) => v === null || v === undefined ? "—" : `<span class="${v > 0 ? "up" : v < 0 ? "down" : ""}">${v > 0 ? "+" : ""}${v >= 10000 ? "10000%+" : v + "%"}</span>`;
+  // 2-year weekly Pinterest curve as a small line; the year boundary is marked so last year's bump is comparable
+  const spark = (v) => {
+    if (!v || v.length < 10) return '<span style="color:var(--muted)">—</span>';
+    const W = 150, H = 28, mx = Math.max(...v, 1), n = v.length;
+    const pts = v.map((y, i) => `${(i / (n - 1) * W).toFixed(1)},${(H - 2 - y / mx * (H - 4)).toFixed(1)}`).join(" ");
+    const mid = (n - 52) / (n - 1) * W;
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="кривая за 2 года">
+      <line x1="${mid}" x2="${mid}" y1="0" y2="${H}" stroke="var(--border)" stroke-dasharray="2 2"/>
+      <polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  };
   function renderPD() {
     const rows = PD.filter((r) => pdFilter === "all" || (r.kind === "item" && (r.yoy ?? 0) >= 5 && (pdFilter === "items" || r.season === "ours")))
       .sort((a, b) => { const x = a[pdKey], y = b[pdKey]; return (typeof x === "string" ? String(x).localeCompare(y) : (x ?? -1e9) - (y ?? -1e9)) * pdDir; });
     $("pd-body").innerHTML = rows.map((r) => `<tr class="${r.pick ? "pick" : ""} ${r.kind === "theme" ? "theme" : ""}">
       <td>${esc(r.term)}</td><td><span class="sz ${r.season}">${SZ[r.season]}</span></td>
+      <td>${spark(r.curve)}</td><td>${r.age ? esc(r.age) : "—"}</td><td class="r">${r.female != null ? r.female + "%" : "—"}</td>
       <td class="r">${num(r.wow)}</td><td class="r">${num(r.mom)}</td><td class="r">${num(r.yoy)}</td>
       <td class="r">${r.volume_idx ?? "—"}</td><td>${LST[r.list] || r.list}</td></tr>`).join("")
-      || '<tr><td colspan="7">Нет данных — запустите run_pinterest_discovery.py</td></tr>';
+      || '<tr><td colspan="10">Нет данных — запустите run_pinterest_discovery.py</td></tr>';
     $("pd-count").textContent = `Показано ${rows.length} из ${PD.length} запросов.`;
   }
   $("pd-date").textContent = D.pin_discovery_date ? `(${D.pin_discovery_date})` : "";

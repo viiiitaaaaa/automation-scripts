@@ -32,7 +32,7 @@ SITES = {
     "freepeople": ("https://www.freepeople.com/new-clothes/", r"/shop/"),
     # added 23.09.2026 (user: «да давай») — more brands, so the supply-side signal covers more items
     "hm": ("https://www2.hm.com/en_us/women/new-arrivals/view-all.html", r"productpage\.\d+"),
-    "mango": ("https://shop.mango.com/us/en/c/women/new-now_56b5c5ed", r"/p/women/|_\d{8}"),
+    "mango": ("https://shop.mango.com/us/en/c/women/new-now/56b5c5ed", r"/p/women/|_\d{8}"),
     "urbanoutfitters": ("https://www.urbanoutfitters.com/womens-new-arrivals", r"/shop/"),
     "abercrombie": ("https://www.abercrombie.com/shop/us/womens-new-arrivals", r"/shop/us/p/"),
 }

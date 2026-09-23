@@ -168,6 +168,13 @@ YouTube) с зелёной полосой «последние 8 недель» 
 
 ## Грабли
 
+- **Новые сборщики 23.09 (все бесплатно, через открытый Dolphin 3 или веб-архив):**
+  `run_pinterest_extra.py` — кривые 2 года (`/metrics/`) и возраст/пол (`/demographics/?terms=…&days=90`) для кандидатов
+  и всех вещей из discovery; у `/metrics/` возраст — параметр `age_bucket`, пол — `gender` (2 = женщины);
+  `run_saturation.py` — насыщение Amazon (товаров, брендов на 1-й стр., медиана отзывов, доля 1000+ отзывов;
+  доля рекламы профилю не видна); `run_brand_history.py` — новинки брендов за 2 года из Wayback Machine CDX
+  (месячные копии; у Zara имена сокращены: LTHR MD SKRT). Mango: новинки теперь `/c/women/new-now/56b5c5ed`.
+  Двухлетней истории Amazon в архиве нет — только Keepa (платно, пользователь решит позже).
 - **Pinterest-поиск новых вещей** — `run_pinterest_discovery.py` (23.09, без API, через бизнес-вход в открытом
   Dolphin 3): `/top_trends_filtered/` с фильтрами страницы `keywordsToInclude=<вещь>`, `gender=2` (женщины),
   `trendsPreset` 3 = растущие, 1 = сезонные; ещё есть `ageBucket` (AGE_25_34…), `keywordsToExclude`,
