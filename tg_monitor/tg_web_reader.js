@@ -71,3 +71,32 @@ async function tgWebSync(list, days = 31) {
   report.push("база: " + await resp.text());
   return report;
 }
+
+// Group chats (shopify_chat): messages of the last `days` days with the id of the message each one answers.
+// Author = first name only. -> POST http://127.0.0.1:8765/chat
+async function readChat(username, days = 45) {
+  const m = rootScope.managers;
+  const peer = await m.appUsersManager.resolveUsername(username);
+  const inputPeer = await m.appChatsManager.getChannelInputPeer(peer.id);
+  const since = Date.now() / 1000 - days * 86400;
+  const out = [];
+  let offset = 0;
+  for (let page = 0; page < 30; page++) {
+    const res = await m.apiManager.invokeApi("messages.getHistory",
+      {peer: inputPeer, offset_id: offset, offset_date: 0, add_offset: 0, limit: 100, max_id: 0, min_id: 0, hash: 0});
+    const users = Object.fromEntries((res.users || []).map(u => [String(u.id), u.first_name || ""]));
+    const msgs = (res.messages || []).filter(x => x._ === "message");
+    if (!msgs.length) break;
+    for (const x of msgs) {
+      if (x.date < since) continue;
+      out.push({chat: username, id: x.id, date: new Date(x.date * 1000).toISOString(), text: x.message || mediaLabel(x.media),
+                reply_to: x.reply_to?.reply_to_msg_id || null, author: users[String(x.from_id?.user_id)] || ""});
+    }
+    const last = msgs[msgs.length - 1];
+    if (last.date < since) break;
+    offset = last.id;
+    await new Promise(r => setTimeout(r, 900));
+  }
+  const resp = await fetch("http://127.0.0.1:8765/chat", {method: "POST", body: JSON.stringify(out)});
+  return [out.length + " сообщений", await resp.text()];
+}

@@ -194,6 +194,45 @@ def ru_date(d):
     return f"{d.day} {MONTHS[d.month - 1]}"
 
 
+CHAT = "shopify_chat"
+
+
+def chat_block(conn, notes):
+    """Question from the chat -> retelling -> the chosen answers (notes: cat "chat", "replies": [ids], "extra_roots")."""
+    try:
+        msgs = {r[0]: r for r in conn.execute("SELECT msg_id, date, text, reply_to FROM chat_msgs WHERE chat=?", (CHAT,))}
+    except sqlite3.OperationalError:
+        return ""
+    items = sorted(((int(k.split("/")[1]), v) for k, v in notes.items() if k.startswith(CHAT + "/") and v.get("cat") == "chat"),
+                   key=lambda x: msgs.get(x[0], (0, ""))[1], reverse=True)
+    if not items:
+        return ""
+    clip = lambda t, n: html.escape(t if len(t) <= n else t[:n].rsplit(" ", 1)[0] + "…")
+    link = lambda mid: f"https://t.me/{CHAT}/{mid}"
+
+    def msg_html(mid, cls):
+        m = msgs.get(mid)
+        if not m:
+            return ""
+        d = local(m[1])
+        return (f'<div class="{cls}"><span class="date">{ru_date(d)}, {d:%H:%M}</span> '
+                f'{clip(m[2] or "", 420)} <a href="{link(mid)}" target="_blank" rel="noopener">↗</a></div>')
+
+    cards = []
+    for root, n in items:
+        body = "".join(f"<p>{fmt_note(s)}</p>" for s in n.get("summary", []))
+        if n.get("for_us"):
+            body += f'<p class="forus"><b>Для нас:</b> {fmt_note(n["for_us"])}</p>'
+        thread = msg_html(root, "chat-q") + "".join(msg_html(r, "chat-a") for r in n.get("replies", []))
+        for extra in n.get("extra_roots", []):   # other threads on the same topic: question + all its answers
+            thread += msg_html(extra, "chat-q") + "".join(
+                msg_html(k, "chat-a") for k, m in sorted(msgs.items()) if m[3] == extra)
+        cards.append(f'<article class="article"><h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
+                     f'<div class="chat-thread"><b>Из чата — вопрос и ответы:</b>{thread}</div></article>')
+    return (f'<div class="pill-row"><span class="pill biz">чат {CHAT} — важное с ответами</span><span class="rule"></span>'
+            f'<span class="cnt">{len(cards)}</span></div><div class="chat-cards">{"".join(cards)}</div>')
+
+
 def build(conn, state, notes):
     since = (datetime.now(timezone.utc) - timedelta(days=WINDOW_DAYS)).isoformat()
     rows = conn.execute("SELECT channel, post_id, post_date, text, scraped_at FROM posts "
@@ -245,6 +284,8 @@ def build(conn, state, notes):
 
     biz, tool, soft = column("biz"), column("tool"), column("soft")
     main_html = [f'<div class="cols"><div class="col">{biz}</div><div class="col">{tool}</div></div>', soft]
+    # «Чат shopify_chat» (user 23.09.2026): important questions with their answers right under them
+    main_html.insert(1, chat_block(conn, notes))
     # «Мода и тренды» — a separate page (user 23.09.2026: fashion news only as a guide for the trend radar,
     # never mixed with dropshipping / AI); here only a link to it
     t_biz, t_tool, t_soft = column("biz", True), column("tool", True), column("soft", True)
@@ -438,6 +479,12 @@ TEMPLATE = """<title>Рабочая панель</title>
   .installed { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--biz-bg);
                border: 1px solid var(--biz-border); border-radius: 12px; padding: 10px 14px; }
   .installed b { color: var(--biz); }
+  .chat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 0 24px; align-items: start; }
+  .chat-thread { margin-top: 10px; font-size: 13px; border-top: 1px solid var(--border-soft); padding-top: 8px; }
+  .chat-thread > b { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .chat-q { background: var(--tool-bg); border-radius: 10px; padding: 7px 10px; margin: 8px 0 4px; color: var(--ink); }
+  .chat-a { border-left: 3px solid var(--biz-border); padding: 3px 0 3px 10px; margin: 4px 0 4px 14px; color: var(--ink-soft); }
+  .chat-q .date, .chat-a .date { font-size: 10.5px; }
   .fashion-link { display: flex; flex-direction: column; gap: 4px; margin: 36px 0 8px; padding: 16px 20px; text-decoration: none;
                   color: var(--ink); background: var(--surface); border: 1px solid var(--biz-border); border-radius: 16px; }
   .fashion-link b { font-size: 17px; color: var(--biz); }

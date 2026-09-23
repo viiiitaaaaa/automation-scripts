@@ -41,6 +41,21 @@ def save(posts):
     return f"новых {added}, дочитано скрытых {fixed}"
 
 
+def save_chat(msgs):
+    """Group chats (shopify_chat): every message + which message it answers -> table chat_msgs."""
+    conn = sqlite3.connect(DB)
+    conn.execute("CREATE TABLE IF NOT EXISTS chat_msgs (chat TEXT, msg_id INTEGER, date TEXT, text TEXT, reply_to INTEGER, "
+                 "author TEXT, scraped_at TEXT, PRIMARY KEY (chat, msg_id))")
+    now = datetime.now(timezone.utc).isoformat()
+    n = 0
+    for m in msgs:
+        cur = conn.execute("INSERT OR IGNORE INTO chat_msgs VALUES (?,?,?,?,?,?,?)",
+                           (m["chat"], m["id"], m["date"], m.get("text") or "", m.get("reply_to"), m.get("author") or "", now))
+        n += cur.rowcount
+    conn.commit()
+    return f"чат: новых сообщений {n}"
+
+
 def plan():
     conn = sqlite3.connect(DB)
     out = [[ch, mid] for ch, mid in conn.execute(
@@ -72,7 +87,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-        msg = save(json.loads(body.decode("utf-8")))
+        data = json.loads(body.decode("utf-8"))
+        msg = save_chat(data) if self.path.startswith("/chat") else save(data)
         print(msg, flush=True)
         self.send_response(200)
         self._cors()
