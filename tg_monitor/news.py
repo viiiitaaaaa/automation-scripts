@@ -32,9 +32,10 @@ WINDOW_DAYS = 45        # на панели; в базе хранится всё
 CATCHUP_DAYS = 31       # насколько далеко назад догонять пропущенные посты
 MAX_PAGES = 6           # страниц t.me/s/ на канал за один сбор (по ~20 постов)
 
-CATS = {"biz": "по делу — shopify / дропшиппинг / тренды",
+CATS = {"biz": "по делу — shopify / дропшиппинг / маркетплейсы",
         "tool": "лично тебе — claude code / инструменты",
         "soft": "фоново"}
+TREND_CATS = {"biz": "мода — что носят и продают", "tool": "тренды контента и инструменты", "soft": "фоново"}
 QUIET = {  # каналы, которые не разбираем подробно
     "irina_agafonova_ved": "Импорт из Китая и комплаенс Wildberries — доступа к WB сейчас нет, оставлено под общие новости e-commerce.",
     "python_tg": "Общий Python-фон — для кругозора.",
@@ -42,7 +43,68 @@ QUIET = {  # каналы, которые не разбираем подробн
     "slivaker_it": "Курсы пачками — полезное вынесено в раздел «Курсы».",
 }
 COURSE_CHANNEL = "slivaker_it"   # каталог курсов: посты вида «Название / Размер: / Цена:»
+# fashion & trend channels: their cards go to a separate «Мода и тренды» block BELOW dropshipping/AI news
+# (user 23.09.2026: «не смешивай с новостями дропшип и ИИ»)
+TREND_CHANNELS = {"now_trends", "moda_po_sprosu", "odezhda_stil_moda", "shop_sekret", "shoppingfyou", "topoeva_olesya",
+                  "runtobuy", "svetlana_nechego_nadet", "moda_vtelege", "my_image_and_style", "valeri_bloc", "pro_reelss",
+                  "promty_by_irri", "photopingvin_ai", "BrandAnalytics", "thetrends_journal"}
 COLORS = ["#4F7358", "#43618A", "#A97A45", "#3E6E6B", "#7A5C8A", "#8A5A4F", "#5C6E3E"]
+FASHION_OUT = BASE / "fashion_panel.html"
+FASHION_URL = "https://claude.ai/artifact/YJuHzoABX1RT98tBBLzWSU"
+RADAR_URL = "https://claude.ai/artifact/7XN5rKYANe4QX8HwRHKNZF"
+
+
+def build_fashion(rows, notes, t_biz, t_tool, t_soft):
+    """fashion_panel.html: what repeats across fashion posts, phrases to check in the trend radar, then the cards."""
+    from collections import defaultdict
+    themes, phrases = defaultdict(list), defaultdict(list)
+    for r in rows:
+        n = notes[f"{r[0]}/{r[1]}"]
+        src = (n.get("headline", "")[:60], f"https://t.me/{r[0]}/{r[1]}")
+        for t in n.get("themes", []):
+            themes[t].append(src)
+        for p in n.get("radar", []):
+            phrases[p].append(src)
+    rep = sorted(((t, s) for t, s in themes.items() if len(s) >= 2), key=lambda x: -len(x[1]))
+    rep_html = "".join(
+        f'<div class="theme"><b>{html.escape(t)}</b> <span class="cnt">{len(s)} постов</span><br>'
+        + " · ".join(f'<a href="{u}" target="_blank" rel="noopener">{html.escape(h)}</a>' for h, u in s[:5]) + "</div>"
+        for t, s in rep) or '<p class="section-note">Пока ничего не повторяется.</p>'
+    ph_html = "".join(
+        f'<tr><td><code class="inline">{html.escape(p)}</code></td><td>'
+        + " · ".join(f'<a href="{u}" target="_blank" rel="noopener">{html.escape(h)}</a>' for h, u in s) + "</td></tr>"
+        for p, s in sorted(phrases.items(), key=lambda x: (-len(x[1]), x[0])))
+    style = re.search(r"<style>.*?</style>", TEMPLATE, re.S).group(0)
+    fonts = re.search(r'<link rel="stylesheet"[^>]+>', TEMPLATE).group(0)
+    upd = datetime.now().astimezone()
+    page = f"""<title>Мода — ориентиры</title>
+<meta name="description" content="Новости модных Telegram-каналов как ориентир для радара трендов: что повторяется и что проверить">
+{fonts}
+{style}
+<style>
+  .theme {{ background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px; }}
+  .theme b {{ font-size: 15px; }}
+  table.ph {{ width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 13.5px; }}
+  table.ph td {{ padding: 8px 12px; border-top: 1px solid var(--border-soft); vertical-align: top; }}
+  .themes {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 0 12px; }}
+</style>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Мода и тренды · обновлено {ru_date(upd)} {upd.year}, {upd:%H:%M}</div>
+    <h1>Мода — ориентиры для радара</h1>
+    <p>Новости модных каналов нужны не сами по себе, а как подсказка: какие вещи, цвета и детали проверить в
+    <a href="{RADAR_URL}" target="_blank" rel="noopener">радаре трендов</a>. Российские каналы опережают или повторяют западные
+    тренды — поэтому всё, что здесь, мы проверяем на спросе в США.</p>
+  </div>
+  <section><div class="section-head"><h2>Что повторяется</h2><span class="count">тема встречается в 2+ постах</span></div>
+    <div class="themes">{rep_html}</div></section>
+  <section><div class="section-head"><h2>Проверить в радаре</h2><span class="count">{len(phrases)} фраз (как ищут в США)</span></div>
+    <p class="section-note">Сначала — фразы, которые встретились в нескольких постах. Добавить в кандидаты радара решаете вы.</p>
+    <div style="overflow-x:auto"><table class="ph">{ph_html}</table></div></section>
+  <section><div class="section-head"><h2>Новости</h2><span class="count">{len(rows)}</span></div>
+    <div class="cols"><div class="col">{t_biz}</div><div class="col">{t_tool or t_soft}</div></div>{t_soft if t_tool else ""}</section>
+</div>"""
+    FASHION_OUT.write_text(page, encoding="utf-8")
 
 
 def load_json(p, default):
@@ -142,10 +204,11 @@ def build(conn, state, notes):
     # Главное: «по делу» и «лично тебе» — два столбца рядом, «фоново» — под ними
     n_notes = 0
 
-    def column(cat):
+    def column(cat, trends=False):
         nonlocal n_notes
-        items = [r for r in rows if notes.get(f"{r[0]}/{r[1]}", {}).get("cat") == cat]
-        out = [f'<div class="pill-row"><span class="pill {cat}">{CATS[cat]}</span>'
+        items = [r for r in rows if notes.get(f"{r[0]}/{r[1]}", {}).get("cat") == cat
+                 and (r[0] in TREND_CHANNELS) == trends]
+        out = [f'<div class="pill-row"><span class="pill {cat}">{(TREND_CATS if trends else CATS)[cat]}</span>'
                f'<span class="rule"></span><span class="cnt">{len(items)}</span></div>']
         for r in items:
             n = notes[f"{r[0]}/{r[1]}"]
@@ -153,6 +216,9 @@ def build(conn, state, notes):
             body = "".join(f"<p>{fmt_note(s)}</p>" for s in n.get("summary", []))
             if n.get("for_us"):
                 body += f'<p class="forus"><b>Для нас:</b> {fmt_note(n["for_us"])}</p>'
+            if n.get("radar"):
+                body += ('<p class="forus"><b>Проверить в радаре:</b> '
+                         + ", ".join(f'<code class="inline">{html.escape(p)}</code>' for p in n["radar"]) + "</p>")
             if n.get("installed"):
                 body += f'<p class="mark ok">✓ Установлено: {fmt_note(n["installed"])}</p>'
             elif n.get("declined"):
@@ -165,6 +231,14 @@ def build(conn, state, notes):
 
     biz, tool, soft = column("biz"), column("tool"), column("soft")
     main_html = [f'<div class="cols"><div class="col">{biz}</div><div class="col">{tool}</div></div>', soft]
+    # «Мода и тренды» — a separate page (user 23.09.2026: fashion news only as a guide for the trend radar,
+    # never mixed with dropshipping / AI); here only a link to it
+    t_biz, t_tool, t_soft = column("biz", True), column("tool", True), column("soft", True)
+    fashion_rows = [r for r in rows if r[0] in TREND_CHANNELS and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in ("biz", "tool", "soft")]
+    build_fashion(fashion_rows, notes, t_biz, t_tool, t_soft)
+    main_html.append(f'<a class="fashion-link" href="{FASHION_URL}" target="_blank" rel="noopener">'
+                     f'<b>Мода и тренды — отдельная страница ↗</b><span>{len(fashion_rows)} новостей из модных каналов '
+                     'и что из них проверить в радаре трендов</span></a>')
     # posts the site hides ("Please open Telegram"): never silently skipped — shown until retold in notes
     hidden = [r for r in rows if r[3] == tm.HIDDEN and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in (None, "skip")]
     if hidden:
@@ -350,6 +424,11 @@ TEMPLATE = """<title>Рабочая панель</title>
   .installed { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--biz-bg);
                border: 1px solid var(--biz-border); border-radius: 12px; padding: 10px 14px; }
   .installed b { color: var(--biz); }
+  .fashion-link { display: flex; flex-direction: column; gap: 4px; margin: 36px 0 8px; padding: 16px 20px; text-decoration: none;
+                  color: var(--ink); background: var(--surface); border: 1px solid var(--biz-border); border-radius: 16px; }
+  .fashion-link b { font-size: 17px; color: var(--biz); }
+  .fashion-link span { font-size: 13px; color: var(--muted); }
+  .trends-h { font-size: 24px; margin: 44px 0 6px; padding-top: 28px; border-top: 1px solid var(--border); }
   .hidden-posts { margin-bottom: 16px; font-size: 14px; color: var(--ink-soft); background: var(--soft-bg);
                   border: 1px solid var(--soft-border); border-radius: 12px; padding: 10px 14px; line-height: 1.7; }
   .hidden-posts b { color: var(--ink); }

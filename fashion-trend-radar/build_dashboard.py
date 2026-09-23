@@ -344,6 +344,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <h1>Какие вещи подтверждают сразу несколько каналов</h1>
   <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата независимыми «свидетелями» и считает, сколько из них видят рост.</p>
   <p class="updated">Обновлено <b class="mono" id="dt"></b> — если здесь старое время, нажмите F5</p>
+  <p class="updated"><a href="https://claude.ai/artifact/YJuHzoABX1RT98tBBLzWSU" target="_blank" rel="noopener">Мода — ориентиры из Telegram-каналов ↗</a> — что повторяется в модных новостях и какие вещи проверить здесь</p>
   <div class="stats" id="stats"></div>
   <details class="howto">
   <summary>Как читать радар: правила решений и буквы каналов</summary>
