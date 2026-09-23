@@ -66,6 +66,16 @@ def parse(d):
     return out
 
 
+def save_merged(df_new, path, key="candidate"):
+    """Partial runs (a few candidates) must not wipe the others: replace only the rows of the candidates just collected."""
+    path = Path(path)
+    if path.exists() and not df_new.empty and key in df_new:
+        old = pd.read_csv(path)
+        if key in old:
+            df_new = pd.concat([old[~old[key].isin(df_new[key].unique())], df_new], ignore_index=True)
+    df_new.to_csv(path, index=False, encoding="utf-8-sig")
+
+
 def main():
     from_raw = "--from-raw" in sys.argv          # re-read today's saved answers, no new (paid) calls
     cands = [a for a in sys.argv[1:] if not a.startswith("--")] or pd.read_csv("config/candidates.csv")["candidate"].tolist()
@@ -96,8 +106,8 @@ def main():
         print(f"  {c:<24} товаров {s['products']:>2}, продано всего {s['sold_total']:>9,}, лидер {s['sold_top']:>8,}, "
               f"продавцов {s['sellers']:>2}, цена ~${s['price_median']}")
     out = Path("data/processed")
-    pd.DataFrame(summary).to_csv(out / "tiktok_shop.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame(products).to_csv(out / "tiktok_shop_products.csv", index=False, encoding="utf-8-sig")
+    save_merged(pd.DataFrame(summary), out / "tiktok_shop.csv")
+    save_merged(pd.DataFrame(products), out / "tiktok_shop_products.csv")
     print(f"Потрачено: ${spent:.4f}. Сохранено: tiktok_shop.csv, tiktok_shop_products.csv")
 
 

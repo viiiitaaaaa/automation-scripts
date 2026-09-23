@@ -41,6 +41,7 @@ PENDING = [
     ("Meta Ad Library", "нужна платёжка"),
     ("Google Merchant Center", "Best Sellers Google Shopping; регистрация просит карту — отложено"),
     ("Keyword Tool", "платный тариф"),
+    ("Temu", "поиск открывается только после входа в аккаунт; в treg.to Temu нет — нужно, чтобы вы вошли в Temu в профиле Dolphin 3"),
 ]
 
 

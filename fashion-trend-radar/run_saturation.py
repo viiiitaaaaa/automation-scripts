@@ -11,6 +11,7 @@ Output: data/processed/amazon_saturation.csv
 Usage: .venv/Scripts/python.exe run_saturation.py
 """
 import random
+import sys
 import re
 import statistics
 import time
@@ -22,6 +23,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 
+from run_extra_signals import parse_bought
 from run_retailers import cdp_endpoint
 
 OUT = Path("data/processed/amazon_saturation.csv")
@@ -57,8 +59,8 @@ def parse(html):
 
 
 def main():
-    cands = pd.read_csv("config/candidates.csv")["candidate"].tolist()
-    out, captchas = [], 0
+    cands = sys.argv[1:] or pd.read_csv("config/candidates.csv")["candidate"].tolist()
+    out, bought, captchas = [], [], 0
     with sync_playwright() as p:
         page = p.chromium.connect_over_cdp(cdp_endpoint()).contexts[0].new_page()
         try:
@@ -78,7 +80,14 @@ def main():
                 for _ in range(4):
                     page.mouse.wheel(0, 1500)
                     time.sleep(random.uniform(0.8, 1.5))
-                results, items = parse(page.content())
+                html = page.content()
+                results, items = parse(html)
+                rb = parse_bought(html)   # same page: «N+ bought in past month» badges (was run_extra_signals.py --amazon)
+                wb = [n for _, n in rb if n]
+                top = sorted(((n, t) for t, n in rb if n), reverse=True)[:3]
+                bought.append({"candidate": cand, "query": q, "items": len(rb), "items_with_bought": len(wb),
+                               "bought_sum": int(sum(wb)), "bought_max": int(max(wb)) if wb else 0,
+                               "top": " | ".join(f"{int(n)}+ {t}" for n, t in top), "date": str(date.today())})
                 organic = [i for i in items if not i["sponsored"]]
                 revs = [i["reviews"] for i in organic]
                 prices = [i["price"] for i in items if i["price"]]
@@ -96,9 +105,14 @@ def main():
                 time.sleep(random.uniform(8, 15))
         finally:
             page.close()
-    if out:
-        pd.DataFrame(out).to_csv(OUT, index=False, encoding="utf-8-sig")
-        print(f"Сохранено: {OUT}")
+    for rows, path in ((out, OUT), (bought, Path("data/processed/amazon_bought.csv"))):
+        if rows:   # partial runs replace only their own candidates
+            new = pd.DataFrame(rows)
+            if path.exists():
+                old = pd.read_csv(path)
+                new = pd.concat([old[~old["candidate"].isin(new["candidate"])], new], ignore_index=True)
+            new.to_csv(path, index=False, encoding="utf-8-sig")
+            print(f"Сохранено: {path}")
 
 
 if __name__ == "__main__":

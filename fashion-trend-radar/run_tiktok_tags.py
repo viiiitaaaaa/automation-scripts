@@ -100,6 +100,16 @@ def us_videos(cid, n=30):
     return list({v["link"]: v for v in out}.values())   # pages can repeat a video
 
 
+def save_merged(df_new, path, key="candidate"):
+    """Partial runs (a few candidates) must not wipe the others: replace only the rows of the candidates just collected."""
+    path = Path(path)
+    if path.exists() and not df_new.empty and key in df_new:
+        old = pd.read_csv(path)
+        if key in old:
+            df_new = pd.concat([old[~old[key].isin(df_new[key].unique())], df_new], ignore_index=True)
+    df_new.to_csv(path, index=False, encoding="utf-8-sig")
+
+
 def main():
     cands = sys.argv[1:] or pd.read_csv("config/candidates.csv")["candidate"].tolist()
     summary, videos = [], []
@@ -129,8 +139,8 @@ def main():
         print(f"  #{tag:<22} всего видео {s['total_videos']!s:>9}, просмотров {s['total_views']!s:>13}; "
               f"US: {s['us_videos_sampled']:>2} видео, свежих за 30 дн {s['us_fresh_30d']:>2}")
     out = Path("data/processed")
-    pd.DataFrame(summary).to_csv(out / "tiktok_tags.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame(videos).to_csv(out / "tiktok_tag_videos.csv", index=False, encoding="utf-8-sig")
+    save_merged(pd.DataFrame(summary), out / "tiktok_tags.csv")
+    save_merged(pd.DataFrame(videos), out / "tiktok_tag_videos.csv")
     print(f"Потрачено: ${spent:.4f}. Сохранено: data/processed/tiktok_tags.csv, tiktok_tag_videos.csv")
 
 

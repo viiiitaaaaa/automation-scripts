@@ -63,6 +63,16 @@ def recent_posts(tag):
     return list({p["link"]: p for p in posts}.values())
 
 
+def save_merged(df_new, path, key="candidate"):
+    """Partial runs (a few candidates) must not wipe the others: replace only the rows of the candidates just collected."""
+    path = Path(path)
+    if path.exists() and not df_new.empty and key in df_new:
+        old = pd.read_csv(path)
+        if key in old:
+            df_new = pd.concat([old[~old[key].isin(df_new[key].unique())], df_new], ignore_index=True)
+    df_new.to_csv(path, index=False, encoding="utf-8-sig")
+
+
 def main():
     cands = sys.argv[1:] or pd.read_csv("config/candidates.csv")["candidate"].tolist()
     summary, allposts = [], []
@@ -91,8 +101,8 @@ def main():
         s = summary[-1]
         print(f"  #{tag:<22} постов {s['posts_sampled']:>3}, с {s['oldest']} по {s['newest']}, в день ≈ {s['posts_per_day']}")
     out = Path("data/processed")
-    pd.DataFrame(summary).to_csv(out / "instagram_tags.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame(allposts).to_csv(out / "instagram_tag_posts.csv", index=False, encoding="utf-8-sig")
+    save_merged(pd.DataFrame(summary), out / "instagram_tags.csv")
+    save_merged(pd.DataFrame(allposts), out / "instagram_tag_posts.csv")
     print(f"Потрачено: ${spent:.4f}. Сохранено: data/processed/instagram_tags.csv, instagram_tag_posts.csv")
 
 
