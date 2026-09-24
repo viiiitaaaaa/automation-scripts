@@ -250,6 +250,68 @@ def words_section():
   </section>"""
 
 
+def variations_section():
+    """«Отстройка» (user's method 24.09.2026): mid-frequency variations of each TEST item — colour, cut, fabric —
+    with a 2-year Google curve, growth now (Google / Pinterest) and live buying (Amazon «bought», Temu «sold»)."""
+    import html as H
+    from src.processors.candidate_matrix import months_label, season_calendar, window_stats
+    fv, fd = Path("data/processed/variations.csv"), Path("data/processed/variation_demand.csv")
+    if not fv.exists():
+        return ""
+    v = pd.read_csv(fv)
+    dem = pd.read_csv(fd).set_index("variation") if fd.exists() else pd.DataFrame()
+    g = pd.read_parquet("data/normalized/google_trends")
+    g = g[(g["region"] == "US") & ~g["is_partial"].astype(bool)].sort_values("date").drop_duplicates(["date", "keyword"], keep="last")
+
+    def spark(vals):
+        vals = [x for x in vals if x is not None]
+        if len(vals) < 10 or not any(vals):
+            return '<span class="mono" style="color:var(--muted)">Google: мало данных</span>'
+        W, Hh, mx, n = 340, 78, max(vals), len(vals)
+        pts = " ".join(f"{i / (n - 1) * W:.1f},{Hh - 2 - x / mx * (Hh - 4):.1f}" for i, x in enumerate(vals))
+        mid = (n - 52) / (n - 1) * W
+        return (f'<svg class="wa-chart" width="{W}" height="{Hh + 14}" viewBox="0 0 {W} {Hh + 14}" role="img" aria-label="Google за 2 года">'
+                f'<line x1="{mid:.1f}" x2="{mid:.1f}" y1="0" y2="{Hh}" stroke="var(--muted)" stroke-dasharray="3 3"/>'
+                f'<polyline points="{pts}" fill="none" stroke="var(--bar)" stroke-width="2" stroke-linejoin="round"/>'
+                f'<text x="4" y="{Hh + 11}" font-size="10" fill="var(--muted)">Google · год назад</text>'
+                f'<text x="{mid + 4:.1f}" y="{Hh + 11}" font-size="10" fill="var(--muted)">этот год</text></svg>')
+    num = lambda x: "—" if x is None or pd.isna(x) else f'<span class="{"up" if x > 0 else "down" if x < 0 else ""}">{x:+.0f}%</span>'
+    big = lambda x: "—" if x is None or pd.isna(x) else f"{int(x):,}".replace(",", " ")
+    out = []
+    for item, grp in v.groupby("item", sort=False):
+        rows = []
+        for r in grp.itertuples():
+            h = g[g["keyword"] == r.variation]
+            vals = list(h["interest"])
+            st = window_stats(vals) if len(h) else None
+            gy = st["yoy_pct"] if st else None
+            season = months_label(season_calendar(list(h["date"]), vals)) if len(h) else ""
+            d = dem.loc[r.variation] if r.variation in dem.index else None
+            amz = d["amazon_bought_sum"] if d is not None else None
+            temu = d["temu_sold"] if d is not None and d["temu_products"] > 0 else None   # 0 products = Temu didn't answer
+            grow = any(x is not None and not pd.isna(x) and x >= 5 for x in (gy, r.pin_yoy8w))
+            demand = (amz or 0) >= 1000 or (temu or 0) >= 5000
+            verdict, cls = (("брать", "TEST") if grow and demand else ("спрос есть, без роста", "WATCH") if demand
+                            else ("растёт, покупок мало", "WATCH") if grow else ("не брать", "REJECT"))
+            rows.append((0 if cls == "TEST" else 1 if cls == "WATCH" else 2, -(amz or 0),
+                         f'<tr><td><b>{H.escape(r.variation)}</b></td><td><span class="pill {cls}">{verdict}</span></td>'
+                         f'<td>{spark(vals)}</td><td class="r">{num(gy)}</td><td class="r">{num(r.pin_yoy8w)}</td>'
+                         f'<td>{H.escape(season) or "—"}</td><td class="r">{big(amz)}</td>'
+                         f'<td class="r">{big(temu) if temu is not None else "нет данных"}</td></tr>'))
+        body = "".join(x[2] for x in sorted(rows, key=lambda x: (x[0], x[1])))
+        out.append(f'<h3 class="fz-h">{H.escape(item)}</h3><div class="tbl-wrap"><table class="pd wa"><thead><tr>'
+                   '<th>Вариация</th><th>Вывод</th><th>Интерес за 2 года</th><th class="r">Google к году</th>'
+                   '<th class="r">Pinterest к году</th><th>Сезон</th><th class="r">Amazon: куплено за месяц</th>'
+                   f'<th class="r">Temu: продано</th></tr></thead><tbody>{body}</tbody></table></div>')
+    return f"""<section id="variations">
+    <h2>Отстройка: вариации — цвет, фасон, ткань</h2>
+    <p class="note">Ваш метод: от широкого ключа вещи — к среднечастотным вариантам с высоким спросом в моменте и модным фасоном.
+    «Брать» — растёт к прошлому году (Google или Pinterest, от 5%) и уже покупают (Amazon от 1 000 в месяц или Temu от 5 000 продаж).
+    Под эти вариации подбираем поставщиков и товар.</p>
+    {"".join(out)}
+  </section>"""
+
+
 def main():
     cand = pd.read_csv("data/reports/radar_candidates.csv")
     cand = sort_candidates(cand)   # тест → наблюдать → отказ → короткий сезон
@@ -282,7 +344,7 @@ def main():
     data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
 
     curves = build_block(cand, with_header=False, date_str=payload["date"])
-    html = TEMPLATE.replace("__FASHION__", fashion_section() + words_section()).replace("__CURVES__", curves).replace("__DATA__", data_json)
+    html = TEMPLATE.replace("__FASHION__", variations_section() + fashion_section() + words_section()).replace("__CURVES__", curves).replace("__DATA__", data_json)
     out = Path("data/reports/trend_radar_dashboard.html")
     out.write_text(html, encoding="utf-8")
     print(f"Сохранено: {out} ({len(cand)} кандидатов), обновлено {payload['updated']}")
@@ -490,7 +552,7 @@ TEMPLATE = r"""<title>Trend Radar</title>
   <h1>Какие вещи подтверждают сразу несколько каналов</h1>
   <p class="lead">Один сигнал — это шум. Радар проверяет каждого кандидата независимыми «свидетелями» и считает, сколько из них видят рост.</p>
   <p class="updated">Обновлено <b class="mono" id="dt"></b> — если здесь старое время, нажмите F5</p>
-  <p class="updated"><a href="#fashion">Мода — ориентиры из Telegram ↓</a> · <a href="#words">Аналитика остальных слов ↓</a></p>
+  <p class="updated"><a href="#variations">Отстройка: вариации ↓</a> · <a href="#fashion">Мода — ориентиры из Telegram ↓</a> · <a href="#words">Аналитика остальных слов ↓</a></p>
   <div class="stats" id="stats"></div>
   <details class="howto">
   <summary>Как читать радар: правила решений и буквы каналов</summary>
