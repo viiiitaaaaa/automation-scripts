@@ -277,7 +277,7 @@ def variations_section():
                 f'<text x="{mid + 4:.1f}" y="{Hh + 11}" font-size="10" fill="var(--muted)">этот год</text></svg>')
     num = lambda x: "—" if x is None or pd.isna(x) else f'<span class="{"up" if x > 0 else "down" if x < 0 else ""}">{x:+.0f}%</span>'
     big = lambda x: "—" if x is None or pd.isna(x) else f"{int(x):,}".replace(",", " ")
-    out = []
+    out, summary = [], []
     for item, grp in v.groupby("item", sort=False):
         rows = []
         for r in grp.itertuples():
@@ -293,6 +293,8 @@ def variations_section():
             demand = (amz or 0) >= 1000 or (temu or 0) >= 5000
             verdict, cls = (("брать", "TEST") if grow and demand else ("спрос есть, без роста", "WATCH") if demand
                             else ("растёт, покупок мало", "WATCH") if grow else ("не брать", "REJECT"))
+            summary.append({"item": item, "var": r.variation, "cls": cls, "verdict": verdict, "gy": gy, "py": r.pin_yoy8w,
+                            "amz": amz, "temu": temu})
             rows.append((0 if cls == "TEST" else 1 if cls == "WATCH" else 2, -(amz or 0),
                          f'<tr><td><b>{H.escape(r.variation)}</b></td><td><span class="pill {cls}">{verdict}</span></td>'
                          f'<td>{spark(vals)}</td><td class="r">{num(gy)}</td><td class="r">{num(r.pin_yoy8w)}</td>'
@@ -303,11 +305,42 @@ def variations_section():
                    '<th>Вариация</th><th>Вывод</th><th>Интерес за 2 года</th><th class="r">Google к году</th>'
                    '<th class="r">Pinterest к году</th><th>Сезон</th><th class="r">Amazon: куплено за месяц</th>'
                    f'<th class="r">Temu: продано</th></tr></thead><tbody>{body}</tbody></table></div>')
+    # summary on top: what to take per item + notable «demand without growth» and «falling» variations
+    def g_(x):
+        return None if x is None or pd.isna(x) else x
+    def fact(x):
+        bits = []
+        best = max([y for y in (g_(x["gy"]), g_(x["py"])) if y is not None], default=None)
+        if best is not None:
+            bits.append(f"{best:+.0f}% к году")
+        if x["amz"]:
+            bits.append(f"Amazon {big(x['amz'])}/мес")
+        if x["temu"]:
+            bits.append(f"Temu {big(x['temu'])}")
+        return ", ".join(bits)
+    cards = []
+    sm = pd.DataFrame(summary)
+    for item, grp in sm.groupby("item", sort=False):
+        take = grp[grp["cls"] == "TEST"].sort_values("amz", ascending=False, na_position="last")
+        flat = grp[grp["verdict"] == "спрос есть, без роста"].assign(_d=grp["amz"].fillna(0) + grp["temu"].fillna(0) / 20).sort_values("_d", ascending=False)
+        fall = grp[grp["gy"].fillna(0) <= -10]
+        li = "".join(f"<li><b>{H.escape(x['var'])}</b> — {fact(x)}</li>" for _, x in take.iterrows()) or "<li>пока ничего</li>"
+        notes = ""
+        if len(flat):
+            notes += "<p class='fz-why'>Покупают много, но роста к году нет: " + ", ".join(
+                f"{H.escape(x['var'])} ({fact(x)})" for _, x in flat.head(3).iterrows()) + ".</p>"
+        if len(fall):
+            notes += "<p class='fz-why'>Падает к прошлому году: " + ", ".join(
+                f"{H.escape(x['var'])} ({x['gy']:+.0f}%)" for _, x in fall.iterrows()) + " — не брать как основную вариацию.</p>"
+        cards.append(f'<div class="fz-theme"><b>{H.escape(item)}</b> <span class="mono">брать {len(take)} из {len(grp)}</span><ul class="var-take">{li}</ul>{notes}</div>')
+    head = f'<h3 class="fz-h">Итог: что брать</h3><div class="fz-themes">{"".join(cards)}</div>'
     return f"""<section id="variations">
     <h2>Отстройка: вариации — цвет, фасон, ткань</h2>
     <p class="note">Ваш метод: от широкого ключа вещи — к среднечастотным вариантам с высоким спросом в моменте и модным фасоном.
     «Брать» — растёт к прошлому году (Google или Pinterest, от 5%) и уже покупают (Amazon от 1 000 в месяц или Temu от 5 000 продаж).
     Под эти вариации подбираем поставщиков и товар.</p>
+    {head}
+    <h3 class="fz-h">Все вариации с графиками</h3>
     {"".join(out)}
   </section>"""
 
@@ -537,6 +570,8 @@ TEMPLATE = r"""<title>Trend Radar</title>
   .fz-alt { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); font-size: 12px; }
   table.fz-ph th { text-align: left; font: 600 11px "JetBrains Mono", monospace; color: var(--text-2); padding: 7px 12px; background: var(--surface-2); }
   .wa-chart { display: block; }
+  .var-take { margin: 6px 0; padding-left: 18px; }
+  .var-take li { margin: 2px 0; }
   .wa-src { font-size: 10.5px; color: var(--muted); }
   .wa-why { font-size: 12.5px; color: var(--text-2); min-width: 220px; }
   table.wa .pill { white-space: nowrap; }
