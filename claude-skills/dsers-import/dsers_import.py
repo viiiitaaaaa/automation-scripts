@@ -16,7 +16,7 @@ from pathlib import Path
 
 from dolphin import DolphinLocal, start_with_retry
 
-PROFILE = 836461485          # «Декор» — там залогинен Dsers
+PROFILE = 859648353          # единственный профиль (там залогинен Dsers)
 IMPORT_URL = "https://www.dsers.com/application/import_list"
 PLACEHOLDER = "Please enter the product link"
 

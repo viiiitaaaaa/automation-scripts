@@ -5,7 +5,7 @@
     python dsers_add.py --file links_decor.txt            # открыть и нажать
     python dsers_add.py --file links_decor.txt --probe    # только разведка кнопки
 
-Профиль по умолчанию — «Декор» (836461485). Кнопку рисует расширение, поэтому
+Профиль по умолчанию — 859648353. Кнопку рисует расширение, поэтому
 ищем её и в обычном DOM, и в shadow DOM, и во фреймах.
 """
 import argparse
@@ -84,7 +84,7 @@ STATE_JS = r"""
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--profile", type=int, default=836461485)
+    ap.add_argument("--profile", type=int, default=859648353)
     ap.add_argument("--file", type=Path, required=True)
     ap.add_argument("--probe", action="store_true", help="только показать, что найдено")
     ap.add_argument("--wait", type=float, default=6, help="сек ожидания появления кнопки")

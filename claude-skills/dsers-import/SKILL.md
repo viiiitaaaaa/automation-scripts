@@ -16,7 +16,7 @@ description: Импорт товаров AliExpress в Dsers — добавле�
 | `dsers_add.py` | Нажать «Add To DSers» на страницах товара AliExpress |
 | `dsers_check.py` | Сколько сейчас в Import list (с перезагрузкой страницы) |
 
-Аккаунт: профиль Dolphin **«Декор» (836461485)**, там залогинен Dsers `artdeco78`,
+Аккаунт: профиль Dolphin **859648353**, там залогинен Dsers `artdeco78`,
 магазин Shopify `kmfmxn-r4`, регион US.
 
 ## Порядок

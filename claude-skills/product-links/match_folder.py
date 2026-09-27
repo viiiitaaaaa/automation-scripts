@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dolphin import DolphinLocal, start_with_retry   # noqa: E402
 from shots import switch_page, autoscroll            # noqa: E402
 
-PROFILE = 828976678
+PROFILE = 859648353
 STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state_tabs.json")
 MATCH_GOOD, MATCH_MAYBE = 8, 16
 

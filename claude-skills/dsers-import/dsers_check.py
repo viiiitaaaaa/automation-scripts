@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 SHOT = r"C:\Users\User\AppData\Local\Temp\claude\C--Users-User\01751d72-549c-49dc-8269-5150f5435db9\scratchpad\dsers_after.png"
 
 api = DolphinLocal(port=DolphinLocal.discover() or 3001)
-auto = start_with_retry(api, 836461485)["automation"]
+auto = start_with_retry(api, 859648353)["automation"]
 with sync_playwright() as p:
     b = p.chromium.connect_over_cdp("ws://127.0.0.1:%s%s" % (auto["port"], auto["wsEndpoint"]))
     ctx = b.contexts[0] if b.contexts else b.new_context()

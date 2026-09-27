@@ -8,7 +8,7 @@
     python match_products.py --store 1105084156 --folder "<папка с фото>"
     python match_products.py --store 1105084156 --folder "<папка>" --out result.csv
 
-Профиль по умолчанию — рабочий 828976678. Токен Local API не нужен.
+Профиль по умолчанию — единственный 859648353. Токен Local API не нужен.
 Домен всегда aliexpress.com: .ru в этом браузере запрещён.
 """
 import argparse
@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dolphin import DolphinLocal, start_with_retry   # noqa: E402
 from shots import switch_page, autoscroll            # noqa: E402
 
-DEFAULT_PROFILE = 828976678
+DEFAULT_PROFILE = 859648353
 TOP_N = 3
 MATCH_GOOD = 8        # расстояние phash: почти наверняка тот же товар
 MATCH_MAYBE = 16      # похоже, но стоит глянуть глазами

@@ -119,7 +119,7 @@ Shopify даёт ECONNRESET. Три окна: start-n8n, start-tunnel, start-pan
 и `.csv`, блок «Отчёты»), сбои любого воркфлоу уходят в панель и Telegram через
 Error Workflow `05-error-alert` (`settings.errorWorkflow` у всех), появился раздел
 «Поставщики»: `80-supplier-check` (Execute Command → `scripts/suppliers/check_suppliers.py`,
-Dsers через Dolphin-профиль 836461485, метаполя `artmellio.supplier_check/supplier_cost/
+Dsers через Dolphin-профиль 859648353, метаполя `artmellio.supplier_check/supplier_cost/
 supplier_checked_at`, тег `supplier:unavailable`, 10–15 мин) и `85-supplier-draft`
 (снять недоступные с продажи, с подтверждением). В n8n 2.x Execute Command выключен
 по умолчанию — `NODES_EXCLUDE='[]'` в `start-n8n.ps1`. После правки коллекций —
@@ -207,7 +207,7 @@ python scripts\theme\push_files.py sections\x.liquid   # точечная зал
   и скриптов. Отпочковывать от актуальной `main`, либо сначала подтянуть `dev`.
 - **`git push` в этой сессии блокировался разрешениями** — ветка `dev` и часть
   коммитов остались только локально. Пушить пользователю самому.
-- **Вход в Shopify только через профиль Dolphin `836461485`.** Системный Chrome
+- **Вход в Shopify только через профиль Dolphin `859648353`.** Системный Chrome
   запрещён, `shopify app` и `shopify store auth` заблокированы обёрткой.
 - **В live-тему публиковать только вручную.** Автоматически — никогда.
 
