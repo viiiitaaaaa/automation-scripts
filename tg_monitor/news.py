@@ -194,11 +194,17 @@ def ru_date(d):
     return f"{d.day} {MONTHS[d.month - 1]}"
 
 
-CHAT = "shopify_chat"
+# group chats read through Telegram Web: chat -> (topic on the panel, pill colour). Same logic for every chat:
+# only important questions with their chosen answers (notes cat "chat"). vibecoding_community added 24.09.2026.
+# groups of «Не забыть» (notes "when"), in the order of launching a store
+WHEN_ORDER = ["Экономика товара и теста", "Реклама и креативы", "Платежи, корзина, каналы", "После запуска рекламы",
+              "Страны и доставка", "Когда будет время (инструменты)"]
+CHATS = {"shopify_chat": ("дропшиппинг", "biz"), "vibecoding_community": ("вайбкодинг", "tool")}
 
 
-def chat_block(conn, notes):
+def chat_block(conn, notes, CHAT="shopify_chat"):
     """Question from the chat -> retelling -> the chosen answers (notes: cat "chat", "replies": [ids], "extra_roots")."""
+    topic, pill = CHATS[CHAT]
     try:
         msgs = {r[0]: r for r in conn.execute("SELECT msg_id, date, text, reply_to FROM chat_msgs WHERE chat=?", (CHAT,))}
     except sqlite3.OperationalError:
@@ -229,7 +235,7 @@ def chat_block(conn, notes):
                 msg_html(k, "chat-a") for k, m in sorted(msgs.items()) if m[3] == extra)
         cards.append(f'<article class="article"><h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
                      f'<div class="chat-thread"><b>Из чата — вопрос и ответы:</b>{thread}</div></article>')
-    return (f'<div class="pill-row"><span class="pill biz">чат {CHAT} — важное с ответами</span><span class="rule"></span>'
+    return (f'<div class="pill-row"><span class="pill {pill}">чат {CHAT} ({topic}) — важное с ответами</span><span class="rule"></span>'
             f'<span class="cnt">{len(cards)}</span></div><div class="chat-cards">{"".join(cards)}</div>')
 
 
@@ -276,6 +282,8 @@ def build(conn, state, notes):
                 body += f'<p class="mark ok">✓ Установлено: {fmt_note(n["installed"])}</p>'
             elif n.get("declined"):
                 body += f'<p class="mark no">Не ставили: {fmt_note(n["declined"])}</p>'
+            if n.get("noted"):  # user 27.09: lessons she took into account are marked, and listed in «Не забыть»
+                body += f'<p class="mark note">📌 Принято к сведению: {fmt_note(n["noted"])}</p>'
             out.append(
                 f'<article class="article" data-ch="{html.escape(r[0])}">{head(r[0], local(r[2]), is_new(r))}'
                 f'<h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
@@ -285,7 +293,8 @@ def build(conn, state, notes):
     biz, tool, soft = column("biz"), column("tool"), column("soft")
     main_html = [f'<div class="cols"><div class="col">{biz}</div><div class="col">{tool}</div></div>', soft]
     # «Чат shopify_chat» (user 23.09.2026): important questions with their answers right under them
-    main_html.insert(1, chat_block(conn, notes))
+    for i, chat in enumerate(CHATS):
+        main_html.insert(1 + i, chat_block(conn, notes, chat))
     # «Мода и тренды» — a separate page (user 23.09.2026: fashion news only as a guide for the trend radar,
     # never mixed with dropshipping / AI); here only a link to it
     t_biz, t_tool, t_soft = column("biz", True), column("tool", True), column("soft", True)
@@ -335,6 +344,23 @@ def build(conn, state, notes):
     installed_html = ("" if not inst else
                       '<div class="installed"><b>Из новостей установлено:</b> '
                       + " · ".join(f'<span title="{html.escape(w)}">{html.escape(t)}</span>' for t, w in inst) + "</div>")
+    # «Не забыть»: everything she took into account from the news (all time), grouped by when to use it
+    noted = {}
+    for k, v in notes.items():
+        if v.get("noted"):
+            noted.setdefault(v.get("when", "Другое"), []).append((k, v))
+    if noted:
+        installed_html += ('<details class="remember" open><summary><b>📌 Не забыть — принято к сведению из новостей</b> '
+                           f'<span class="cnt">{sum(map(len, noted.values()))}</span></summary>'
+                           '<p class="rem-note">Всё это записано в скилл dropship-lessons и в GitHub '
+                           '(artmellio-system/docs/uroki-iz-novostey.md) — напоминаю, когда наступает момент.</p>'
+                           + "".join(f'<div class="rem-group"><b>{html.escape(w)}</b><ul>'
+                                     + "".join(f'<li><a href="https://t.me/{k}" target="_blank" rel="noopener">'
+                                               f'{html.escape(v.get("noted_title") or v.get("headline", k))}</a></li>'
+                                               for k, v in items) + "</ul></div>"
+                                     for w, items in sorted(noted.items(), key=lambda kv: (
+                                         WHEN_ORDER.index(kv[0]) if kv[0] in WHEN_ORDER else len(WHEN_ORDER))))
+                           + "</details>")
 
     upd = datetime.now().astimezone()
     new_count = sum(1 for r in rows if is_new(r))
@@ -476,6 +502,17 @@ TEMPLATE = """<title>Рабочая панель</title>
   .article p.mark { font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 6px 10px; }
   .mark.ok { background: var(--biz-bg); color: var(--biz); }
   .mark.no { background: var(--border-soft); color: var(--muted); font-weight: 500; }
+  .mark.note { background: var(--tool-bg); color: var(--tool); }
+  .remember { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--tool-bg);
+              border: 1px solid var(--tool-border); border-radius: 12px; padding: 10px 14px; }
+  .remember summary { cursor: pointer; color: var(--tool); }
+  .remember summary b { color: var(--tool); }
+  .rem-note { margin: 6px 0 4px; font-size: 12.5px; color: var(--muted); }
+  .rem-group { margin-top: 8px; }
+  .rem-group b { color: var(--ink); font-size: 12.5px; }
+  .rem-group ul { margin: 3px 0 0; padding-left: 18px; }
+  .rem-group li { margin: 2px 0; }
+  .rem-group a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px dotted var(--tool-border); }
   .installed { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--biz-bg);
                border: 1px solid var(--biz-border); border-radius: 12px; padding: 10px 14px; }
   .installed b { color: var(--biz); }
