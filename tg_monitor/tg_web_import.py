@@ -1,6 +1,8 @@
 """Приёмник постов из Telegram Web (tg_web_reader.js) -> tg_monitor.db.
 
 python tg_web_import.py --serve      ждёт один POST на http://127.0.0.1:8765/import и выходит
+python tg_web_import.py --serve --keep  принимает несколько POST подряд (выход — Ctrl+C / 10 мин тишины)
+python tg_web_import.py --plan --full  все каналы за всё окно (исчерпывающий сбор) + границы чатов
 python tg_web_import.py --plan       печатает список [канал, minId] для tgWebSync: каналы со скрытыми
                                      постами (с самого старого скрытого) и закрытые каналы (0)
 
@@ -58,6 +60,12 @@ def save_chat(msgs):
 
 def plan():
     conn = sqlite3.connect(DB)
+    if "--full" in sys.argv:  # 29.09 «исчерпывающий сбор»: every channel, whole window, hidden posts included
+        print(json.dumps([[ch, 0] for ch in tm.load_channels()], ensure_ascii=False))
+        chats = {c: conn.execute("SELECT min(msg_id), max(msg_id) FROM chat_msgs WHERE chat=?", (c,)).fetchone()
+                 for c in ("shopify_chat", "vibecoding_community")}
+        print("чаты (min, max):", json.dumps(chats))
+        return
     out = [[ch, mid] for ch, mid in conn.execute(
         "SELECT channel, min(post_id) FROM posts WHERE text=? GROUP BY channel", (tm.HIDDEN,))]
     readable = {r[0] for r in conn.execute("SELECT DISTINCT channel FROM posts")}
@@ -95,7 +103,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
         self.wfile.write(msg.encode("utf-8"))
-        self.server.done = True
+        self.server.done = "--keep" not in sys.argv  # --keep: accept several POSTs (channels, then each chat)
 
 
 if __name__ == "__main__":
@@ -104,7 +112,9 @@ if __name__ == "__main__":
     else:
         srv = HTTPServer(("127.0.0.1", PORT), Handler)
         srv.done = False
+        srv.idle = False
         srv.timeout = 600
+        srv.handle_timeout = lambda: setattr(srv, "idle", True)  # 10 min without a POST -> stop
         print(f"Жду посты из Telegram Web на {PORT}...", flush=True)
-        while not srv.done:
+        while not srv.done and not srv.idle:
             srv.handle_request()

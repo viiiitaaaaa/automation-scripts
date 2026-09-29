@@ -29,8 +29,8 @@ STATE = BASE / "panel_state.json"
 EXTRA = BASE / "panel_extra.html"
 OUT = BASE / "news_panel.html"
 WINDOW_DAYS = 45        # на панели; в базе хранится всё
-CATCHUP_DAYS = 31       # насколько далеко назад догонять пропущенные посты
-MAX_PAGES = 6           # страниц t.me/s/ на канал за один сбор (по ~20 постов)
+CATCHUP_DAYS = 45       # догонять всё окно панели (29.09: «исчерпывающий сбор»)
+MAX_PAGES = 30          # страниц t.me/s/ на канал за один сбор (по ~20 постов)
 
 CATS = {"biz": "по делу — shopify / дропшиппинг / маркетплейсы",
         "tool": "лично тебе — claude code / инструменты",
@@ -137,8 +137,12 @@ def collect(conn):
     horizon = datetime.now(timezone.utc) - timedelta(days=CATCHUP_DAYS)
     now = datetime.now(timezone.utc).isoformat()
     total = 0
+    full = "--full" in sys.argv  # 29.09 «исчерпывающий сбор»: walk the whole window, filling every gap
     for ch in tm.load_channels():
         known = {r[0] for r in conn.execute("SELECT post_id FROM posts WHERE channel=?", (ch,))}
+        # history does not reach the window start yet -> keep paging back past known posts down to the horizon
+        first = conn.execute("SELECT min(post_date) FROM posts WHERE channel=?", (ch,)).fetchone()[0]
+        backfill = full or not first or datetime.fromisoformat(first) > horizon + timedelta(days=1)
         before, new, pages = None, [], 0
         while pages < MAX_PAGES:
             try:
@@ -153,8 +157,8 @@ def collect(conn):
             new += fresh
             oldest = min(posts, key=lambda p: p["post_id"])
             old_date = datetime.fromisoformat(oldest["post_date"]) if oldest["post_date"] else horizon
-            if len(fresh) < len(posts) or old_date < horizon or not known:
-                break  # дошли до известных / глубже месяца / канал новый — хватит одной страницы
+            if old_date < horizon or (len(fresh) < len(posts) and not backfill):
+                break  # глубже окна / дошли до известных (если история уже полная)
             before = oldest["post_id"]
             time.sleep(tm.REQUEST_DELAY)
         for p in new:
@@ -203,6 +207,15 @@ WHEN_ORDER = ["Всегда: кому можно отдавать данные",
 CHATS = {"shopify_chat": ("дропшиппинг", "biz"), "vibecoding_community": ("вайбкодинг", "tool")}
 
 
+# user 29.09: «я прочла» — the panel shows only what she has not seen yet (any date) and what she took into account
+SEEN_FILE = BASE / "seen.json"
+SEEN = set(json.loads(SEEN_FILE.read_text(encoding="utf-8"))["keys"]) if SEEN_FILE.exists() else set()
+
+
+def shown(key, note):
+    return bool(note.get("noted")) or key not in SEEN
+
+
 def chat_block(conn, notes, CHAT="shopify_chat"):
     """Question from the chat -> retelling -> the chosen answers (notes: cat "chat", "replies": [ids], "extra_roots")."""
     topic, pill = CHATS[CHAT]
@@ -210,7 +223,8 @@ def chat_block(conn, notes, CHAT="shopify_chat"):
         msgs = {r[0]: r for r in conn.execute("SELECT msg_id, date, text, reply_to FROM chat_msgs WHERE chat=?", (CHAT,))}
     except sqlite3.OperationalError:
         return ""
-    items = sorted(((int(k.split("/")[1]), v) for k, v in notes.items() if k.startswith(CHAT + "/") and v.get("cat") == "chat"),
+    items = sorted(((int(k.split("/")[1]), v) for k, v in notes.items() if k.startswith(CHAT + "/") and v.get("cat") == "chat"
+                    and shown(k, v)),
                    key=lambda x: msgs.get(x[0], (0, ""))[1], reverse=True)
     if not items:
         return ""
@@ -246,6 +260,10 @@ def build(conn, state, notes):
     since = (datetime.now(timezone.utc) - timedelta(days=WINDOW_DAYS)).isoformat()
     rows = conn.execute("SELECT channel, post_id, post_date, text, scraped_at FROM posts "
                         "WHERE post_date >= ? ORDER BY post_date DESC", (since,)).fetchall()
+    # unseen posts count whatever their date (29.09: «не важно от какой даты, если я их не видела»)
+    rows += [r for r in conn.execute("SELECT channel, post_id, post_date, text, scraped_at FROM posts WHERE post_date < ? "
+                                     "ORDER BY post_date DESC", (since,)) if SEEN and f"{r[0]}/{r[1]}" not in SEEN]
+    panel_rows = [r for r in rows if shown(f"{r[0]}/{r[1]}", notes.get(f"{r[0]}/{r[1]}", {}))]
     # «новое» = in the DB since the PREVIOUS «новости» run: the hourly TG_Monitor task can scrape posts in between
     last_collect = state.get("prev_collect_started") or state.get("last_collect_started", "")
     if last_collect:   # posts saved BY that previous run carry its start time (+ms) -> they are not new
@@ -269,7 +287,7 @@ def build(conn, state, notes):
     def column(cat, trends=False, only=None):
         nonlocal n_notes
         cats = (cat,) if isinstance(cat, str) else cat
-        items = [r for r in rows if notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in cats
+        items = [r for r in panel_rows if notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in cats
                  and (r[0] in TREND_CHANNELS) == trends and (r[0] == only if only else r[0] not in OWN_BLOCKS)]
         if only:
             out = [f'<div class="pill-row" id="{OWN_BLOCKS[only][0]}"><span class="pill tool">{OWN_BLOCKS[only][1]}</span>'
@@ -316,7 +334,7 @@ def build(conn, state, notes):
                      f'<b>Мода и тренды — в дашборде радара трендов ↗</b><span>{len(fashion_rows)} новостей из модных каналов '
                      'и что из них проверить в радаре трендов</span></a>')
     # posts the site hides ("Please open Telegram"): never silently skipped — shown until retold in notes
-    hidden = [r for r in rows if r[3] == tm.HIDDEN and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in (None, "skip")]
+    hidden = [r for r in panel_rows if r[3] == tm.HIDDEN and notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in (None, "skip")]
     if hidden:
         main_html.insert(0, '<div class="hidden-posts"><b>Не прочитала — Telegram не показывает эти посты на сайте, откройте в приложении:</b> '
                          + " · ".join(f'<a href="https://t.me/{r[0]}/{r[1]}" target="_blank" rel="noopener">'
@@ -395,6 +413,15 @@ def build(conn, state, notes):
 
 
 def main():
+    if "--seen" in sys.argv:  # she said «прочла»: everything in the DB and every chat note becomes read
+        conn = sqlite3.connect(tm.DB_PATH)
+        notes = load_json(NOTES, {})
+        keys = SEEN | {f"{c}/{i}" for c, i in conn.execute("SELECT channel, post_id FROM posts")} \
+               | {k for k, v in notes.items() if v.get("cat") == "chat"}
+        SEEN_FILE.write_text(json.dumps({"_why": "прочитанное: на панель не выводится, кроме принятого к сведению",
+                                         "keys": sorted(keys)}, ensure_ascii=False), encoding="utf-8")
+        print(f"Отмечено прочитанным: {len(keys)}")
+        sys.exit(0)
     only_build = "--build" in sys.argv
     conn = tm.init_db()
     state = load_json(STATE, {})
