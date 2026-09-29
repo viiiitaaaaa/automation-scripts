@@ -1,6 +1,6 @@
 ---
 name: dsers-import
-description: Импорт товаров AliExpress в Dsers — добавление по ссылкам в Import list на dsers.com через поле «Please enter the product link here» и кнопку OK, либо нажатие кнопки «Add To DSers» прямо на страницах товара. Используй, когда просят "добавь товары в dsers", "закинь в import list", "нажми add to dsers", "импортируй ссылки в dsers". Триггеры: "dsers", "import list", "add to dsers", "импорт товаров".
+description: "Импорт товаров AliExpress в Dsers — добавление по ссылкам в Import list на dsers.com через поле «Please enter the product link here» и кнопку OK, либо нажатие кнопки «Add To DSers» прямо на страницах товара. Используй, когда просят \"добавь товары в dsers\", \"закинь в import list\", \"нажми add to dsers\", \"импортируй ссылки в dsers\". Триггеры: \"dsers\", \"import list\", \"add to dsers\", \"импорт товаров\"."
 ---
 
 # Импорт товаров в Dsers

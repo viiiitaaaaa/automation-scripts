@@ -1,6 +1,6 @@
 ---
 name: style-collections
-description: Разбивка товаров магазина по коллекциям в соответствии с интерьерными стилями 2025–2026 (Warm Minimalism, Organic Luxe, Color Drenching, Heritage Maximalism, Modern Mediterranean, Neo-Japandi, Quiet Luxury 2.0, Sculptural Contemporary, Dark Academia, Eclectic Collector's). Каждый товар попадает ровно в одну коллекцию. Используй, когда просят "разбить товары по коллекциям", "разложить по стилям", "собрать коллекции магазина", "подобрать товары под стиль интерьера". Триггеры: "коллекции", "по стилям", "стили 25-26", "разбить магазин на коллекции".
+description: "Разбивка товаров магазина по коллекциям в соответствии с интерьерными стилями 2025–2026 (Warm Minimalism, Organic Luxe, Color Drenching, Heritage Maximalism, Modern Mediterranean, Neo-Japandi, Quiet Luxury 2.0, Sculptural Contemporary, Dark Academia, Eclectic Collector's). Каждый товар попадает ровно в одну коллекцию. Используй, когда просят \"разбить товары по коллекциям\", \"разложить по стилям\", \"собрать коллекции магазина\", \"подобрать товары под стиль интерьера\". Триггеры: \"коллекции\", \"по стилям\", \"стили 25-26\", \"разбить магазин на коллекции\"."
 ---
 
 # Коллекции по интерьерным стилям 2025–2026
