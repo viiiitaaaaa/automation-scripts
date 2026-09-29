@@ -198,7 +198,7 @@ def ru_date(d):
 # group chats read through Telegram Web: chat -> (topic on the panel, pill colour). Same logic for every chat:
 # only important questions with their chosen answers (notes cat "chat"). vibecoding_community added 24.09.2026.
 # groups of «Не забыть» (notes "when"), in the order of launching a store
-WHEN_ORDER = ["Экономика товара и теста", "Реклама и креативы", "Платежи, корзина, каналы", "После запуска рекламы",
+WHEN_ORDER = ["Всегда: кому можно отдавать данные", "Экономика товара и теста", "Реклама и креативы", "Платежи, корзина, каналы", "После запуска рекламы",
               "Страны и доставка", "Когда будет время (инструменты)"]
 CHATS = {"shopify_chat": ("дропшиппинг", "biz"), "vibecoding_community": ("вайбкодинг", "tool")}
 
@@ -230,6 +230,8 @@ def chat_block(conn, notes, CHAT="shopify_chat"):
         body = "".join(f"<p>{fmt_note(s)}</p>" for s in n.get("summary", []))
         if n.get("for_us"):
             body += f'<p class="forus"><b>Для нас:</b> {fmt_note(n["for_us"])}</p>'
+        if n.get("noted"):
+            body += f'<p class="mark note">📌 Принято к сведению: {fmt_note(n["noted"])}</p>'
         thread = msg_html(root, "chat-q") + "".join(msg_html(r, "chat-a") for r in n.get("replies", []))
         for extra in n.get("extra_roots", []):   # other threads on the same topic: question + all its answers
             thread += msg_html(extra, "chat-q") + "".join(
