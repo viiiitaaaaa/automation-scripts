@@ -95,7 +95,10 @@
   "headline": "Расшарить localhost одной командой",
   "summary": [
    "Бесплатный туннель Cloudflare: `cloudflared tunnel --url http://localhost:8000`. Для демо клиенту, вебхуков и доступа ИИ-агентов к локальным приложениям."
-  ]
+  ],
+  "noted": "29.09 — записано в скилл dropship-lessons и в GitHub; напомню по одному после «новостей»",
+  "when": "Когда будет время (инструменты)",
+  "noted_title": "Туннель Cloudflare — временная ссылка на localhost"
  },
  "vibecoding_tg/3887": {
   "cat": "tool",
