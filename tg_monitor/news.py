@@ -41,6 +41,8 @@ QUIET = {  # каналы, которые не разбираем подробн
     "LLMScience": "AI-research фон — для кругозора.",
     "slivaker_it": "Курсы пачками — полезное вынесено в раздел «Курсы».",
 }
+# channels with their own block on the panel (user 29.09: «python_tg — для новостей и полезностей», not lost in «фоново»)
+OWN_BLOCKS = {"python_tg": ("python", "Python — новости и полезное")}
 COURSE_CHANNEL = "slivaker_it"   # каталог курсов: посты вида «Название / Размер: / Цена:»
 # fashion & trend channels: their cards go to a separate «Мода и тренды» block BELOW dropshipping/AI news
 # (user 23.09.2026: «не смешивай с новостями дропшип и ИИ»)
@@ -262,12 +264,17 @@ def build(conn, state, notes):
     # Главное: «по делу» и «лично тебе» — два столбца рядом, «фоново» — под ними
     n_notes = 0
 
-    def column(cat, trends=False):
+    def column(cat, trends=False, only=None):
         nonlocal n_notes
-        items = [r for r in rows if notes.get(f"{r[0]}/{r[1]}", {}).get("cat") == cat
-                 and (r[0] in TREND_CHANNELS) == trends]
-        out = [f'<div class="pill-row"><span class="pill {cat}">{(TREND_CATS if trends else CATS)[cat]}</span>'
-               f'<span class="rule"></span><span class="cnt">{len(items)}</span></div>']
+        cats = (cat,) if isinstance(cat, str) else cat
+        items = [r for r in rows if notes.get(f"{r[0]}/{r[1]}", {}).get("cat") in cats
+                 and (r[0] in TREND_CHANNELS) == trends and (r[0] == only if only else r[0] not in OWN_BLOCKS)]
+        if only:
+            out = [f'<div class="pill-row" id="{OWN_BLOCKS[only][0]}"><span class="pill tool">{OWN_BLOCKS[only][1]}</span>'
+                   f'<span class="rule"></span><span class="cnt">{len(items)}</span></div><div class="chat-cards">']
+        else:
+            out = [f'<div class="pill-row"><span class="pill {cat}">{(TREND_CATS if trends else CATS)[cat]}</span>'
+                   f'<span class="rule"></span><span class="cnt">{len(items)}</span></div>']
         for r in items:
             n = notes[f"{r[0]}/{r[1]}"]
             n_notes += 1
@@ -287,6 +294,8 @@ def build(conn, state, notes):
                 f'<article class="article" data-ch="{html.escape(r[0])}">{head(r[0], local(r[2]), is_new(r))}'
                 f'<h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
                 f'<a class="src" href="https://t.me/{r[0]}/{r[1]}" target="_blank" rel="noopener">Открыть пост в Telegram ↗</a></article>')
+        if only:
+            out.append("</div>")
         return "\n".join(out) if items else ""
 
     biz, tool, soft = column("biz"), column("tool"), column("soft")
@@ -294,6 +303,8 @@ def build(conn, state, notes):
     # «Чат shopify_chat» (user 23.09.2026): important questions with their answers right under them
     for i, chat in enumerate(CHATS):
         main_html.insert(1 + i, chat_block(conn, notes, chat))
+    for i, ch in enumerate(OWN_BLOCKS):
+        main_html.insert(1 + i, column(("tool", "biz", "soft"), only=ch))
     # «Мода и тренды» — a separate page (user 23.09.2026: fashion news only as a guide for the trend radar,
     # never mixed with dropshipping / AI); here only a link to it
     t_biz, t_tool, t_soft = column("biz", True), column("tool", True), column("soft", True)
@@ -571,6 +582,7 @@ TEMPLATE = """<title>Рабочая панель</title>
 <nav class="top"><div class="top-inner">
   <div class="brand">Панель</div>
   <a class="navlink" href="#digest">Главное</a>
+  <a class="navlink" href="#python">Python</a>
   <a class="navlink" href="#courses">Курсы</a>
   <a class="navlink" href="https://claude.ai/artifact/3TFmbuqrhc4s1j9eauX2my">Экосистема ↗</a>
 </div></nav>
