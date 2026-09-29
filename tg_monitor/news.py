@@ -202,7 +202,7 @@ def ru_date(d):
 # group chats read through Telegram Web: chat -> (topic on the panel, pill colour). Same logic for every chat:
 # only important questions with their chosen answers (notes cat "chat"). vibecoding_community added 24.09.2026.
 # groups of «Не забыть» (notes "when"), in the order of launching a store
-WHEN_ORDER = ["Всегда: кому можно отдавать данные", "Экономика товара и теста", "Реклама и креативы", "Платежи, корзина, каналы", "После запуска рекламы",
+WHEN_ORDER = ["Всегда: кому можно отдавать данные", "Всегда: лимит Claude и чужие скиллы", "Экономика товара и теста", "Реклама и креативы", "Платежи, корзина, каналы", "После запуска рекламы",
               "Страны и доставка", "Когда будет время (инструменты)"]
 CHATS = {"shopify_chat": ("дропшиппинг", "biz"), "vibecoding_community": ("вайбкодинг", "tool")}
 
@@ -416,8 +416,15 @@ def main():
     if "--seen" in sys.argv:  # she said «прочла»: everything in the DB and every chat note becomes read
         conn = sqlite3.connect(tm.DB_PATH)
         notes = load_json(NOTES, {})
-        keys = SEEN | {f"{c}/{i}" for c, i in conn.execute("SELECT channel, post_id FROM posts")} \
-               | {k for k, v in notes.items() if v.get("cat") == "chat"}
+        if "--from" in sys.argv:  # 29.09 «прочла первый блок до 1 сентября»: only the «по делу» + «инструменты» columns,
+            # posts from that date on; older posts, «фоново», chats, Python, fashion and courses stay unread
+            since = sys.argv[sys.argv.index("--from") + 1]
+            keys = SEEN | {f"{c}/{i}" for c, i, d in conn.execute("SELECT channel, post_id, post_date FROM posts")
+                           if local(d).date().isoformat() >= since and c not in TREND_CHANNELS and c not in OWN_BLOCKS
+                           and c != COURSE_CHANNEL and notes.get(f"{c}/{i}", {}).get("cat") in ("biz", "tool")}
+        else:
+            keys = SEEN | {f"{c}/{i}" for c, i in conn.execute("SELECT channel, post_id FROM posts")} \
+                   | {k for k, v in notes.items() if v.get("cat") == "chat"}
         SEEN_FILE.write_text(json.dumps({"_why": "прочитанное: на панель не выводится, кроме принятого к сведению",
                                          "keys": sorted(keys)}, ensure_ascii=False), encoding="utf-8")
         print(f"Отмечено прочитанным: {len(keys)}")
