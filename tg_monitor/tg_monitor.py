@@ -140,7 +140,8 @@ def save_media(channel, post_id, photos, videos):
         if not os.path.exists(dest):
             download_file(url, dest)
 
-    for i, url in enumerate(videos, start=1):
+    # 05.10: videos are not downloaded (her «давай пропустим видео») — the panel never shows them, links stay in the db
+    for i, url in enumerate(videos if os.environ.get("TG_VIDEOS") else [], start=1):
         ext = ".mp4"
         dest = os.path.join(channel_dir, f"{post_id}_video{i}{ext}")
         if not os.path.exists(dest):

@@ -27,3 +27,7 @@ BrandAnalytics
 valeri_bloc
 pro_reelss
 photopingvin_ai
+intelligentdesign
+sitodel
+uxlive
+tproger_web
