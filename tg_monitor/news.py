@@ -28,6 +28,7 @@ NOTES = BASE / "notes.json"
 STATE = BASE / "panel_state.json"
 EXTRA = BASE / "panel_extra.html"
 OUT = BASE / "news_panel.html"
+NUMS = BASE / "post_numbers.json"   # 07.10: every post has its own permanent simple number on the panel
 WINDOW_DAYS = 45        # на панели; в базе хранится всё
 CATCHUP_DAYS = 45       # догонять всё окно панели (29.09: «исчерпывающий сбор»)
 MAX_PAGES = 30          # страниц t.me/s/ на канал за один сбор (по ~20 постов)
@@ -124,7 +125,32 @@ def build_fashion(rows, notes, t_biz, t_tool, t_soft):
   <section><div class="section-head"><h2>Новости</h2><span class="count">{len(rows)}</span></div>
     <div class="cols"><div class="col">{t_biz}</div><div class="col">{t_tool or t_soft}</div></div>{t_soft if t_tool else ""}</section>
 </div>"""
-    FASHION_OUT.write_text(page, encoding="utf-8")
+    FASHION_OUT.write_text(NUM_RE.sub("", page), encoding="utf-8")
+
+
+def num_tag(key, date_iso):
+    """Placeholder for the post's number; number_posts() swaps it for the permanent number."""
+    return f'<span class="postnum">⟦{key}|{date_iso}⟧</span>'
+
+
+NUM_RE = re.compile(r'<span class="postnum">⟦([^|⟧]+)\|([^⟧]*)⟧</span>')
+
+
+def number_posts(page):
+    """07.10 «каждый пост своей уникальной простой цифрой»: a number once given never changes;
+    new posts get the next free numbers, older posts first."""
+    nums = load_json(NUMS, {})
+    new = {}
+    for k, d in NUM_RE.findall(page):
+        if k not in nums:
+            new.setdefault(k, d)
+    nxt = max(nums.values(), default=0)
+    for k in sorted(new, key=lambda k: (new[k], k)):
+        nxt += 1
+        nums[k] = nxt
+    if new:
+        NUMS.write_text(json.dumps(nums, ensure_ascii=False, indent=0), encoding="utf-8")
+    return NUM_RE.sub(lambda m: f'<span class="postnum" title="пост № {nums[m.group(1)]}">{nums[m.group(1)]}</span>', page)
 
 
 def load_json(p, default):
@@ -212,13 +238,15 @@ WHEN_ORDER = ["Всегда: кому можно отдавать данные",
 CHATS = {"shopify_chat": ("дропшиппинг", "biz"), "vibecoding_community": ("вайбкодинг", "tool")}
 
 
-# user 29.09: «я прочла» — the panel shows only what she has not seen yet (any date) and what she took into account
+# user 29.09: «я прочла» — the panel shows only what she has not seen yet (any date).
+# user 07.10: already taken into account («noted») never goes to the panel — it lives in the skill noted-news
+# (noted_to_skill.py); the panel is only for new, not yet taken news
 SEEN_FILE = BASE / "seen.json"
 SEEN = set(json.loads(SEEN_FILE.read_text(encoding="utf-8"))["keys"]) if SEEN_FILE.exists() else set()
 
 
 def shown(key, note):
-    return bool(note.get("noted")) or key not in SEEN
+    return not note.get("noted") and key not in SEEN
 
 
 def chat_block(conn, notes, CHAT="shopify_chat"):
@@ -255,7 +283,7 @@ def chat_block(conn, notes, CHAT="shopify_chat"):
         for extra in n.get("extra_roots", []):   # other threads on the same topic: question + all its answers
             thread += msg_html(extra, "chat-q") + "".join(
                 msg_html(k, "chat-a") for k, m in sorted(msgs.items()) if m[3] == extra)
-        cards.append(f'<article class="article"><h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
+        cards.append(f'<article class="article">{num_tag(f"{CHAT}/{root}", msgs.get(root, (0, ""))[1] or "")}<h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
                      f'<div class="chat-thread"><b>Из чата — вопрос и ответы:</b>{thread}</div></article>')
     return (f'<div class="pill-row"><span class="pill {pill}">чат {CHAT} ({topic}) — важное с ответами</span><span class="rule"></span>'
             f'<span class="cnt">{len(cards)}</span></div><div class="chat-cards">{"".join(cards)}</div>')
@@ -316,7 +344,7 @@ def build(conn, state, notes):
             if n.get("noted"):  # user 27.09: lessons she took into account are marked, and listed in «Не забыть»
                 body += f'<p class="mark note">📌 Принято к сведению: {fmt_note(n["noted"])}</p>'
             out.append(
-                f'<article class="article" data-ch="{html.escape(r[0])}">{head(r[0], local(r[2]), is_new(r))}'
+                f'<article class="article" data-ch="{html.escape(r[0])}">{num_tag(f"{r[0]}/{r[1]}", r[2])}{head(r[0], local(r[2]), is_new(r))}'
                 f'<h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
                 f'<a class="src" href="https://t.me/{r[0]}/{r[1]}" target="_blank" rel="noopener">Открыть пост в Telegram ↗</a></article>')
         if only:
@@ -361,7 +389,7 @@ def build(conn, state, notes):
         pick = n.get("cat") == "course"
         courses.append(
             f'<a class="offer{" pick" if pick else ""}" href="https://t.me/{r[0]}/{r[1]}" target="_blank" rel="noopener">'
-            f'<span class="otitle">{html.escape(title)}</span>'
+            f'{num_tag(f"{r[0]}/{r[1]}", r[2])}<span class="otitle">{html.escape(title)}</span>'
             f'<span class="ometa">{html.escape(price)}{" · " + html.escape(size) if size else ""} · {ru_date(local(r[2]))}'
             + (' <span class="new">новое</span>' if is_new(r) else "") + "</span>"
             + (f'<span class="owhy">{fmt_note(n["for_us"])}</span>' if n.get("for_us") else "") + "</a>")
@@ -379,23 +407,7 @@ def build(conn, state, notes):
     installed_html = ("" if not inst else
                       '<div class="installed"><b>Из новостей установлено:</b> '
                       + " · ".join(f'<span title="{html.escape(w)}">{html.escape(t)}</span>' for t, w in inst) + "</div>")
-    # «Не забыть»: everything she took into account from the news (all time), grouped by when to use it
-    noted = {}
-    for k, v in notes.items():
-        if v.get("noted"):
-            noted.setdefault(v.get("when", "Другое"), []).append((k, v))
-    if noted:
-        installed_html += ('<details class="remember" open><summary><b>📌 Не забыть — принято к сведению из новостей</b> '
-                           f'<span class="cnt">{sum(map(len, noted.values()))}</span></summary>'
-                           '<p class="rem-note">Всё это записано в скилл dropship-lessons и в GitHub '
-                           '(artmellio-system/docs/uroki-iz-novostey.md) — напоминаю, когда наступает момент.</p>'
-                           + "".join(f'<div class="rem-group"><b>{html.escape(w)}</b><ul>'
-                                     + "".join(f'<li><a href="https://t.me/{k}" target="_blank" rel="noopener">'
-                                               f'{html.escape(v.get("noted_title") or v.get("headline", k))}</a></li>'
-                                               for k, v in items) + "</ul></div>"
-                                     for w, items in sorted(noted.items(), key=lambda kv: (
-                                         WHEN_ORDER.index(kv[0]) if kv[0] in WHEN_ORDER else len(WHEN_ORDER))))
-                           + "</details>")
+    # «Не забыть» (принятое к сведению) убрано с панели 07.10 — оно в скилле noted-news (noted_to_skill.py)
 
     upd = datetime.now().astimezone()
     new_count = sum(1 for r in rows if is_new(r))
@@ -412,7 +424,7 @@ def build(conn, state, notes):
             .replace("__OFFERS_N__", str(len(courses)))
             .replace("__WINDOW__", str(WINDOW_DAYS))
             .replace("__EXTRA__", EXTRA.read_text(encoding="utf-8") if EXTRA.exists() else ""))
-    OUT.write_text(page, encoding="utf-8")
+    OUT.write_text(number_posts(page), encoding="utf-8")
     print(f"Панель: {OUT} — постов {len(rows)}, новых {new_count}, в «Главном» {n_notes}")
     return rows, is_new
 
@@ -537,6 +549,11 @@ TEMPLATE = """<title>Рабочая панель</title>
   .pill.tool { background: var(--tool-bg); color: var(--tool); border: 1px solid var(--tool-border); }
   .pill.soft { background: var(--soft-bg); color: var(--soft); border: 1px solid var(--soft-border); }
   .pill-row .rule { flex-grow: 1; height: 1px; background: var(--border); }
+  .article, .offer { position: relative; }
+  .postnum { position: absolute; top: -10px; left: -10px; z-index: 2; min-width: 30px; height: 30px; padding: 0 8px;
+    border-radius: 15px; background: var(--bg); color: var(--ink-soft); border: 1px solid var(--border); font: 700 15px/30px Arial, sans-serif; text-align: center;
+    box-shadow: var(--shadow); }
+  .offer .postnum { left: auto; right: -10px; }
   .article { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
              margin-bottom: 12px; box-shadow: var(--shadow); }
   .article-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
