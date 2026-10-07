@@ -14,6 +14,7 @@ import html
 import json
 import re
 import sqlite3
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -290,7 +291,9 @@ def chat_block(conn, notes, CHAT="shopify_chat"):
 
 
 def build(conn, state, notes):
-    since = (datetime.now(timezone.utc) - timedelta(days=WINDOW_DAYS)).isoformat()
+    # user 07.10: everything taken into account always goes to the skill noted-news — rebuilt on every panel build
+    subprocess.run([sys.executable, str(BASE / "noted_to_skill.py")], check=False)
+    since =(datetime.now(timezone.utc) - timedelta(days=WINDOW_DAYS)).isoformat()
     rows = conn.execute("SELECT channel, post_id, post_date, text, scraped_at FROM posts "
                         "WHERE post_date >= ? ORDER BY post_date DESC", (since,)).fetchall()
     # unseen posts count whatever their date (29.09: «не важно от какой даты, если я их не видела»)
