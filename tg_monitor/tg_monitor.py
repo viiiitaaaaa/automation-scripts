@@ -90,6 +90,10 @@ def parse_posts(html):
         post_date = time_tag.get("datetime") if time_tag else None
 
         text_tag = wrap.select_one("div.tgme_widget_message_text")
+        if text_tag:  # user 07.10: links hide under words like «тут» — write the url right after the word
+            for a in text_tag.find_all("a", href=True):
+                if a["href"].startswith("http") and a.get_text(strip=True) != a["href"]:
+                    a.append(f" ({a['href']})")
         text = text_tag.get_text("\n").strip() if text_tag else ""
         if not text and wrap.select_one(".message_media_not_supported"):
             text = HIDDEN  # Telegram shows "Please open Telegram to view this post" instead of the content

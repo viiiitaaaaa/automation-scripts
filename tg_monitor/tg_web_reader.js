@@ -44,7 +44,10 @@ async function readChannel(username, minId, days) {
     for (const x of msgs) {
       if (x.id < minId || x.date < since) continue;
       if (!x.message && x.grouped_id) continue;  // album part: the caption is on another photo of the album
-      const text = x.message || (x.rich_message ? richText(x.rich_message) : "") || mediaLabel(x.media);
+      let text = x.message || (x.rich_message ? richText(x.rich_message) : "") || mediaLabel(x.media);
+      // user 07.10: links hide under words like «тут» — keep every hidden url next to the post text
+      const urls = (x.entities || []).filter(e => e._ === "messageEntityTextUrl" && e.url).map(e => e.url);
+      if (urls.length) text += "\n[ссылки: " + [...new Set(urls)].join(" ") + "]";
       posts.push({channel: username, id: x.id, date: new Date(x.date * 1000).toISOString(), text,
                   media: x.media ? x.media._ : ""});
     }
