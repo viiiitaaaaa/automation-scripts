@@ -117,7 +117,9 @@
   ],
   "noted": "27.09 — записано в скилл dropship-lessons и в GitHub; напомню по одному после «новостей»",
   "when": "Когда будет время (инструменты)",
-  "noted_title": "Orca — второй агент проверяет первого"
+  "noted_title": "Orca — второй агент проверяет первого",
+  "tool": "Orca",
+  "declined": "09.10 — проверено: цикл «Codex проверяет» требует OpenAI (🔴 по правилу данных), телеметрия по умолчанию; одной на Claude пользы мало"
  },
  "vibecoding_tg/3886": {
   "cat": "tool",
@@ -896,7 +898,9 @@
   "for_us": "Заточен под демо программ, а не товаров; для рекламы вещей у нас есть скилл artlist-product-ads. Смотреть — только если понадобится показать наши панели.",
   "noted": "29.09 — записано в скилл dropship-lessons и в GitHub; напомню по одному после «новостей»",
   "when": "Когда будет время (инструменты)",
-  "noted_title": "/brag — промо-ролик для наших панелей"
+  "noted_title": "/brag — промо-ролик для наших панелей",
+  "tool": "brag-slim",
+  "installed": "09.10 — скилл brag-slim (только SKILL.md) в ~/.claude/skills/brag-slim; полный /brag не ставили — https://github.com/latent-spaces/brag"
  },
  "vibecoding_tg/3931": {
   "cat": "tool",
@@ -4353,7 +4357,9 @@
   "for_us": "Можно пролистать и взять пару приёмов (строка состояния и голосовой ввод). Ссылка — в посте в Telegram.",
   "noted": "Пролистать «40+ советов» ради строки состояния и голосового ввода",
   "when": "Claude Code: приёмы",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md — «Горячие клавиши и команды»"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md — «Горячие клавиши и команды»",
+  "tool": "dx + 45 советов",
+  "declined": "setup.sh ставит алиас --dangerously-skip-permissions; советы забраны текстом"
  },
  "vibecoding_tg/3694": {
   "cat": "soft",
@@ -4804,7 +4810,9 @@
   "for_us": "Пригодится для темы магазина: брать экран-референс из Inspo или ComfyUI-подложки и быстро получать первый вариант вёрстки.",
   "noted": "Промпт «повтори экран по скриншоту, сравни скриншотом, исправь» для вёрстки по референсу Inspo/site-mockups",
   "when": "Сайт и дизайн",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Готовые промпты») + C:\\Users\\User\\.claude\\skills\\site-design\\ссылки_ручные.md"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Готовые промпты») + C:\\Users\\User\\.claude\\skills\\site-design\\ссылки_ручные.md",
+  "tool": "screenshot-to-code",
+  "declined": "нужны платные API-ключи; Claude Code делает то же по промпту"
  },
  "vibecoding_tg/3759": {
   "cat": "soft",
@@ -5048,7 +5056,9 @@
   "for_us": "Стоит посмотреть пример «розница»: идея для магазина — ИИ-консультант по размерам и сочетанию вещей. Пока не срочно, до запуска продаж.",
   "noted": "29.09 — записано в скилл dropship-lessons и в GitHub; напомню в момент «Платежи, корзина, каналы»",
   "when": "Платежи, корзина, каналы",
-  "noted_title": "ИИ-консультант по размерам — после запуска"
+  "noted_title": "ИИ-консультант по размерам — после запуска",
+  "tool": "commerce-agents",
+  "declined": "09.10 — безопасно (Anthropic), но рано: нужен отдельный платный API-ключ; вернуться при запуске магазина"
  },
  "vibecoding_tg/3797": {
   "cat": "soft",
@@ -5783,7 +5793,9 @@
   "for_us": "Как запасной вариант на время, когда кончился лимит Claude, — для простых задач. Не отправлять туда ключи и личные данные: бесплатные провайдеры могут хранить запросы.",
   "noted": "Free Claude Code не ставить — бесплатный роутер моделей = 🔴 (решено 29.09)",
   "when": "Всегда: кому можно отдавать данные",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Экономия лимита и кэша») + C:\\Users\\User\\.claude\\skills\\dropship-lessons\\SKILL.md (ВСЕГДА: данные)"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Экономия лимита и кэша») + C:\\Users\\User\\.claude\\skills\\dropship-lessons\\SKILL.md (ВСЕГДА: данные)",
+  "tool": "Free Claude Code",
+  "declined": "роутер чужих моделей, установка curl | sh (🔴)"
  },
  "python2day/8122": {
   "cat": "skip"
@@ -6553,7 +6565,9 @@
   "for_us": "Можно подсмотреть готовые скиллы по дизайну и безопасности для нашей темы Shopify и сравнить со своими. Ставить целиком не нужно — выбрать 2–3 полезных.",
   "noted": "Из сборника 103 скиллов подсмотреть 2–3 (дизайн, безопасность), целиком не ставить",
   "when": "Когда будет время (инструменты)",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md — таблица «Плагины и репозитории — кандидаты»"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md — таблица «Плагины и репозитории — кандидаты»",
+  "tool": "rampstack claude-skills",
+  "declined": "09.10 — тексты чистые, но выжимки ads-creative и CRO уже в dropship-lessons; SEO-аудит требует платный Ahrefs"
  },
  "PushEnter/13598": {
   "cat": "soft",
@@ -6581,7 +6595,9 @@
   "for_us": "Стоит проверить OpenMontage для роликов товаров и Agency agents (субагенты СММ/маркетинг) как источник идей для наших скиллов. Обещания экономии — проверять.",
   "noted": "Agency agents/OpenMontage/Codebase memory/Graft — только смотреть как образцы; обещания экономии проверять, не ставить",
   "when": "Когда будет время (инструменты)",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md — таблица «Плагины и репозитории — кандидаты»"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md — таблица «Плагины и репозитории — кандидаты»",
+  "tool": "agency-agents (4 роли)",
+  "installed": "09.10 — 4 роли в ~/.claude/agents: paid-media-creative-strategist, paid-media-paid-social-strategist, marketing-tiktok-strategist, marketing-instagram-curator — https://github.com/msitarzewski/agency-agents. Graft, Codebase memory MCP, OpenMontage, Orca из поста не ставили (телеметрия/хуки/платные ключи)"
  },
  "PushEnter/13602": {
   "cat": "skip"
@@ -6689,7 +6705,9 @@
   "for_us": "Для идей: можно посмотреть, как описаны роли маркетолога и финансиста, и взять для своих скиллов. Всерьёз «автономный стартап» не ждать.",
   "noted": "Посмотреть описания ролей маркетолога и финансиста для своих скиллов; автономный стартап не ждать",
   "when": "Claude Code: приёмы",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Субагенты и проверка работы»)"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Субагенты и проверка работы»)",
+  "tool": "Auto-Company",
+  "declined": "bypassPermissions и автономный цикл 24/7 — опасно; роли забраны текстом в claude-code-priemy"
  },
  "PushEnter/13618": {
   "cat": "soft",
@@ -6708,7 +6726,9 @@
   "for_us": "Пригодится перед запуском магазина: прогнать сайт на Shopify и исправить SEO-ошибки.",
   "noted": "Прогнать сайт Frivent и магазин через бесплатный SEO-аудит перед запуском",
   "when": "Сайт и дизайн",
-  "applied": "C:\\Users\\User\\.claude\\skills\\site-design\\ссылки_ручные.md"
+  "applied": "C:\\Users\\User\\.claude\\skills\\site-design\\ссылки_ручные.md",
+  "tool": "On-Page SEO Analyzer",
+  "declined": "нужны платные DataForSEO + Firecrawl; чек-лист записан в site-design"
  },
  "PushEnter/13620": {
   "cat": "soft",
@@ -6813,7 +6833,9 @@
   "for_us": "Для кругозора: сгенерированные ИИ фото товаров могут помечаться как ИИ — учитывать для рекламы в Meta, где такие метки видны.",
   "noted": "29.09 — записано в скилл dropship-lessons и в GitHub; напомню в момент «Всегда: кому можно отдавать данные»",
   "when": "Всегда: кому можно отдавать данные",
-  "noted_title": "ИИ-метку на фото не стирать, в Meta помечать"
+  "noted_title": "ИИ-метку на фото не стирать, в Meta помечать",
+  "tool": "watermarks-remover",
+  "declined": "хук на каждую запись файла; снимать метки ИИ с рекламы против правил Meta/TikTok"
  },
  "PushEnter/13641": {
   "cat": "soft",
@@ -20711,7 +20733,9 @@
   "for_us": "Готовая формулировка для наших правил «объяснять как новичку»: одна мысль в предложении, короткие инструкции. Можно дописать в скиллы и в тексты лендинга — инженерные вещи для владельцев домов объяснять так же, а сложное показывать схемой или HTML-страницей.",
   "noted": "Объяснять по ASD-STE100: одно предложение — одна мысль, до 20 слов; не помогло — схема → HTML-страница → видео; так же тексты лендинга",
   "when": "Claude Code: приёмы",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Объяснять просто»)"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Объяснять просто»)",
+  "tool": "asd-ste100",
+  "installed": "09.10 — скилл asd-ste100 (SKILL.md + ste-lint.py без сети) в ~/.claude/skills/asd-ste100 — https://github.com/danyuchn/asd-ste100-skill"
  },
  "vibecoding_tg/4007": {
   "cat": "skip"
@@ -21086,7 +21110,9 @@
   "for_us": "Можно попробовать для разовых сборов по lead-engine (сайты монтажников, конкурентов) — когда писать отдельный парсер дольше, чем описать словами. Не запускать на Taobao/1688 под её аккаунтом; ключи в сторонний код — только отдельные, не боевые.",
   "noted": "CyberScraper 2077 — для разовых сборов lead-engine словами; только с отдельным ключом или Ollama, не на 1688/Taobao",
   "when": "Когда будет время (инструменты)",
-  "applied": "C:\\Users\\User\\.claude\\skills\\b2b-sbor\\SKILL.md (раздел «Когда будет время: ИИ-парсер»)"
+  "applied": "C:\\Users\\User\\.claude\\skills\\b2b-sbor\\SKILL.md (раздел «Когда будет время: ИИ-парсер»)",
+  "tool": "CyberScraper 2077",
+  "declined": "тяжёлые зависимости, страницы уходят во внешнюю модель; записано в b2b-sbor"
  },
  "python2day/8189": {
   "cat": "skip"
@@ -22866,7 +22892,9 @@
   "for_us": "Наш глобальный CLAUDE.md и память давно разрослись — можно поставить навык и прогнать тот же промпт по нашим CLAUDE.md и SKILL.md, чтобы сессии стали дешевле (ходит в тему «длинные сессии дорогие»).",
   "noted": "Почистить CLAUDE.md, память и большие скиллы тремя субагентами (мягко → радикально) по промпту Pocock, её решения не выкидывать",
   "when": "Всегда: лимит Claude и чужие скиллы",
-  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Экономия лимита и кэша») + C:\\Users\\User\\.claude\\skills\\dropship-lessons\\SKILL.md («Когда будет время», п.1)"
+  "applied": "C:\\Users\\User\\.claude\\skills\\claude-code-priemy\\SKILL.md (раздел «Экономия лимита и кэша») + C:\\Users\\User\\.claude\\skills\\dropship-lessons\\SKILL.md («Когда будет время», п.1)",
+  "tool": "writing-for-agents",
+  "installed": "09.10 — только скилл writing-for-agents в ~/.claude/skills/writing-for-agents — https://github.com/mattpocock/skills"
  },
  "vibecoding_tg/4042": {
   "cat": "soft",
@@ -23075,7 +23103,9 @@
   "for_us": "Добавить в скилл vendor-check как второй инструмент рядом с Aliens Eye для проверки поставщиков и партнёров; заодно проверить, что утекло о наших собственных рабочих почтах.",
   "noted": "Flowsint — второй OSINT-инструмент для проверки поставщиков/партнёров по почте и телефону и наших почт на утечки; ставить после чтения кода",
   "when": "Когда будет время (инструменты)",
-  "applied": "C:\\Users\\User\\.claude\\skills\\vendor-check\\SKILL.md (раздел «Второй инструмент — Flowsint»)"
+  "applied": "C:\\Users\\User\\.claude\\skills\\vendor-check\\SKILL.md (раздел «Второй инструмент — Flowsint»)",
+  "tool": "Flowsint",
+  "declined": "нужен Docker с открытыми базами и платные источники; записано в vendor-check"
  },
  "PushEnter/13814": {
   "cat": "skip"
