@@ -44,12 +44,39 @@ QUIET = {  # каналы, которые не разбираем подробн
     "slivaker_it": "Курсы пачками — полезное вынесено в раздел «Курсы».",
     "uxlive": "UX и тренды, много шума — поглядывать для сайта (05.10).",
     "tproger_web": "Фронтенд/бэкенд — справочно для сборки сайта (05.10).",
+    "marketingmass": "Маркетинг (tgstat 09.10), фон: строго только полезное — B2B-маркетинг от экс-CMO Битрикса: «портрет целевого клиента и как проверить», «хорошая уп…",
+    "HelloDigitalWorld": "Маркетинг (tgstat 09.10), фон: строго только полезное — Практик SEO: межсезонье в SEO (07.10), обзор AI Tracker Топвизора для видимости в ИИ-ответ…",
+    "Meo_marketing": "Маркетинг (tgstat 09.10), фон: строго только полезное — CMO B2B IT-компании: как заставить холодные продажи работать в сложном B2B, кастдев через …",
+    "TexterraBlog": "Маркетинг (tgstat 09.10), фон: строго только полезное — Полезные статьи про GEO (видимость компании в ответах нейросетей, кейс ошибок ИИ о бренде)…",
+    "coreboot_marketing": "Маркетинг (tgstat 09.10), фон: строго только полезное — Перфоманс-агентство: советы по рекламе в Авито (в т.ч. B2B и премиум), реклама в Max через…",
+    "molyanov_blog": "Маркетинг (tgstat 09.10), фон: строго только полезное — Иногда практичные ИИ-приёмы: субагенты обновляют устаревшие статьи сайта, 2–3 варианта хук…",
+    "websstudio": "Маркетинг (tgstat 09.10), фон: строго только полезное — Бывают практичные посты: реклама в MAX и таргет Директа в MAX (01.10, 08.10), маржа на каж…",
+    "copywritersdigest": "Маркетинг (tgstat 09.10), фон: строго только полезное — Для текстов иногда полезно: подборка сервисов редактуры (Diffchecker и др., 11.09), итоги …",
+    "sukhachevk": "Маркетинг (tgstat 09.10), фон: строго только полезное — Деловые эссе собственника: как сверять CTR/конверсию с нормой рынка, low ticket, ролики о …",
+    "eduard_trubcheninov": "Маркетинг (tgstat 09.10), фон: строго только полезное — SEO под Яндекс от практика: зачем Яндекс Вебмастер, как Яндекс маскирует рекламу в SEO-выд…",
+    "maps_biz": "Маркетинг (tgstat 09.10), фон: строго только полезное — Тема ровно наша — геомаркетинг (Яндекс Карты/2ГИС, GEO-выдача), но последние недели почти …",
+    "projplus": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Есть полезные находки для Claude Code — команда /insights (04.10), Mods (05.10), бесплатны…",
+    "ppprompt": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Автор строит «personal AI OS» и скиллы (/slides-generator, 22.09), дельно про Haiku 5.5 по…",
+    "kdoronin_blog": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Практик, но пишет ~3 раза в неделю и много анонсов эфиров; ценное — статистика банов Claud…",
+    "ai_vibe": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Практик ИИ-видео: гайд «ролик с любыми персонажами и окружением» (05.10), как подстраховат…",
+    "RixAiHub": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Практик на Claude: готовый плагин для Claude, который монтирует длинные видео (08.10), раз…",
+    "TochkiNadAI": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Иногда полезное: библиотека 475 промптов видео/эксплейнеров для повтора под свой бренд, га…",
+    "free_republic_ai": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Справочники для ИИ-видео: 45 движений камеры, шпаргалка по объективам, эмоции лица (FACS) …",
+    "NeuroLuv": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Практичные туториалы для визуала: промпт «фото товара → обложка журнала» с сохранением тов…",
+    "ai4svoi": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Попадаются рабочие советы по Claude Code — /claude-api prompt-audit (26.09), мод прогрева …",
+    "its_capitan": "ИИ (tgstat/папка Tech 09.10, прислала сама), фон: строго только полезное — Честно: это дневник инди-разработчика микро-SaaS (bota.chat, ai-flip, legalai) — показывае…",
+    "digital_ponos": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — CTO делится найденными фичами агентов: Dreams — оптимизация памяти Claude Code (04.08), ка…",
+    "aiwizards": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — По делу бывают рецепты: свой Telegram CLI с демоном (07.09), список стека агентных инструм…",
+    "dev_salikhov": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — CTO RetailCRM с реальным опытом агентной разработки: Claude Code с 2.1.277 читает AGENTS.m…",
 }
 # channels with their own block on the panel (user 29.09: «python_tg — для новостей и полезностей», not lost in «фоново»)
 # 05.10: she starts building the site — the four web-design channels share one block «Дизайн сайтов», shown first
 DESIGN_BLOCK = ("design", "Дизайн сайтов — новости и полезное")
 OWN_BLOCKS = {"intelligentdesign": DESIGN_BLOCK, "sitodel": DESIGN_BLOCK, "uxlive": DESIGN_BLOCK, "tproger_web": DESIGN_BLOCK,
               "python_tg": ("python", "Python — новости и полезное")}
+# 09.10: marketing channels from tgstat.ru/tag/marketing (104 read, 18 kept) share one block «Маркетинг»
+MARKETING_BLOCK = ("marketing", "Маркетинг — реклама, лиды, тексты")
+OWN_BLOCKS.update({c: MARKETING_BLOCK for c in ['serezha_pro_marketing', 'boringmarketer', 'vanzhula', 'b2b_marketing_ru', 'target_nata', 'irina_trafik', 'glvrdru', 'marketingmass', 'HelloDigitalWorld', 'Meo_marketing', 'TexterraBlog', 'coreboot_marketing', 'molyanov_blog', 'websstudio', 'copywritersdigest', 'sukhachevk', 'eduard_trubcheninov', 'maps_biz']})
 COURSE_CHANNEL = "slivaker_it"   # каталог курсов: посты вида «Название / Размер: / Цена:»
 # fashion & trend channels: their cards go to a separate «Мода и тренды» block BELOW dropshipping/AI news
 # (user 23.09.2026: «не смешивай с новостями дропшип и ИИ»)
@@ -644,6 +671,7 @@ TEMPLATE = """<title>Рабочая панель</title>
   <div class="brand">Панель</div>
   <a class="navlink" href="#digest">Главное</a>
   <a class="navlink" href="#design">Дизайн сайтов</a>
+  <a class="navlink" href="#marketing">Маркетинг</a>
   <a class="navlink" href="#python">Python</a>
   <a class="navlink" href="#courses">Курсы</a>
   <a class="navlink" href="https://claude.ai/artifact/3TFmbuqrhc4s1j9eauX2my">Экосистема ↗</a>
