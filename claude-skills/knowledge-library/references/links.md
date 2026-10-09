@@ -11,6 +11,7 @@
 | https://asyncio.ru/3.15/library/asyncio.html | Полная русская документация asyncio (наша выжимка — `references/python/asyncio.md`). |
 | https://python-all.ru/ | Русскоязычный сайт-сборник материалов по Python. 29.09.2026 с этого компьютера не открылся (таймаут) — содержимое не проверено. |
 | https://github.com/PythonNoobs/python_developer | Подборка сообщества @PythonNoobs: дорожная карта обучения (Road_map.md), книги (Books.md), курсы (Courses.md), видео, Django, GUI (Tkinter/PyQt), полезные ресурсы. Смотреть, когда нужно «что почитать по теме X». |
+| https://gabors-data-analysis.com/ai-course/ | Курс Габора Бекеша «Data Analysis with AI» (бесплатный, открытый, обновлён летом 2026): ИИ как участник анализа таблиц и как ловить его ошибки. Для отбора 1688, радара, продаж (LLMScience/1056, пост 319, 26.08.2026). |
 | https://py-ds-ml.ru/ | Справочник-шпаргалка по 30 библиотекам данных (pandas, numpy, matplotlib…) с поиском. Наша выжимка по pandas — `references/python/pandas.md`. Часть примеров там под старый pandas 2.x. |
 | https://pandas.pydata.org/docs/ | Официальная документация pandas (англ.) — если нужен параметр, которого нет в выжимке. |
 
