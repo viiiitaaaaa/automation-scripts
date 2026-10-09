@@ -55,6 +55,7 @@ QUIET = {  # каналы, которые не разбираем подробн
     "sukhachevk": "Маркетинг (tgstat 09.10), фон: строго только полезное — Деловые эссе собственника: как сверять CTR/конверсию с нормой рынка, low ticket, ролики о …",
     "eduard_trubcheninov": "Маркетинг (tgstat 09.10), фон: строго только полезное — SEO под Яндекс от практика: зачем Яндекс Вебмастер, как Яндекс маскирует рекламу в SEO-выд…",
     "maps_biz": "Маркетинг (tgstat 09.10), фон: строго только полезное — Тема ровно наша — геомаркетинг (Яндекс Карты/2ГИС, GEO-выдача), но последние недели почти …",
+    "c/3493639787": "CodeGuard: Academy (папка Tech, подписалась сама 09.10) — ИБ для начинающих; брать только то, что защищает наши ПК и аккаунты (в pc-check).",
     "projplus": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Есть полезные находки для Claude Code — команда /insights (04.10), Mods (05.10), бесплатны…",
     "ppprompt": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Автор строит «personal AI OS» и скиллы (/slides-generator, 22.09), дельно про Haiku 5.5 по…",
     "kdoronin_blog": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — Практик, но пишет ~3 раза в неделю и много анонсов эфиров; ценное — статистика банов Claud…",
@@ -75,6 +76,9 @@ DESIGN_BLOCK = ("design", "Дизайн сайтов — новости и по�
 OWN_BLOCKS = {"intelligentdesign": DESIGN_BLOCK, "sitodel": DESIGN_BLOCK, "uxlive": DESIGN_BLOCK, "tproger_web": DESIGN_BLOCK,
               "python_tg": ("python", "Python — новости и полезное")}
 # 09.10: marketing channels from tgstat.ru/tag/marketing (104 read, 18 kept) share one block «Маркетинг»
+# 09.10: private channels without @username (she subscribed; read only through Telegram Web): c/<id> -> name on the panel
+PRIVATE_TITLES = {"c/3128735547": "CodeGuard: Python", "c/3493639787": "CodeGuard: Academy"}
+OWN_BLOCKS["c/3128735547"] = OWN_BLOCKS["python_tg"]
 MARKETING_BLOCK = ("marketing", "Маркетинг — реклама, лиды, тексты")
 OWN_BLOCKS.update({c: MARKETING_BLOCK for c in ['serezha_pro_marketing', 'boringmarketer', 'vanzhula', 'b2b_marketing_ru', 'target_nata', 'irina_trafik', 'glvrdru', 'marketingmass', 'HelloDigitalWorld', 'Meo_marketing', 'TexterraBlog', 'coreboot_marketing', 'molyanov_blog', 'websstudio', 'copywritersdigest', 'sukhachevk', 'eduard_trubcheninov', 'maps_biz']})
 COURSE_CHANNEL = "slivaker_it"   # каталог курсов: посты вида «Название / Размер: / Цена:»
@@ -340,8 +344,8 @@ def build(conn, state, notes):
         return bool(last_collect) and (r[4] or "") >= last_collect
 
     def head(ch, dt, new):
-        return (f'<div class="article-head"><div class="avatar" style="background:{color.get(ch, "#777")}">{html.escape(ch[:1].upper())}</div>'
-                f'<div><div class="chan">{html.escape(ch)}</div><div class="date">{ru_date(dt)}, {dt:%H:%M}</div></div>'
+        return (f'<div class="article-head"><div class="avatar" style="background:{color.get(ch, "#777")}">{html.escape(PRIVATE_TITLES.get(ch, ch)[:1].upper())}</div>'
+                f'<div><div class="chan">{html.escape(PRIVATE_TITLES.get(ch, ch))}</div><div class="date">{ru_date(dt)}, {dt:%H:%M}</div></div>'
                 + ('<span class="new">новое</span>' if new else "") + "</div>")
 
     # Главное: «по делу» и «лично тебе» — два столбца рядом, «фоново» — под ними

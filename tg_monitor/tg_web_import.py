@@ -74,7 +74,7 @@ def plan():
             last = conn.execute("SELECT max(post_id) FROM posts WHERE channel=?", (ch,)).fetchone()[0]
             out.append([ch, (last or 0) + 1])
     # closed channels that already got posts through Telegram Web: continue after the last one
-    for ch in ("anita_bold", "moda_po_sprosu"):
+    for ch in ["anita_bold", "moda_po_sprosu"] + [c for c in tm.load_channels() if c.startswith("c/")]:  # 09.10: c/<id> = private
         last = conn.execute("SELECT max(post_id) FROM posts WHERE channel=?", (ch,)).fetchone()[0]
         if last and [ch, last + 1] not in out and ch in tm.load_channels():
             out.append([ch, last + 1])

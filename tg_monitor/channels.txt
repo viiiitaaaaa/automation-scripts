@@ -68,3 +68,8 @@ its_capitan
 digital_ponos
 aiwizards
 dev_salikhov
+# 09.10 закрытые каналы без @адреса (папка Tech, она подписалась): c/<номер>, читаются только через Telegram Web
+# CodeGuard: Academy
+c/3493639787
+# CodeGuard: Python
+c/3128735547

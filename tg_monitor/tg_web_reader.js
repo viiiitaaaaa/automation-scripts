@@ -30,9 +30,16 @@ function mediaLabel(media) {
 
 async function readChannel(username, minId, days) {
   const m = rootScope.managers;
-  const peer = await m.appUsersManager.resolveUsername(username);
-  if (!peer || !peer.id) return {username, error: "not found"};
-  const inputPeer = await m.appChatsManager.getChannelInputPeer(peer.id);
+  // 09.10: private channel without @username is written in channels.txt as "c/<channel id>"
+  // (then t.me/c/<id>/<post> is its real post link); she must be subscribed
+  let chatId;
+  if (username.startsWith("c/")) chatId = +username.slice(2);
+  else {
+    const peer = await m.appUsersManager.resolveUsername(username);
+    if (!peer || !peer.id) return {username, error: "not found"};
+    chatId = peer.id;
+  }
+  const inputPeer = await m.appChatsManager.getChannelInputPeer(chatId);
   const since = Date.now() / 1000 - days * 86400;
   const posts = [];
   let offset = 0;
