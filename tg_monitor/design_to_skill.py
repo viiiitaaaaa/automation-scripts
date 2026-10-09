@@ -52,6 +52,26 @@ for n, (d, k, v) in enumerate(items, 1):
 json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
 
+# изучение по ссылкам (её правило 07.10 «изучаешь всё, а не только текст поста»): study_design_*/out_*.json → изучено.md
+import glob
+studied = {}
+for f in sorted(glob.glob(os.path.join(HERE, "study_design_*", "out_*.json"))):
+    for r in json.load(open(f, encoding="utf-8")):
+        studied[r["link"]] = r  # более поздняя папка перекрывает раннюю
+st = ["# Изучено по ссылкам из дизайн-постов\n",
+      "Первоисточники открыты и прочитаны целиком (не пересказ поста). Собирается из `tg_monitor/study_design_*/out_*.json`.\n"]
+for u, r in sorted(studied.items(), key=lambda x: links.get(x[0], ("", "", ""))[2], reverse=True):
+    st.append(f"\n## {r.get('what') or u}\n{u} · [пост](https://t.me/{r.get('post', '')}) · {r.get('status', '')}\n")
+    st += [f"- {h}\n" for h in r.get("how", [])]
+    if r.get("for_us"):
+        st.append(f"\n**Для нашего сайта:** {r['for_us']}\n")
+    if r.get("safety"):
+        st.append(f"\n**Безопасность:** {r['safety']}\n")
+not_yet = [u for u in links if u not in studied]
+if not_yet:
+    st.append("\n## Ещё не изучены\n" + "".join(f"- {u}\n" for u in not_yet))
+open(os.path.join(SKILL, "изучено.md"), "w", encoding="utf-8").write("".join(st))
+
 manual = os.path.join(SKILL, "ссылки_ручные.md")  # что добавлено руками — не перезаписывается
 lk = ["# Полезные ссылки и сайты по дизайну сайтов\n",
       "Напоминать ей по запросу («какие были ссылки/сайты по дизайну», «чем сделать …»). Автосписок из новостей; "
@@ -60,4 +80,4 @@ lk += [f"| {u} | {h} | {d} | [пост](https://t.me/{k}) |\n" for u, (h, k, d) 
 open(os.path.join(SKILL, "ссылки.md"), "w", encoding="utf-8").write("".join(lk))
 if not os.path.exists(manual):
     open(manual, "w", encoding="utf-8").write("# Ссылки, добавленные вручную\n\n| Ссылка | Что это | Когда и откуда |\n|---|---|---|\n")
-print(f"site-design: приёмов {len(items)}, ссылок {len(links)}")
+print(f"site-design: приёмов {len(items)}, ссылок {len(links)}, изучено {len(studied)}, не изучено {len(not_yet)}")

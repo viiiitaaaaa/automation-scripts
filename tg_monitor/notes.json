@@ -34650,5 +34650,15 @@
  },
  "my_image_and_style/6624": {
   "cat": "skip"
+ },
+ "tproger_web/6586": {
+  "cat": "soft",
+  "design": true,
+  "headline": "Плавная смена содержимого: ViewTransition в React 19.3",
+  "summary": [
+   "React 19.3: компонент <ViewTransition> плавно меняет старое содержимое на новое через браузерные View Transitions; срабатывает только в startTransition, Suspense и useDeferredValue. https://react.dev/blog/2026/09/09/react-19-3",
+   "Настройка update=\"auto\" default=\"none\" — заглушка появляется мгновенно, а готовое содержимое въезжает плавно."
+  ],
+  "for_us": "Сайт Frivent на чистом HTML/CSS, React не нужен: то же даёт сам браузер — document.startViewTransition() и @view-transition { navigation: auto; } для плавного перехода между страницами клиентов. Делать как улучшение, спокойно и коротко (≈200 мс)."
  }
 }

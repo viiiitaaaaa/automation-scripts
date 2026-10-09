@@ -1,0 +1,298 @@
+[
+ {
+  "link": "https://developer.chrome.com/blog/new-in-devtools-october-2026",
+  "post": "tproger_web/6584",
+  "status": "изучено",
+  "what": "Обзор новинок Chrome DevTools (инструменты разработчика в Chrome) версий 153–154.",
+  "how": [
+    "Performance → Insights теперь разбирает «мягкие переходы» (soft navigation — смена экрана без перезагрузки страницы): записать в Performance клик → новый экран и смотреть блок Insights.",
+    "Новое в протоколе CDP: Emulation.setCPUPerformanceOverride — «уровни производительности процессора» для повторяемых замеров на разном железе (в статье без готовых пресетов и цифр).",
+    "Device Mode: пресеты разложены на Mobile / Foldables / Tablets & Desktops / Smart Displays, добавлены iPhone 16, Pixel 9/10, Galaxy Z Fold 6, iPad Pro 13\".",
+    "Elements: показывает «неактивные» стили (правило совпало, но не применяется) — включается в Settings; помогает понять, почему CSS «не работает».",
+    "Network: «Edit and resend as fetch» — открыть запрос как готовый fetch() в консоли и отправить заново с правками.",
+    "Для ИИ-агентов: DevTools MCP получил флаг --no-javascript-evaluation (агент смотрит страницу, не выполняя скриптов)."
+  ],
+  "for_us": "У нас лендинг без переходов-экранов, поэтому soft navigation почти не нужен; полезнее Device Mode с новыми iPhone/iPad (клиенты Рублёвки чаще на них) и «неактивные стили» при отладке вёрстки.",
+  "safety": ""
+ },
+ {
+  "link": "https://koboyo.com/page-mascot",
+  "post": "PushEnter/13822",
+  "status": "изучено",
+  "what": "page-mascot — открытый React-компонент: персонаж наверху страницы следит за курсором и моргает при клике; 53 готовых + скилл для агента, рисующий своего (в т.ч. по фото).",
+  "how": [
+    "Устроен на двух спрайтах 3×3 (картинка-сетка из 9 кадров): 9 направлений головы и 9 эмоций; угол от персонажа до курсора выбирает кадр, клик показывает реакцию на 0,5 с.",
+    "Установка: npm i page-mascot; использование <Mascot directions=\"/mascots/fox-directions.webp\" reactions=\"/mascots/fox-reactions.webp\" size={140} />.",
+    "6 стилей рисовки: colour, ink, sketch, riso, paper, pixel.",
+    "На сенсорных экранах слежение отключается (нет «точного указателя»), анимация клика уважает prefers-reduced-motion (настройка «уменьшить движение»).",
+    "Свой персонаж рисует агент-скилл (npx skills add nilbuild/page-mascot) через OpenAI images API — нужен OPENAI_API_KEY."
+  ],
+  "for_us": "Для премиального инженерного сайта не ставить: несерьёзно и спорит с «тихой роскошью». Сам приём (кадр выбирается по углу курсора) на чистом JS повторяется в 20 строк, если когда-то понадобится «живой» элемент.",
+  "safety": "🟢 GitHub nilbuild/page-mascot, MIT, ~1,1 тыс. звёзд; на сайте-витрине стоит Google Analytics, в самом пакете сетевых вызовов не заявлено; скилл для рисования шлёт картинки в OpenAI (свой ключ). Не ставили."
+ },
+ {
+  "link": "https://getartcraft.com/apps",
+  "post": "vibecoding_tg/4029",
+  "status": "изучено",
+  "what": "Семь открытых «клонов» программ Adobe на Rust от команды ArtCraft (GitHub storytold): PhotoCraft, VectorCraft, FilmCraft, LightCraft, PdfCraft, EffectCraft, DesignCraft.",
+  "how": [
+    "PhotoCraft (аналог Photoshop) — «early alpha» (ранняя версия): 34 инструмента, 16 корректирующих слоёв, маски, стили слоёв, открывает PSD; лицензия MIT/Apache-2.0.",
+    "Остальные: VectorCraft ≈ Illustrator, FilmCraft ≈ Premiere, LightCraft ≈ Lightroom, PdfCraft ≈ Acrobat (тоже early alpha), EffectCraft ≈ After Effects, DesignCraft ≈ InDesign — пока «in development» (в разработке).",
+    "Работают локально (без облака), есть веб-версии на WebAssembly — запускаются прямо в браузере, без установки.",
+    "Всё управляется и мышью, и командами: CLI, JSON-канал и MCP-сервер — ИИ-агент может делать то же, что человек кликает.",
+    "Сами авторы пишут, что PhotoCraft пока не замена Photoshop для ежедневной работы: нет генеративных функций, ~20 инструментов не хватает, плагинов нет."
+  ],
+  "for_us": "Для простой правки фото объектов и макетов можно пробовать веб-версию PhotoCraft/PdfCraft в браузере без установки; для серьёзной ретуши фото домов пока рано.",
+  "safety": "🟡 Код открыт (MIT/Apache у Craft-приложений; у основного storytold/artcraft — сырая «fair source» лицензия), проекту ~неделя, ранняя альфа — устанавливать на рабочий ПК пока не стоит, веб-версия в браузере безопаснее. Не ставили."
+ },
+ {
+  "link": "https://fonts.google.com/specimen/REM",
+  "post": "sitodel/3926",
+  "status": "изучено",
+  "what": "REM — бесплатный геометрический шрифт без засечек от Octavio Pardo на Google Fonts.",
+  "how": [
+    "Кириллицы НЕТ: наборы символов только latin, latin-ext, vietnamese (проверено по API Fontsource и Google Fonts) — русский текст упадёт в запасной шрифт.",
+    "Лицензия SIL Open Font License 1.1 — можно бесплатно на коммерческом сайте.",
+    "Вариативный (variable — один файл со всеми толщинами): веса 100–900, есть курсив.",
+    "Подключение: <link href=\"https://fonts.googleapis.com/css2?family=REM:wght@100..900&display=swap\" rel=\"stylesheet\">."
+  ],
+  "for_us": "Для русскоязычного лендинга Frivent не подходит из-за отсутствия кириллицы; максимум — латинские цифры/логотипы, но рядом с Vela Sans это лишний шрифт. Оставляем Vela Sans.",
+  "safety": ""
+ },
+ {
+  "link": "https://tproger.ru/articles/optimizaciya-kartinok-dlya-veba-gde-teryayutsya-megabajty-i-kak-ih-v",
+  "post": "tproger_web/6562",
+  "status": "изучено",
+  "what": "Статья-чеклист tproger: как облегчить картинки на сайте — размер, формат, второй проход сжатия, метаданные, AVIF.",
+  "how": [
+    "Сначала размер в пикселях: фото 6000×4000 в блоке 1200 px — в 25 раз больше пикселей, чем нужно; уменьшение дало 4,7 → 1,1 МБ (−77%). Для экранов Retina — несколько версий через srcset.",
+    "Формат по типу: фото — WebP (−30–50% к JPEG) или AVIF (ещё −30%); скриншоты — PNG/WebP без потерь; логотипы — SVG; анимации — анимированный WebP вместо GIF (−60–80%).",
+    "Качество фото 75–82%; тест 1920×1080: JPEG q85 420 КБ, WebP q80 298 КБ, AVIF 210 КБ. AVIF кодируется ~в 15 раз дольше JPEG — делать на сборке, не на лету.",
+    "Удалять EXIF/GPS (10–30 КБ на файл, и это могут быть координаты объекта!), но сперва «впечь» поворот из тега ориентации.",
+    "Разметка: <picture><source srcset=\"photo.avif\" type=\"image/avif\"><source srcset=\"photo.webp\" type=\"image/webp\"><img src=\"photo.jpg\" width=\"1200\" height=\"800\" loading=\"lazy\" alt=\"…\"></picture>.",
+    "width/height обязательны (нет «прыжков» вёрстки); картинке первого экрана НЕ ставить lazy, а ставить fetchpriority=\"high\" (иначе страдает LCP — время показа главного элемента)."
+  ],
+  "for_us": "Добавить в build.py шаг: каждое фото домов ресайз под ширину блока ×1 и ×2, AVIF + WebP + JPEG q≈80, срезать EXIF/GPS (важно для приватности объектов на Рублёвке), выводить через <picture> с width/height; героя — fetchpriority=\"high\".",
+  "safety": ""
+ },
+ {
+  "link": "https://app.initium.sh/",
+  "post": "vibecoding_tg/3994",
+  "status": "изучено",
+  "what": "Initium — бесплатный онлайн-редактор стиля для shadcn/ui (набор React-компонентов) с экспортом файла DESIGN.md для ИИ-агентов и 200+ готовыми маркетинговыми блоками.",
+  "how": [
+    "Вкладка Style: пресет, логотип, основной цвет (палитра Tailwind или свой), цвета фона/текста/рамок, размер шрифта, шрифт заголовков и текста с толщиной, скругления, стиль кнопок и форм, «линейки» (Gap/Line).",
+    "Export → DESIGN.md: «Copy / Download DESIGN.md» — текстовое описание стиля для любого ИИ-инструмента; входа в аккаунт для экспорта не требует.",
+    "Export → shadcn/ui: команда pnpm dlx shadcn@latest add '<ссылка-пресет>' --overwrite — только для React-проектов (Next.js, Vite, Astro…).",
+    "Вкладка Strategy собирает STRATEGY.md (бриф для агента), Blocks — 277 блоков (hero, цены, FAQ, отзывы)."
+  ],
+  "for_us": "Нам нужен только DESIGN.md: выставить беж/серый фон, #6b1a24 кнопки, #222947 акцент, свои скругления и скачать файл как черновик правил для Claude Code; блоки и CLI — под React, нам не подходят (аналог — свои CSS-переменные в :root).",
+  "safety": "🟢 Веб-сервис, ничего не ставится; при экспорте в DESIGN.md данные не нужны. Команду shadcn не запускать — она для React и перезаписывает компоненты."
+ },
+ {
+  "link": "https://skillry.dev/ai-videos/opus-5-5",
+  "post": "PushEnter/13770",
+  "status": "изучено",
+  "what": "Skillry — галерея ~513 роликов, сделанных моделью Opus 5.5, у каждого — исходный промпт автора и ремейк Skillry.",
+  "how": [
+    "Рубрики: Motion graphics (317), Explainers (67 — объясняющие ролики), 3D scenes (59), Games (70).",
+    "Ролики сделаны кодом, а не в видеоредакторе: чаще всего Remotion (видео из React-кода) и HyperFrames (видео из HTML), плюс Three.js, GSAP, SVG, Canvas; озвучка — ElevenLabs/Gemini TTS, музыка синтезом в Python.",
+    "Хороший промпт по образцам: разрешение и частота кадров, фирменные цвета, стиль картинки и движения, требования к звуку, финальная строка-подпись.",
+    "Читать и копировать промпты можно бесплатно без аккаунта; платно ($9.99/мес, $79/год, $169 навсегда) — только премиум-скиллы."
+  ],
+  "for_us": "Взять из раздела Explainers 2–3 промпта, заменить цвета на беж/#222947/#6b1a24 и тему на «как воздух проходит через дом» — короткий ролик для первого экрана; HyperFrames (HTML) ближе нашему стеку, чем Remotion (React).",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/Unleashed-Design/pen/zYMxyNx",
+  "post": "sitodel/3900",
+  "status": "изучено",
+  "what": "«CSS Only Background Image Grids Animation» — мозаика из 9 скруглённых плиток разной высоты, сквозь которые видна одна общая картинка, и картинки по кругу сменяются.",
+  "how": [
+    "Сетка: 3 колонки flex с gap 0.5rem, у плиток разная высота (3–9rem) и border-radius: 0.5rem.",
+    "Главный трюк: background-attachment: fixed + background-position: center — все плитки показывают куски ОДНОЙ картинки, как будто смотришь через окна.",
+    "Смена фото: @keyframes background { 0%,30% {background-image: var(--image-1)} 33%,63% {var(--image-2)} 66%,96% {var(--image-3)} } на 5s infinite.",
+    "Разные animation-delay у плиток (95–350 ms) — смена прокатывается волной, а не разом.",
+    "Без JavaScript; картинки в CSS-переменных --image-1..3."
+  ],
+  "for_us": "Красиво для блока «Наши объекты»: дом виден сквозь «окна»-плитки. Для тихой роскоши замедлить (≈12–15 s на цикл), сменять плавно через opacity слоёв (background-image не плавно анимируется), учесть, что background-attachment: fixed не работает на iPhone — там показать обычную сетку.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/yagoestevez/pen/oapQEJ",
+  "post": "sitodel/3886",
+  "status": "изучено",
+  "what": "«Portfolio Page» Яго Эстевеса — одностраничное портфолио; в блоке проектов фото чёрно-белые и оживают цветом с приближением при наведении.",
+  "how": [
+    "Фото в покое: .project-image { transform: scale(1.2); filter: saturate(0); transition: all 300ms; } — без цвета и слегка увеличено.",
+    "При наведении: .project-link:hover > img { filter: saturate(1); transform: scale(1.05); } — цвет возвращается, кадр чуть «отъезжает».",
+    "Карточке при наведении — мягкая тень снизу: box-shadow: 0 50px 15px -30px #25293450.",
+    "Кнопки: при наведении translateY(-2px) и широкая размытая тень цвета акцента.",
+    "Сайт написан на React, но эффект фото — чистый CSS."
+  ],
+  "for_us": "Для сетки объектов взять как есть, но спокойнее: saturate(0.35) вместо полного ч/б, scale 1.04→1.0, transition 600ms ease; тень в тоне #222947 с малой прозрачностью. React не нужен.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/Coding-in-Public/pen/rNGpJJV",
+  "post": "sitodel/3876",
+  "status": "изучено",
+  "what": "«Check Micro Animation» — чекбокс-кнопка с градиентной рамкой: при нажатии галочка «прорисовывается» штрихом и вокруг вспыхивают кружки-«искры».",
+  "how": [
+    "Градиентная рамка: button::after { content:''; position:absolute; inset:-3px; z-index:-1; background: linear-gradient(321deg, hsl(var(--accent1)), hsl(var(--accent2))); border-radius:.4rem; }",
+    "В отмеченном состоянии фон кнопки становится прозрачным — градиент заливает весь квадрат (transition background-color 400ms).",
+    "Галочка — SVG-линия, рисуется через stroke-dasharray/stroke-dashoffset: 19.8 → 0 за 350ms cubic-bezier(0.83, 0.05, 0.62, 1).",
+    "«Взрыв»: два слоя кружков с keyframes scale(.01)→scale(2) и opacity 0→1→0 за 0.64–0.8 s.",
+    "JS только переключает класс .checked (и в демо играет звук колокольчика — его убрать).",
+    "Цвета в HSL-переменных, отдельные значения для prefers-color-scheme: dark."
+  ],
+  "for_us": "Для галочки согласия в форме взять только прорисовку галочки (stroke-dashoffset) и заливку #6b1a24 без градиента, «искр» и звука; повесить на настоящий <input type=\"checkbox\"> (через appearance: none), чтобы форма и доступность работали.",
+  "safety": ""
+ },
+ {
+  "link": "https://csswizardry.com/2026/04/font-family-doesnt-fall-back-the-way-you-think/",
+  "post": "tproger_web/6518",
+  "status": "изучено",
+  "what": "Статья Harry Roberts (CSS Wizardry): font-family не «наследует» запасные шрифты от родителя.",
+  "how": [
+    "Каждое объявление font-family самостоятельно: если у h1 написано только \"Open Sans\", пока шрифт грузится, браузер возьмёт свой шрифт по умолчанию (часто Times New Roman), а не набор с body.",
+    "Правильно: h1 { font-family: \"Open Sans\", system-ui, sans-serif; } — всегда заканчивать общим семейством.",
+    "В дизайн-токенах (CSS-переменных) хранить сразу полный набор: :root { --heading-large: \"Clan Pro\", sans-serif; }.",
+    "Даже один общий sans-serif в конце спасает от «вспышки» шрифта с засечками; разная ширина запасного и основного шрифта двигает блоки и портит CLS (оценку сдвигов вёрстки)."
+  ],
+  "for_us": "В CSS Frivent задать --font-main: \"Vela Sans\", system-ui, -apple-system, \"Segoe UI\", Arial, sans-serif и везде использовать только переменную; попросить Claude Code найти все font-family без запасного.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/kjbrum/pen/qooQJJ",
+  "post": "sitodel/3869",
+  "status": "изучено",
+  "what": "«Custom Dot Cursor» — свой курсор: маленькая точка 8 px и полупрозрачный круг 40 px, который плавно догоняет точку.",
+  "how": [
+    "Системный курсор прячется: html *, body * { cursor: none; }.",
+    "Два div с pointer-events: none; position: absolute; border-radius: 50%; transform: translate(-50%,-50%); точка 8×8, обводка 40×40 rgba(…,0.5).",
+    "Точка ставится сразу по mousemove (e.pageX/pageY), круг догоняет с задержкой: _x += (endX - _x) / 8 в цикле requestAnimationFrame.",
+    "Над ссылками и при нажатии: точка scale(0.75), круг scale(1.5), transition 0.3s ease-in-out.",
+    "При уходе мыши со страницы оба элемента opacity: 0."
+  ],
+  "for_us": "Включать только над галереей объектов и только на компьютере: @media (hover: hover) and (pointer: fine); в остальном сайте оставить обычный курсор (на премиальном сайте прятать курсор везде мешает). Круг цвета #222947 с прозрачностью 0.25, подпись «Смотреть» внутри круга — по желанию.",
+  "safety": ""
+ },
+ {
+  "link": "http://colorpalette.pro/",
+  "post": "tproger_web/6501",
+  "status": "изучено",
+  "what": "Color Palette Pro — «синтезатор палитр»: из одного цвета строит 6 палитр в перцептивных цветовых пространствах (OKLCH/LCH/LAB) и выгружает CSS-переменные.",
+  "how": [
+    "Ввод цвета: OKLCH, hex, RGB или имя; ползунки L/C/H (светлота/насыщенность/оттенок); пипетка; ссылка сохраняет настройки.",
+    "Типы палитр: аналоговая, комплементарная, сплит-комплементарная, триада, тетрада и Tints & Shades — 12 ступеней светлее/темнее базового.",
+    "4 варианта у каждой палитры; «Diamond» уводит оттенки к нейтральному серому — подходит для приглушённых тонов.",
+    "Экспорт: CSS-файл с переменными (к каждому цвету — контрастный белый/чёрный для текста), картинка для Figma, ссылка.",
+    "UI mode: сам строит пары surface / on-surface (фон и текст на нём) для светлой и тёмной темы.",
+    "Из той же подборки tproger: готовые палитры uchū (OKLCH, P3), Flexoki, Reasonable Colors (упор на контраст по WCAG), генераторы Harmonizer и tints.dev."
+  ],
+  "for_us": "Вбить #6b1a24 и #222947, взять Tints & Shades в варианте Diamond — получим ряд оттенков бордо/синего для hover, рамок и фонов; выгрузить CSS-переменные прямо в :root нашего style.css.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/seyedi/pen/nKdMyj",
+  "post": "sitodel/3859",
+  "status": "изучено",
+  "what": "«Navigation» — ряд из трёх этапов-«ручек»; при наведении плашка этапа вырастает вверх в карточку с фото, пунктами списка и кнопкой.",
+  "how": [
+    "В покое .item высотой 130px и margin-top: 354px (карточка «утоплена» вниз); при :hover — margin-top: 0; height: 484px; фон белый, box-shadow 0 0 5px 1px #aaa; transition all 225ms ease-out.",
+    "Пункты списка проявляются по очереди задержками: li:first-child transition-delay .222s, второй .299s, последний .333s (opacity 0 → 1).",
+    "Кнопка-ссылка появляется последней: transition: all 225ms .7s.",
+    "«Ручка» этапа — квадрат с треугольниками из border на ::before/::after.",
+    "Без JavaScript, но вёрстка старая: float и фиксированные ширины 320/960px."
+  ],
+  "for_us": "Идея для «Как мы работаем»: 5 этапов в ряд, при наведении карточка этапа плавно раскрывается и пункты проявляются лесенкой (можно через sibling-index()). Сделать на flex/grid, а на телефоне — <details> с раскрытием по нажатию вместо hover.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/christian-thorvik/pen/JZGoqr",
+  "post": "sitodel/3838",
+  "status": "изучено",
+  "what": "«Hamburgers» — 6 вариантов анимированной иконки меню «три полоски», каждая превращается в крестик по-своему.",
+  "how": [
+    "Одна полоска — сам div, две другие — ::before (top: 10px) и ::after (top: -10px); высота 3px, ширина 30px.",
+    "Самый простой вариант (.hamburger1): по классу .closed средняя полоска становится прозрачной, верх/низ съезжают в top: 0 и поворачиваются rotate(45deg)/rotate(-45deg) → крестик; transition 250ms.",
+    "Варианты 2–6 — через keyframes (сначала сдвиг полосок к центру, потом поворот) и с вращением всей иконки (класс fastrotate).",
+    "JS — одна строка (в демо на jQuery): по клику toggleClass('closed'); без jQuery: btn.classList.toggle('closed')."
+  ],
+  "for_us": "Взять вариант 1 без вращения всей иконки: полоски 1.5–2px цвета #222947, transition 300ms ease; иконку делать <button aria-expanded> и без jQuery.",
+  "safety": ""
+ },
+ {
+  "link": "https://web-platform-dx.github.io/web-features-explorer/features/sibling-count/",
+  "post": "tproger_web/6452",
+  "status": "изучено",
+  "what": "Карточка функций CSS sibling-index() и sibling-count() в каталоге Web Features Explorer: поддержка браузерами и статус Baseline.",
+  "how": [
+    "sibling-index() — номер элемента среди соседей (с 1), sibling-count() — сколько всего соседей; работают внутри calc().",
+    "Поддержка: Chrome/Edge 138, Safari 26.2 (iOS тоже), Firefox 154; статус Baseline «Newly available» с 18.08.2026, «Widely available» ожидается в 2029.",
+    "Лесенка без JS и без nth-child: .card { animation: fade-in .6s both; animation-delay: calc(sibling-index() * 80ms); }",
+    "Ширина по числу карточек: .cards > * { flex-basis: calc(100% / sibling-count()); } — для раскладки обернуть в @supports (width: calc(sibling-index() * 1px)).",
+    "Для декоративных задержек можно сразу: старый браузер просто покажет всё одновременно."
+  ],
+  "for_us": "Использовать для появления карточек услуг, этапов и фото объектов с шагом 100–120 ms (спокойнее, чем 80) и только при @media (prefers-reduced-motion: no-preference).",
+  "safety": ""
+ },
+ {
+  "link": "https://github.com/kikkupico/ambientcss",
+  "post": "tproger_web/6444",
+  "status": "изучено",
+  "what": "Ambient CSS — CSS-библиотека «освещения»: задаёшь направление света, а тени, блики и фаски всех элементов считаются согласованно (откалибровано по рендерам Blender).",
+  "how": [
+    "Свет задаётся классом на родителе: .amb-light-tl (сверху-слева), -tr, -bl, -br, -top, -bottom, -left, -right — наследуется детьми.",
+    "Тонкая настройка переменными: --amb-light-x/--amb-light-y (−1…1), --amb-key-light-intensity и --amb-fill-light-intensity (0…1), --amb-light-hue, --amb-albedo (цвет поверхности).",
+    "Элемент: class=\"ambient amb-surface amb-chamfer amb-elevation-1 amb-rounded\"; высота .amb-elevation-0…3, толщина .amb-thickness-0…2.",
+    "Материалы: .amb-mat-matte, -shiny, -glass, -brushed (шлифованный металл), -blasted; поверхности concave/convex (вогнутая/выпуклая).",
+    "Пакет @ambientcss/css — чистый CSS без зависимостей (dist/ambient.css), работает без React; @ambientcss/components — отдельно для React."
+  ],
+  "for_us": "Целиком не подключать — стиль «приборной панели» с фасками слишком технический для тихой роскоши. Взять принцип: одно направление света для всех теней сайта (например, свет сверху-слева → все box-shadow смещены вправо-вниз, мягкие и тёплые); возможно .amb-mat-matte для одной кнопки-регулятора, если будет «пульт климата».",
+  "safety": "🟢 MIT, ~585 звёзд, CSS-пакет без зависимостей и без сетевых вызовов по README; install-скрипты в README не заявлены (package.json не проверен). Ничего не ставили."
+ },
+ {
+  "link": "http://catstxt.org/",
+  "post": "tproger_web/6426",
+  "status": "изучено",
+  "what": "cats.txt — шуточный «стандарт» (пародия на llms.txt): Markdown-файл для чат-ботов, обязательно с картинкой кота.",
+  "how": [
+    "Пародирует правила llms.txt: файл в /.well-known/cats.txt, не закрыт в robots.txt, ссылка с главной, Markdown-описание сайта.",
+    "Абсурдное требование «минимум одна картинка кота (можно ASCII)» показывает, что любые такие «стандарты» никто не проверяет.",
+    "Главная страница сайта доводов не приводит; цифры (Ahrefs, 100 000 доменов) и «четыре доказательства» — из поста канала и разделов сайта, сама страница их не содержит."
+  ],
+  "for_us": "Подтверждает решение: llms.txt на сайт Frivent не делать и подрядчикам за него не платить; силы — в нормальные тексты, разметку и скорость.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/yudizsolutions/pen/QWoqmWW",
+  "post": "sitodel/3760",
+  "status": "изучено",
+  "what": "«Responsive GSAP Slider» (Fruity) — слайдер вкусов напитка: банка в центре, вокруг «плавают» фрукты, при переключении меняются огромный заголовок, цвет фона и этикетка.",
+  "how": [
+    "Подключается библиотека GSAP (gsap.min.js с CDN) + Font Awesome для стрелок.",
+    "«Плавание» картинок: gsap.to('.fruit-image img', { x: 'random(-20, 20)', y: 'random(-20, 20)', duration: 2, yoyo: true, repeat: -1, ease: 'none' }).",
+    "Смена слайда: контейнер секций сдвигается style.left = currentPosition + '%' (шаг 100%) с transition 0.5s; заголовок gsap.from('.h1', { y: '20%', opacity: 0, duration: 0.5 }); фрукты падают сверху y: '-100vh'.",
+    "Цвета каждого слайда — CSS-переменные (--pear-can, --apple-background…), заголовок 449px.",
+    "Кнопки вперёд/назад прячутся на крайних слайдах (display: none)."
+  ],
+  "for_us": "Целиком слишком «сочно» для нас. Взять только лёгкое «дыхание» элемента (±4–6px, 6–8 s, yoyo) для фото оборудования — это делается чистым CSS keyframes без GSAP; слайдер объектов — на scroll-snap.",
+  "safety": ""
+ },
+ {
+  "link": "https://codepen.io/ykadosh/pen/KKezJzz",
+  "post": "sitodel/3750",
+  "status": "изучено",
+  "what": "«Infinite Scroll Animation» — несколько рядов бесконечно бегущих тегов в разные стороны с затуханием по краям.",
+  "how": [
+    "Содержимое ряда выводится ДВАЖДЫ подряд, а .inner { display: flex; width: fit-content; animation: loop var(--duration) linear infinite; } с @keyframes loop { to { transform: translateX(-50%); } } — шов незаметен.",
+    "Направление и скорость ряда — переменные: animation-direction: var(--direction) (normal/reverse), --duration ~15000ms.",
+    "Затухание по краям: .fade { position:absolute; inset:0; pointer-events:none; background: linear-gradient(90deg, #1e293b, transparent 30%, transparent 70%, #1e293b); }.",
+    "В демо ряды генерирует React, но сама анимация — чистый CSS: на нашем сайте просто продублировать список в HTML (дубль с aria-hidden=\"true\")."
+  ],
+  "for_us": "Одна строка марок оборудования или типов объектов: --duration 40–60 s, мелкий шрифт, градиент к беж-фону по краям, пауза .inner:hover { animation-play-state: paused; } и остановка при prefers-reduced-motion.",
+  "safety": ""
+ }
+]
