@@ -12,6 +12,7 @@ cat=skip — пост просмотрен, в «Главное» не идёт 
 """
 import html
 import json
+import os
 import re
 import sqlite3
 import subprocess
@@ -28,6 +29,8 @@ BASE = Path(__file__).resolve().parent
 NOTES = BASE / "notes.json"
 STATE = BASE / "panel_state.json"
 EXTRA = BASE / "panel_extra.html"
+BOOKS = BASE / "panel_books.html"   # user 09.10: книги — выжимка и что ушло в скиллы, отдельный блок панели
+BOOKS_FULL = BASE / "panel_books_full.html"   # 09.10 «маловато»: все приёмы и конспекты целиком, строит build_books.py
 OUT = BASE / "news_panel.html"
 NUMS = BASE / "post_numbers.json"   # 07.10: every post has its own permanent simple number on the panel
 WINDOW_DAYS = 45        # на панели; в базе хранится всё
@@ -69,6 +72,22 @@ QUIET = {  # каналы, которые не разбираем подробн
     "digital_ponos": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — CTO делится найденными фичами агентов: Dreams — оптимизация памяти Claude Code (04.08), ка…",
     "aiwizards": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — По делу бывают рецепты: свой Telegram CLI с демоном (07.09), список стека агентных инструм…",
     "dev_salikhov": "ИИ (tgstat/папка Tech 09.10), фон: строго только полезное — CTO RetailCRM с реальным опытом агентной разработки: Claude Code с 2.1.277 читает AGENTS.m…",
+    "deksden_notes": "Вайбкодинг (12.10), фон: строго только полезное — DEKSDEN notes: новости Codex/Claude Code с практическими советами (TTL кэша субагентов, Agent SDK по подписке)",
+    "nobilix": "Вайбкодинг (12.10), фон: строго только полезное — Refat Talks: приёмы работы с кодовыми агентами (диплинки, регламенты как инструкции агенту) + субботний дайджест",
+    "sergiobulaev": "Вайбкодинг (12.10), фон: строго только полезное — Сергей Булаев: разборы про агентов и Claude Code (облачные сессии), много пересказа новостей",
+    "neuraldeep": "Вайбкодинг (12.10), фон: строго только полезное — Валера Ковальский: опыт с Claude Code и агентами, статистика банов Claude, инструменты терминала",
+    "ultravibecoder": "Вайбкодинг (12.10), фон: строго только полезное — Ультра ВайбКодер: практика сайтов с 3D и анимациями через ИИ, сценарии Codex; часть постов личные",
+    "vibecodings": "Вайбкодинг (12.10), фон: строго только полезное — Станислав Быстрицкий: гайды по Claude Design и промпты для макетов, но много продажи обучения",
+    "max_about_ai": "Вайбкодинг (12.10), фон: строго только полезное — Max: вдумчивые посты про скиллы, RAG, универсальных агентов; пишет редко",
+    "typetoday": "Дизайн сайтов (12.10), фон: строго только полезное — type.today: шрифты и типографика, новые гарнитуры и примеры айдентики — для выбора шрифтов",
+    "figmaweb": "Дизайн сайтов (12.10), фон: строго только полезное — Веб-дизайн в Figma: бесплатные макеты лендингов и магазинов по темам + статьи; есть реклама",
+    "figma_pro": "Дизайн сайтов (12.10), фон: строго только полезное — Figma Pro: плагины, наборы иконок и UI-китов (в т.ч. Типограф Бычкова)",
+    "onlyfigma": "Дизайн сайтов (12.10), фон: строго только полезное — Только Figma: шрифтовые пары, градиенты, мини-уроки эффектов; бывают мемы",
+    "pdigest": "Дизайн сайтов (12.10), фон: строго только полезное — Дайджест продуктового дизайна: ежемесячные подборки паттернов и дизайн-систем для ИИ; бывает реклама курсов",
+    "designdealer": "Дизайн сайтов (12.10), фон: строго только полезное — Designdealer: новые ИИ-инструменты для дизайна и анимации (SVG-генераторы, скиллы для 3D-иконок)",
+    "prouxui": "Дизайн сайтов (12.10), фон: строго только полезное — Про UX, UI и AI: Figma + MCP (вытащить шейдеры, анимации как стили), мысли про интерфейсы",
+    "frontendnoteschannel_ru": "Дизайн сайтов (12.10), фон: строго только полезное — Frontender's notes: новости фронтенда и ИИ-разработки (Next.js, Chrome, Claude) короткими пересказами",
+    "nikitonsky_pub": "Дизайн сайтов (12.10), фон: строго только полезное — Никита Прокопов (Tonsky): мнения про UX интерфейсов и форм, иногда про ИИ",
 }
 # channels with their own block on the panel (user 29.09: «python_tg — для новостей и полезностей», not lost in «фоново»)
 # 05.10: she starts building the site — the four web-design channels share one block «Дизайн сайтов», shown first
@@ -79,6 +98,7 @@ OWN_BLOCKS = {"intelligentdesign": DESIGN_BLOCK, "sitodel": DESIGN_BLOCK, "uxliv
 # 09.10: private channels without @username (she subscribed; read only through Telegram Web): c/<id> -> name on the panel
 PRIVATE_TITLES = {"c/3128735547": "CodeGuard: Python", "c/3493639787": "CodeGuard: Academy"}
 OWN_BLOCKS["c/3128735547"] = OWN_BLOCKS["python_tg"]
+OWN_BLOCKS.update({c: DESIGN_BLOCK for c in ['webstandards_ru', 'mozhno', 'fourdesign', 'htmlacademy', 'typetoday', 'figmaweb', 'figma_pro', 'onlyfigma', 'pdigest', 'designdealer', 'prouxui', 'frontendnoteschannel_ru', 'nikitonsky_pub']})  # 12.10 new web-design channels
 MARKETING_BLOCK = ("marketing", "Маркетинг — реклама, лиды, тексты")
 OWN_BLOCKS.update({c: MARKETING_BLOCK for c in ['serezha_pro_marketing', 'boringmarketer', 'vanzhula', 'b2b_marketing_ru', 'target_nata', 'irina_trafik', 'glvrdru', 'marketingmass', 'HelloDigitalWorld', 'Meo_marketing', 'TexterraBlog', 'coreboot_marketing', 'molyanov_blog', 'websstudio', 'copywritersdigest', 'sukhachevk', 'eduard_trubcheninov', 'maps_biz']})
 COURSE_CHANNEL = "slivaker_it"   # каталог курсов: посты вида «Название / Размер: / Цена:»
@@ -201,7 +221,10 @@ def collect(conn):
     now = datetime.now(timezone.utc).isoformat()
     total = 0
     full = "--full" in sys.argv  # 29.09 «исчерпывающий сбор»: walk the whole window, filling every gap
+    only = set(filter(None, os.environ.get("TG_ONLY", "").split(",")))  # 12.10: collect just the newly added channels
     for ch in tm.load_channels():
+        if only and ch not in only:
+            continue
         known = {r[0] for r in conn.execute("SELECT post_id FROM posts WHERE channel=?", (ch,))}
         # history does not reach the window start yet -> keep paging back past known posts down to the horizon
         first = conn.execute("SELECT min(post_date) FROM posts WHERE channel=?", (ch,)).fetchone()[0]
@@ -457,7 +480,8 @@ def build(conn, state, notes):
             .replace("__OFFERS__", "\n".join(courses) or '<p class="section-note">Новых курсов за этот период нет.</p>')
             .replace("__OFFERS_N__", str(len(courses)))
             .replace("__WINDOW__", str(WINDOW_DAYS))
-            .replace("__EXTRA__", EXTRA.read_text(encoding="utf-8") if EXTRA.exists() else ""))
+            .replace("__EXTRA__", "".join(p.read_text(encoding="utf-8") for p in (BOOKS, BOOKS_FULL) if p.exists())
+                     + (EXTRA.read_text(encoding="utf-8") if EXTRA.exists() else "")))
     OUT.write_text(number_posts(page), encoding="utf-8")
     print(f"Панель: {OUT} — постов {len(rows)}, новых {new_count}, в «Главном» {n_notes}")
     return rows, is_new
@@ -677,6 +701,8 @@ TEMPLATE = """<title>Рабочая панель</title>
   <a class="navlink" href="#design">Дизайн сайтов</a>
   <a class="navlink" href="#marketing">Маркетинг</a>
   <a class="navlink" href="#python">Python</a>
+  <a class="navlink" href="#books">Книги</a>
+  <a class="navlink" href="#books-all">Все приёмы</a>
   <a class="navlink" href="#courses">Курсы</a>
   <a class="navlink" href="https://claude.ai/artifact/3TFmbuqrhc4s1j9eauX2my">Экосистема ↗</a>
 </div></nav>

@@ -73,3 +73,26 @@ dev_salikhov
 c/3493639787
 # CodeGuard: Python
 c/3128735547
+# 12.10 её «больше новостей по веб-дизайну и вайбкодингу» — sources_1210/design_vibe.json
+llm_under_hood
+the_ai_architect
+webstandards_ru
+mozhno
+fourdesign
+htmlacademy
+deksden_notes
+nobilix
+sergiobulaev
+neuraldeep
+ultravibecoder
+vibecodings
+max_about_ai
+typetoday
+figmaweb
+figma_pro
+onlyfigma
+pdigest
+designdealer
+prouxui
+frontendnoteschannel_ru
+nikitonsky_pub
