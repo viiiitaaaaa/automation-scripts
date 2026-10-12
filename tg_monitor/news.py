@@ -222,9 +222,8 @@ def collect(conn):
     total = 0
     full = "--full" in sys.argv  # 29.09 «исчерпывающий сбор»: walk the whole window, filling every gap
     only = set(filter(None, os.environ.get("TG_ONLY", "").split(",")))  # 12.10: collect just the newly added channels
-    for ch in tm.load_channels():
-        if only and ch not in only:
-            continue
+    chans = [c for c in tm.load_channels() if not only or c in only]
+    for idx, ch in enumerate(chans, 1):  # 12.10: «N из M» по каналам
         known = {r[0] for r in conn.execute("SELECT post_id FROM posts WHERE channel=?", (ch,))}
         # history does not reach the window start yet -> keep paging back past known posts down to the horizon
         first = conn.execute("SELECT min(post_date) FROM posts WHERE channel=?", (ch,)).fetchone()[0]
@@ -255,7 +254,7 @@ def collect(conn):
         conn.commit()
         total += len(new)
         status = "нет постов (закрыт веб-просмотр)" if pages and not new and not known else f"новых: {len(new)}"
-        print(f"  [{ch}] {status}")
+        print(f"  {idx} из {len(chans)} [{ch}] {status}")
         time.sleep(tm.REQUEST_DELAY)
     return total
 
@@ -487,6 +486,20 @@ def build(conn, state, notes):
     return rows, is_new
 
 
+STALE_HOURS = 30  # 12.10: a collection gap went unnoticed for 3.5 days elsewhere (boringmarketer/1331) -> warn, no schedule
+
+
+def warn_if_stale(conn):
+    """Print a warning when the newest post in the DB is older than STALE_HOURS (collector or VPN probably broke)."""
+    last = conn.execute("SELECT max(post_date) FROM posts").fetchone()[0]
+    if not last:
+        return
+    age = datetime.now(timezone.utc) - datetime.fromisoformat(last)
+    if age > timedelta(hours=STALE_HOURS):
+        print(f"\n!!! ВНИМАНИЕ: последний пост в базе от {local(last):%d.%m %H:%M} — {age.total_seconds() / 3600:.0f} ч назад "
+              f"(порог {STALE_HOURS} ч). Похоже, сбор не работает: проверить VPN/Happ и доступ к t.me/s.")
+
+
 def main():
     if "--seen" in sys.argv:  # she said «прочла»: everything in the DB and every chat note becomes read
         conn = sqlite3.connect(tm.DB_PATH)
@@ -515,6 +528,7 @@ def main():
         state["last_collect_started"] = started
         STATE.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"Новых постов: {n}")
+    warn_if_stale(conn)
     notes = load_json(NOTES, {})
     rows, is_new = build(conn, state, notes)
     # needs review = any post in the window without a note, whoever scraped it (23.09 bug: TG_Monitor
