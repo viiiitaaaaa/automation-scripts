@@ -6,7 +6,7 @@
 import io
 import json
 
-THEME = r"C:\Users\User\shopify-decor-theme"
+THEME = r"C:\Users\User\decor-store-theme"
 
 # ---------------------------------------------------------------- announcement
 hg_path = THEME + r"\sections\header-group.json"

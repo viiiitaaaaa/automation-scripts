@@ -6,7 +6,7 @@ description: "Заведение коллекций магазина ARTMELLIO �
 # Коллекции магазина: три типа сетов
 
 Магазин — `www.artmellio.com` (`kmfmxn-r4.myshopify.com`), тема в репозитории
-`github.com/viiiitaaaaa/shopify-decor-theme`. Подробности темы — в памяти
+`github.com/viiiitaaaaa/decor-store-theme`. Подробности темы — в памяти
 `shopify-magazin-dekora`.
 
 Один товар участвует **одновременно в нескольких коллекциях** — это требование ТЗ,

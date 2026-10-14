@@ -11,7 +11,7 @@ mutation($id: ID!, $files: [OnlineStoreThemeFilesUpsertFileInput!]!) {
 """
 files = []
 for path in sys.argv[1:]:
-    local = r"C:\Users\User\shopify-decor-theme" + "\\" + path.replace("/", "\\")
+    local = r"C:\Users\User\decor-store-theme" + "\\" + path.replace("/", "\\")
     content = io.open(local, encoding="utf-8-sig").read()
     files.append({"filename": path, "body": {"type": "TEXT", "value": content}})
 
