@@ -33,7 +33,14 @@ class BrightDataClient:
         headers = {"Authorization": f"Bearer {self.api_token}"}
         waited = 0
         while waited < max_wait:
-            r = requests.get(f"{DATASET_URL}?id={collection_id}", headers=headers, timeout=30)
+            # 14.10: обрыв на опросе не роняет уже оплаченный сбор — ждём и спрашиваем снова.
+            # trigger() не повторяем сам: повторный запуск платный (Newman — повтор не должен списывать дважды)
+            try:
+                r = requests.get(f"{DATASET_URL}?id={collection_id}", headers=headers, timeout=30)
+            except (requests.ConnectionError, requests.Timeout):
+                time.sleep(poll_interval)
+                waited += poll_interval
+                continue
             if r.status_code == 200 and r.text.strip() not in ("", "[]"):
                 return r.json()
             time.sleep(poll_interval)

@@ -65,9 +65,24 @@ def load_channels():
 def fetch_page(channel, before=None):
     url = f"https://t.me/s/{channel}"
     params = {"before": before} if before else {}
-    resp = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
-    resp.raise_for_status()
-    return resp.text
+    # 14.10 (c/3128735547/1055, Newman «Resilient»): повтор с растущей паузой только на временные сбои —
+    # обрыв/таймаут, 408, 429 (ждём Retry-After), 5xx; 404 и прочее — сразу ошибка, канал не долбим
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == 2:
+                raise
+            time.sleep(5 * (attempt + 1))
+            continue
+        if resp.status_code in (408, 429) or resp.status_code >= 500:
+            if attempt == 2:
+                resp.raise_for_status()
+            wait = resp.headers.get("Retry-After", "")
+            time.sleep(min(int(wait), 60) if wait.isdigit() else 5 * (attempt + 1))
+            continue
+        resp.raise_for_status()
+        return resp.text
 
 
 def extract_bg_url(style):
