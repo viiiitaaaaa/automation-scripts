@@ -388,7 +388,7 @@ def build(conn, state, notes):
         installed_html += ('<details class="remember" open><summary><b>📌 Не забыть — принято к сведению из новостей</b> '
                            f'<span class="cnt">{sum(map(len, noted.values()))}</span></summary>'
                            '<p class="rem-note">Всё это записано в скилл dropship-lessons и в GitHub '
-                           '(artmellio-system/docs/uroki-iz-novostey.md) — напоминаю, когда наступает момент.</p>'
+                           '(decor-store-ops/docs/uroki-iz-novostey.md) — напоминаю, когда наступает момент.</p>'
                            + "".join(f'<div class="rem-group"><b>{html.escape(w)}</b><ul>'
                                      + "".join(f'<li><a href="https://t.me/{k}" target="_blank" rel="noopener">'
                                                f'{html.escape(v.get("noted_title") or v.get("headline", k))}</a></li>'

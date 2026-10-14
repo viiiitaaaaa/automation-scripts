@@ -23,10 +23,10 @@ description: "Уроки из новостей Telegram для запуска м
    (группа из `WHEN_ORDER`) и `"noted_title"` (коротко) → `python noted_to_skill.py` пересобирает скилл noted-news.
    С 07.10 принятое на панель НЕ выводится (её правило: на панели только новые, ещё не принятые новости).
    Установленное из новостей — как раньше: `"installed"` / `"declined"`. Затем `python news.py --build` и публикация панели.
-2. **GitHub, проект магазина:** `python C:\Users\User\.claude\skills\dropship-lessons\lessons_doc.py` → `artmellio-system\docs\uroki-iz-novostey.md`
+2. **GitHub, проект магазина:** `python C:\Users\User\.claude\skills\dropship-lessons\lessons_doc.py` → `decor-store-ops\docs\uroki-iz-novostey.md`
    (копия этого файла без шапки; ссылка «📌 Не забыть» стоит в начале README) → коммит, push в текущую ветку и в `dev`.
 3. **GitHub, скиллы:** копия в `automation-scripts\claude-skills` (+ `tg_monitor`) → коммит и push в `master`.
-4. Архив `Downloads\ARTMELLIO_SKILLS` (sync_skills.ps1) и карта скиллов, если менялась логика.
+4. Архив `Downloads\claude-skills` (sync_skills.ps1) и карта скиллов, если менялась логика.
 Вычеркнутый пункт «когда будет время» отмечать и на панели: в notes поста `"installed"` или `"declined"` с датой.
 
 ## ВСЕГДА: кому можно отдавать данные, а кому нельзя (её правило 29.09: «предупреждать всегда»)

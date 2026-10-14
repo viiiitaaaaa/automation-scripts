@@ -29,7 +29,7 @@ https://claude.ai/code/artifact/7d31149d-ae55-4bbd-a9a1-89451a2eec35
 
 ## Репозиторий
 
-`C:\Users\User\artmellio-system`, приватный на GitHub: `viiiitaaaaa/artmellio-system`.
+`C:\Users\User\decor-store-ops`, приватный на GitHub: `viiiitaaaaa/decor-store-ops`.
 
 ```
 shopify-theme/      живая тема (Dawn 16, сильно доработана)
@@ -47,7 +47,7 @@ docs/               план, backlog темы, лекция
 ```
 
 Правила проекта — `AGENTS.md` в корне, на него ссылаются `CLAUDE.md` и
-`.cursor/rules/artmellio.mdc`. Cursor открывается командой `cursor C:\Users\User\artmellio-system`.
+`.cursor/rules/artmellio.mdc`. Cursor открывается командой `cursor C:\Users\User\decor-store-ops`.
 
 Ветки: `main` — то, что в магазине; `dev` — собранные правки;
 `feature/…` — одна задача. Есть `feature/remove-tax-note` (правки карточки,

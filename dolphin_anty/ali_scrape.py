@@ -18,7 +18,7 @@ import openpyxl
 
 CDP = Path(__file__).with_name("cdp.json")
 XLSX = Path(r"C:\Users\User\Desktop\скрины магазинов\Новая папка\ссылки на товары.xlsx")
-OUT = Path(r"C:\Users\User\artmellio-system\data\products\ali-reviews.jsonl")
+OUT = Path(r"C:\Users\User\decor-store-ops\data\products\ali-reviews.jsonl")
 
 sys.stdout.reconfigure(encoding="utf-8")
 LIMIT = None

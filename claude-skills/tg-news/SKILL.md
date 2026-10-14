@@ -191,7 +191,7 @@ Code со скиллами. Есть цифра, приём или инстру�
 раздел «Ещё не изучены» → открыть каждую (статьи прочитать, CodePen — код, шрифты — кириллица и лицензия, GitHub — проверка
 кода без установки) и записать `study_design_<ММДД>\out_*.json` (поля link, post, status, what, how[], for_us, safety; при
 10+ ссылок — 2–3 помощника), снова `design_to_skill.py`; важное — в «Выжимку» SKILL.md site-design. Затем скопировать *.py, *.js, channels.txt, notes.json, seen.json в `C:\Users\User\automation-scripts\tg_monitor`,
-commit + push, и `ARTMELLIO_SKILLS\sync_skills.ps1`.
+commit + push, и `claude-skills\sync_skills.ps1`.
 Самое полезное дописывать в `lead-engine\docs\сайт_старт.md` (раздел 6) + GitHub + копия на Диске.
 С 05.10 всё, что помогает делать сайт/дизайн с ИИ, из любых каналов — «берёт».
 
