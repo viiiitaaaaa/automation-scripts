@@ -167,6 +167,29 @@ def main():
             f'<details class="bkf-sub"><summary>Чего НЕ брать</summary><div class="bkf-md">{"".join(MD(n) for n in nots)}</div></details>'
             f'<p class="bkf-file">Файл: {" + ".join(files)}</p></details>')
 
+    # докупленные книги: 10.10 (knigi\novye) и 13.10 (knigi\novye13, пересказ Hermes + проверка Claude) — один файл на книгу
+    n_new, n_books = 0, len(BOOKS)
+    for folder, label in ((KNIGI / "novye", "10.10"), (KNIGI / "novye13", "13.10")):
+        for f in sorted(folder.glob("*.md")) if folder.exists() else []:
+            text = f.read_text(encoding="utf-8")
+            first = next((l.strip("#* ").strip() for l in text.splitlines() if l.strip()), f.stem)
+            name = (first[:70] + "…") if len(first) > 70 else first
+            dp = dop_sections(text)
+            its = items(dp.get("Новые приёмы", ""))
+            n_new += len(its); n_books += 1
+            for it in its:
+                for sk in skills_of(it["text"]):
+                    by_skill.setdefault(sk, []).append((name, it))
+            li = "".join((f'<li><span class="grp">{html.escape(it["group"])}</span> ' if it["group"] else "<li>")
+                         + inline(it["text"]) + "</li>" for it in its)
+            books_html.append(
+                f'<details class="bkf-book"><summary><b>{html.escape(name)}</b><span class="bkf-n">{len(its)} приёмов · куплена {label}</span></summary>'
+                f'<details class="bkf-sub" open><summary>Новые приёмы — {len(its)}</summary><ol class="bkf-list">{li}</ol></details>'
+                + "".join(f'<details class="bkf-sub"><summary>{html.escape(p)}</summary><div class="bkf-md">{MD(v)}</div></details>'
+                          for p, v in dp.items() if p != "Новые приёмы" and v.strip())
+                + f'<p class="bkf-file">Файл: {folder.name}\\{f.name}</p></details>')
+    total2 += n_new
+
     order = sorted(by_skill, key=lambda s: (s == "(без скилла)", -len(by_skill[s])))
     skills_html = "".join(
         f'<details class="bkf-book"><summary><code>{html.escape(sk)}</code><span class="bkf-n">{len(by_skill[sk])} приёмов</span></summary>'
@@ -193,7 +216,7 @@ def main():
     #books-all h3.bkf-h {{ font-size: 20px; margin: 22px 0 10px; }}
   </style>
   <section id="books-all">
-    <div class="section-head"><h2>Книги — все приёмы и конспекты целиком</h2><span class="count">{total + total2} приёмов ({total} первое чтение + {total2} второе и третье) · 17 книг</span></div>
+    <div class="section-head"><h2>Книги — все приёмы и конспекты целиком</h2><span class="count">{total + total2} приёмов ({total} первое чтение + {total2} второе, третье и докупленные) · {n_books} книг</span></div>
     <p class="section-note">Собирается скриптом <code>build_books.py</code> прямо из конспектов, ничего не сокращено. Нажми на строку, чтобы раскрыть.
     Один приём может стоять у нескольких скиллов.</p>
     <h3 class="bkf-h">Все приёмы по скиллам</h3>
