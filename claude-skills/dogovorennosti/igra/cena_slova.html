@@ -1,0 +1,402 @@
+<title>Цена слова</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column "переговорный стол" — счёт-квитанция сверху, карточка сцены, ответы стопкой; на широком экране панель приёмов сбоку */
+:root{
+  --bg:#eef1f4; --paper:#fbfcfd; --ink:#16202b; --muted:#5b6876; --line:#d5dbe2;
+  --accent:#1f5f8b; --accent-ink:#ffffff; --good:#1d7a4f; --warn:#a8620a; --bad:#b23a3a;
+  --soft-good:#e3f2ea; --soft-warn:#fbefdc; --soft-bad:#f8e3e3; --hl:#ffe08a;
+  --f-display:"Unbounded",system-ui,sans-serif; --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10161d; --paper:#18212b; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2b3744;
+  --accent:#6fb2e0; --accent-ink:#0c1520; --good:#5fc896; --warn:#e2a54d; --bad:#ef8080;
+  --soft-good:#173527; --soft-warn:#3a2c14; --soft-bad:#3d1d1d; --hl:#6b5512; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161d; --paper:#18212b; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2b3744;
+  --accent:#6fb2e0; --accent-ink:#0c1520; --good:#5fc896; --warn:#e2a54d; --bad:#ef8080;
+  --soft-good:#173527; --soft-warn:#3a2c14; --soft-bad:#3d1d1d; --hl:#6b5512; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;gap:20px}
+header{display:grid;gap:6px}
+h1{font:700 clamp(28px,6vw,44px)/1.05 var(--f-display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:62ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font:600 14px var(--f-body);border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:10px 14px;border-radius:999px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.panel{display:grid;gap:16px}
+.tally{display:flex;flex-wrap:wrap;gap:8px 20px;font:500 13px var(--f-mono);color:var(--muted);border-block:1px dashed var(--line);padding-block:10px;font-variant-numeric:tabular-nums}
+.tally b{color:var(--ink);font-weight:500}
+.scene{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.who{font:600 12px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.quote{font:500 clamp(19px,3.4vw,24px)/1.35 var(--f-display);margin:0;text-wrap:balance}
+.ctx{color:var(--muted);margin:0}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;font:16px/1.45 var(--f-body);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.best{background:var(--soft-good);border-color:var(--good)}
+.opt.ok{background:var(--soft-warn);border-color:var(--warn)}
+.opt.weak{background:var(--soft-bad);border-color:var(--bad)}
+.opt .pts{float:right;font:500 13px var(--f-mono);margin-left:10px}
+.why{border-left:4px solid var(--accent);padding:4px 0 4px 14px;display:grid;gap:6px}
+.why p{margin:0}
+.src{font:500 12px var(--f-mono);color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:700 15px var(--f-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:12px 18px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.final{text-align:center;display:grid;gap:10px;justify-items:center}
+.big{font:700 56px/1 var(--f-display);font-variant-numeric:tabular-nums}
+/* live */
+.chars{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.char{text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;color:var(--ink);font:15px/1.4 var(--f-body);display:grid;gap:4px}
+.char b{font:600 15px var(--f-body)}
+.char span{color:var(--muted);font-size:14px}
+.char[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.chat{display:grid;gap:10px;min-width:0}
+.msg{max-width:88%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.them{background:var(--paper);border:1px solid var(--line);justify-self:start}
+.msg.me{background:var(--accent);color:var(--accent-ink);justify-self:end}
+.grade{justify-self:end;max-width:88%;font-size:14px;border-radius:10px;padding:10px 12px;background:var(--paper);border:1px dashed var(--line);display:grid;gap:4px}
+.grade .sc{font:500 13px var(--f-mono)}
+.grade .g{color:var(--good)} .grade .b{color:var(--bad)} .grade .t{color:var(--ink)}
+textarea{width:100%;min-height:96px;font:16px/1.5 var(--f-body);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}
+.note{color:var(--muted);font-size:14px;margin:0}
+.err{color:var(--bad);font-size:14px;margin:0}
+.checked{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
+mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 2px}
+.found{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.found li{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.found b{font-weight:700}
+@media (prefers-reduced-motion:no-preference){.opt,.tab,.char{transition:border-color .15s,background .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Цена слова</h1>
+    <p class="lede">Тренажёр разговоров о деньгах на ваших настоящих случаях. Ответы оцениваются по книгам: Восс, Бэбкок, Вайс, Мор, Дилтс, Клафф.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-cards" aria-selected="true">Карточки</button>
+    <button class="tab" role="tab" id="t-live" aria-selected="false">Живой разговор</button>
+    <button class="tab" role="tab" id="t-check" aria-selected="false">Проверка сообщения</button>
+  </div>
+
+  <!-- КАРТОЧКИ -->
+  <section class="panel" id="p-cards">
+    <div class="tally"><span>Карточка <b id="c-n">1</b> из <b id="c-tot">12</b></span><span>Очки <b id="c-score">0</b></span><span>Лучший результат <b id="c-best">—</b></span></div>
+    <div class="scene" id="c-scene"></div>
+  </section>
+
+  <!-- ЖИВОЙ РАЗГОВОР -->
+  <section class="panel" id="p-live" hidden>
+    <p class="note">Claude играет собеседника и после каждой вашей реплики ставит оценку 0–10. Пишите так, как сказали бы вслух.</p>
+    <div class="chars" id="l-chars"></div>
+    <div class="scene" id="l-goal"></div>
+    <div class="chat" id="l-chat"></div>
+    <div id="l-input" class="panel" hidden>
+      <label for="l-text" class="who">Ваш ответ</label>
+      <textarea id="l-text" placeholder="Например: «Паша, давай зафиксируем: этап 2 — 15 000, до пятницы 18:00. Подходит?»"></textarea>
+      <div class="row">
+        <button class="btn" id="l-send">Ответить</button>
+        <button class="btn ghost" id="l-stop" hidden>Стоп</button>
+        <button class="btn ghost" id="l-restart">Начать заново</button>
+      </div>
+      <p class="err" id="l-err" hidden></p>
+    </div>
+    <p class="err" id="l-off" hidden>Живой разговор работает, только когда страница открыта на claude.ai и разрешено обращаться к Claude. Карточки и проверка сообщения работают всегда.</p>
+  </section>
+
+  <!-- ПРОВЕРКА -->
+  <section class="panel" id="p-check" hidden>
+    <label for="k-text" class="who">Сообщение заказчику или подруге</label>
+    <textarea id="k-text">Привет! Извини, что беспокою 🙏 Если не сложно, скинь хотя бы часть оплаты, как получится. Правки, кстати, много времени не займут, я быстро сделаю.</textarea>
+    <div class="row">
+      <button class="btn" id="k-go">Проверить</button>
+      <button class="btn ghost" id="k-ai" hidden>Переписать с Claude</button>
+    </div>
+    <div class="checked" id="k-out" hidden></div>
+    <ul class="found" id="k-found"></ul>
+    <div class="checked" id="k-rewrite" hidden></div>
+  </section>
+</div>
+
+<script>
+const store = {
+  get(k){ try{ return localStorage.getItem(k) }catch(e){ return null } },
+  set(k,v){ try{ localStorage.setItem(k,v) }catch(e){} }
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- вкладки ---------- */
+const TABS = ["cards","live","check"];
+function show(name){
+  TABS.forEach(t => { $("t-"+t).setAttribute("aria-selected", t===name); $("p-"+t).hidden = t!==name; });
+  store.set("cs_tab", name);
+}
+TABS.forEach(t => $("t-"+t).onclick = () => show(t));
+
+/* ---------- карточки ---------- */
+const CARDS = [
+ {who:"Паша, после созвона", q:"«Как будет возможность — скину».", ctx:"Вы попросили оплату за этап. Ни суммы, ни даты.",
+  o:[["Хорошо, без проблем!",0,"Слова без даты, суммы и записи — это вежливость, а не обязательство. Вы приняли пустой ответ."],
+     ["Давай зафиксируем: 15 000 до пятницы, 18:00. Подходит?",10,"Кто, что, сколько, до какого дня и часа. Так заканчивают любой разговор о деньгах."],
+     ["Ну хотя бы до конца месяца…",1,"«Хотя бы» сразу снижает вашу же планку. Это смягчитель."],
+     ["Что должно случиться, чтобы ты смог перевести, и к какому числу?",8,"Уточняющий вопрос на размытое обещание. Хорошо, но в конце всё равно нужна дата."]],
+  src:"Challenger Sale, с. 187 · O'Connor, мета-модель · Mom Test, гл. 5"},
+ {who:"Паша", q:"«Задача была меньше. Ты сама решила заморочиться».", ctx:"Две недели работы он называет вашей инициативой.",
+  o:[["Да, я увлеклась, извини.",0,"Вы приняли его рамку: сделанное сверх — значит бесплатно."],
+     ["Ты, наверное, думаешь, что я сделала лишнее. Давай выпишем, что из сделанного тебе нужно, а что нет, и решим по оплате.",10,"Аудит обвинений снимает напряжение, а список возвращает разговор к фактам."],
+     ["Нет, ты сам это просил!",3,"Спор о том, кто виноват. Рамка всё ещё его, вы просто защищаетесь."],
+     ["Я сделала больше, потому что вам нужен результат к ноябрю. Это работа вне первого объёма, оценю её отдельно.",8,"Своя рамка результата вместо оправдания. Сверх-работа названа вслух."]],
+  src:"Voss, гл. 3 · Dilts, Sleight of Mouth · Persuasion, ключ 6"},
+ {who:"Паша", q:"«Это буквально одна команда, быстро».", ctx:"Он оценивает вашу работу за вас.",
+  o:[["Да, много времени не займёт.",0,"Вы сами обесценили работу, и он это запомнит."],
+     ["Давай распишем, что в неё входит, и посмотрим объём вместе.",10,"Расстановка по пунктам: «одна команда» превращается в несколько задач."],
+     ["Тогда сделай сам.",2,"Угроза, которую вы не выполните. Только портит отношения."],
+     ["Окей, сегодня сделаю.",1,"Согласие без условий: работа снова бесплатная."]],
+  src:"Challenger Sale, с. 71 · Mohr, гл. 8"},
+ {who:"Новый заказчик", q:"«Сколько это будет стоить?»", ctx:"Вы ещё толком не знаете задачу.",
+  o:[["Ой, ну сколько не жалко.",0,"Вы отдали цену ему. Он назовёт минимум."],
+     ["Чтобы назвать честную цену, мне нужно понять задачу. Завтра до 12:00 пришлю предложение с тремя вариантами.",10,"Цену не называют на лету. Три варианта дают «да» чаще, чем «да или нет»."],
+     ["5 000.",2,"Цифра с потолка и сразу внизу: торговаться дальше некуда."],
+     ["Обычно от 30 до 60 тысяч, зависит от объёма.",6,"Диапазон годится, если нижняя граница — ваша настоящая цель."]],
+  src:"Weiss, гл. 4–5 · Voss, гл. 9"},
+ {who:"Заказчик", q:"«Аванс не дадим: у тебя нет кейсов».", ctx:"Ваше главное сомнение он произносит вслух.",
+  o:[["Понимаю. Тогда сделаю бесплатно.",0,"Риск целиком на вас. Это «рынок лимонов»: так платят за неизвестное."],
+     ["Понимаю ваш риск. Предлагаю пилот: первый этап за 10 000, с понятным результатом. Не понравится — дальше не идём.",10,"Маленький платный пилот снимает его риск и не отдаёт вашу работу даром."],
+     ["Тогда я ухожу.",4,"Уйти можно, но без предложения это просто конец разговора."],
+     ["Я гарантирую результат!",2,"Гарантируют выполнение списка, а не результат. Иначе отвечаете за чужие продажи."]],
+  src:"Weiss, гл. 5, 14 · микроэкономика, гл. 22"},
+ {who:"Подруга-юрист", q:"«Помоги с сайтом, потом сочтёмся».", ctx:"В прошлый раз так ушло 60 часов за минимум.",
+  o:[["Конечно, для тебя всё.",0,"Тот же сценарий, что и в прошлый раз."],
+     ["С радостью. Давай сразу договоримся: до 10 часов, за них 10 000 или отзыв плюс рекомендация двум клиентам. Что тебе удобнее?",10,"Тепло и твёрдо: лимит часов, цена и выбор из двух."],
+     ["Нет, с друзьями я не работаю.",4,"Можно, но вы теряете кейс и отношения."],
+     ["Ладно, только недолго.",2,"«Недолго» никто не считает. Нужен лимит в часах."]],
+  src:"Weiss, гл. 14 (7 правил союза) · Babcock, гл. 9"},
+ {who:"Заказчик", q:"«Давай ты работаешь за процент с заявок».", ctx:"Денег сейчас он не предлагает.",
+  o:[["Хорошо!",0,"«Получится — заплачу» перекладывает весь риск на вас."],
+     ["Давай. Процент плюс фикс за каждый этап. И запишем: сколько процентов, с каких заявок, как считаем и на какой срок.",10,"Фикс снимает ваш риск, а запись делает процент настоящим."],
+     ["А сколько процентов?",5,"Хороший вопрос, но без фикса и записи этого мало."],
+     ["Нет, только фикс.",5,"Честно, но вы закрываете путь к большому результату."]],
+  src:"Mom Test, гл. 3 · микроэкономика, гл. 23–24"},
+ {who:"Вы, за час до созвона", q:"«У меня нет кейсов. Кто я такая, чтобы просить».", ctx:"Знакомая мысль перед разговором о деньгах.",
+  o:[["Перенести созвон.",0,"Страх остаётся, а сроки съезжают."],
+     ["Записать запасной вариант, нижнюю границу и цель. Потом пять минут на якорь уверенности.",10,"Подготовка по Бэбкок плюс состояние по Бэндлеру. Цифры на бумаге держат лучше настроения."],
+     ["Сразу сказать, что я новичок, поэтому можно платить мало.",1,"Вы сами торгуетесь против себя ещё до разговора."],
+     ["Порепетировать разговор с Claude в роли заказчика.",9,"Бэбкок советует репетировать с напарником: в настоящем разговоре нужные слова уже знакомы."]],
+  src:"Babcock, гл. 5–7 · Bandler, Using Your Brain"},
+ {who:"Вы пишете заказчику", q:"Какое сообщение отправить?", ctx:"Этап сдан, пора получить оплату.",
+  o:[["Привет! Извини, что беспокою, если не сложно, скинь хотя бы часть оплаты, как получится 🙏",0,"Пять смягчителей подряд: «извини», «если не сложно», «хотя бы», «как получится», молитвенные руки."],
+     ["Привет! Этап 1 сдан: сайт и сбор данных (список ниже). Оплата 15 000 до пятницы. Реквизиты ниже.",10,"Что сделано, сколько, до когда. Без извинений и без давления."],
+     ["Привет, ну что там с деньгами?",3,"Звучит как упрёк и не называет ни суммы, ни срока."],
+     ["Привет! Я тут подумала, может, обсудим оплату когда-нибудь?",1,"«Когда-нибудь» значит никогда."]],
+  src:"Mohr, гл. 8, с. 172–173"},
+ {who:"Заказчик", q:"«Дорого».", ctx:"Вы назвали цену за этап.",
+  o:[["Ну давайте дешевле.",0,"Уступка без вопроса: вы даже не узнали, что значит «дорого»."],
+     ["Что именно дорого: сумма целиком или платить сразу?",10,"Если нет денег сейчас, меняют график, а не цену."],
+     ["Это рыночная цена.",5,"Правда, но разговор встал."],
+     ["Хорошо, минус 30 %.",0,"Сумму не уступают. Меняют условия: этапы, сроки, объём."]],
+  src:"Dilts, Sleight of Mouth · Weiss, гл. 5"},
+ {who:"Вы, после созвона", q:"Что сделать вечером?", ctx:"Договорились устно.",
+  o:[["Ничего. Всё же договорились.",0,"Не записано, значит, не договорились."],
+     ["Написать: «Как поняла: … сумма … до (дата). Если иначе — напиши до вечера».",10,"Письмо-подтверждение превращает слова в запись."],
+     ["Подождать, пока он напишет сам.",1,"Он не напишет: ему это не нужно."],
+     ["Пересказать подруге.",0,"Приятно, но заказчик ничего не подтвердил."]],
+  src:"Weiss, гл. 15 · Babcock"},
+ {who:"Заказчик", q:"(молчит после вашего предложения)", ctx:"Вы назвали сумму. Тишина 10 секунд.",
+  o:[["Если дорого, могу скинуть!",0,"Вы торгуетесь сами с собой. Тишина работала на вас."],
+     ["Спокойно подождать ответа.",10,"Кто первым заговорил после цены, тот обычно уступает."],
+     ["Ну что скажешь? Можно и дешевле.",0,"Две уступки за одну фразу."],
+     ["Подумай до среды, окно для вашего проекта держу до среды.",8,"Настоящий срок без давления. Только если окно правда до среды."]],
+  src:"Klaff, гл. 6 · Voss, гл. 9"}
+];
+let ci = 0, cscore = 0, order = [];
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function startCards(){ ci=0; cscore=0; order=shuffle(CARDS.map((_,i)=>i)); renderCard(); }
+function renderCard(){
+  $("c-tot").textContent = CARDS.length; $("c-score").textContent = cscore;
+  const best = store.get("cs_best"); $("c-best").textContent = best ? best+" / "+CARDS.length*10 : "—";
+  const sc = $("c-scene");
+  if (ci >= CARDS.length){
+    const prev = Number(store.get("cs_best")||0);
+    if (cscore > prev) store.set("cs_best", cscore);
+    const pct = Math.round(cscore/(CARDS.length*10)*100);
+    const verdict = pct>=85 ? "Вы говорите как профи. Пора в живой разговор." : pct>=60 ? "Хорошая база. Пройдите ещё раз и посмотрите, где теряли очки." : "Знакомые ловушки. Пройдите ещё раз: правильные ответы запоминаются со второго-третьего круга.";
+    sc.innerHTML = `<div class="final"><div class="who">Итог</div><div class="big">${cscore}<span class="src"> / ${CARDS.length*10}</span></div><p>${verdict}</p><div class="row"><button class="btn" id="c-again">Ещё раз</button><button class="btn ghost" id="c-tolive">В живой разговор</button></div></div>`;
+    $("c-n").textContent = CARDS.length; $("c-best").textContent = Math.max(prev,cscore)+" / "+CARDS.length*10;
+    $("c-again").onclick = startCards; $("c-tolive").onclick = () => show("live");
+    return;
+  }
+  $("c-n").textContent = ci+1;
+  const c = CARDS[order[ci]], opts = shuffle(c.o.map((o,i)=>({t:o[0],p:o[1],w:o[2],i})));
+  sc.innerHTML = `<div class="who">${esc(c.who)}</div><p class="quote">${esc(c.q)}</p><p class="ctx">${esc(c.ctx)}</p>
+    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${esc(o.t)}</button>`).join("")}</div><div id="c-fb"></div>`;
+  sc.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    const pick = opts[b.dataset.k]; cscore += pick.p; $("c-score").textContent = cscore;
+    sc.querySelectorAll(".opt").forEach((x,k) => { x.disabled = true; const o=opts[k];
+      x.classList.add(o.p>=9?"best":o.p>=5?"ok":"weak");
+      if (x===b || o.p>=9) x.insertAdjacentHTML("afterbegin", `<span class="pts">+${o.p}</span>`); });
+    const best = opts.reduce((a,o)=>o.p>a.p?o:a);
+    $("c-fb").innerHTML = `<div class="why"><p><b>${pick.p>=9?"Сильно.":pick.p>=5?"Неплохо.":"Слабо."}</b> ${esc(pick.w)}</p>
+      ${pick!==best?`<p><b>Лучше:</b> ${esc(best.w)}</p>`:""}<p class="src">${esc(c.src)}</p></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="c-next">${ci+1<CARDS.length?"Дальше":"Итог"}</button></div>`;
+    $("c-next").onclick = () => { ci++; renderCard(); }; $("c-next").focus();
+  });
+}
+
+/* ---------- живой разговор ---------- */
+const CHARS = {
+  pasha:{name:"Паша", tag:"Оплата следующего этапа",
+    persona:"Паша, заказчик и «партнёр»: владелец бизнеса, дружелюбный, на «ты», говорит быстро и размыто. Денег сейчас мало, решает вместе с партнёром Андреем, на неделе уезжает в командировку. Любит уходить от конкретики: «как будет возможность», «ты сама решила заморочиться», «это одна команда, быстро», «потом с процента от заявок», «у нас же общий проект». Аванс 30 000 он уже однажды отказал. Он не злой: просто ему удобно не платить, пока на него не давят фактами.",
+    goal:"Договориться о фиксированной оплате следующего этапа (сумма и дата) и о том, что процент с заявок будет записан: сколько, с каких заявок, на какой срок.",
+    open:"Привет! Слушай, ну что, правки сделала? Там же быстро всё."},
+  friend:{name:"Подруга-юрист", tag:"«Помоги по-дружески»",
+    persona:"Подруга, юрист с небольшой практикой. Тёплая, искренняя, привыкла, что ей помогают «по дружбе». Денег немного, может обидеться на разговор о деньгах («мы же подруги»), но в итоге разумная. Прошлый раз помощь растянулась на 60 часов за минимальную плату.",
+    goal:"Договориться заранее: лимит часов, оплата или понятный обмен (отзыв, рекомендации клиентам), и сохранить дружбу.",
+    open:"Привет, дорогая! Слушай, мне так нужен нормальный сайт для практики… Поможешь? Потом сочтёмся, ты же знаешь."},
+  coffee:{name:"Владелец кофейни", tag:"Новый заказчик, торг",
+    persona:"Владелец двух кофеен, практичный, считает деньги, вежлив, но давит: «а кейсы есть?», «у меня племянник сделает за 5 тысяч», «дорого», «а гарантии?». Готов платить, если увидит понятный результат и маленький риск.",
+    goal:"Продать платный пилот: первый этап за конкретную сумму с понятным результатом, без бесплатной работы и без гарантии чужих продаж.",
+    open:"Добрый день. Мне сказали, вы делаете сайты и заявки через ИИ. Сколько это стоит и какие у вас кейсы?"},
+  andrey:{name:"Андрей", tag:"Партнёр Паши, жёсткий",
+    persona:"Андрей, партнёр Паши. Сдержанный, немногословный, считает каждую копейку, не любит пустых слов. Возражения: «мы ещё ничего не заработали», «результата нет», «Паша обещал — с Паши и спрашивайте». Уважает конкретику и цифры.",
+    goal:"Объяснить Андрею, что сделано и чего стоит, и договориться о минимальной оплате этапа или письменных условиях процента.",
+    open:"Паша сказал, вы хотели обсудить деньги. Слушаю. Только коротко."}
+};
+const RULES = `Ты — тренажёр переговоров. Играешь роль собеседника, пользовательница учится разговаривать о деньгах.
+О ней: начинающий специалист по ИИ-автоматизации, сайтам и сбору заявок, учится в процессе, кейсов мало. Её слабые места: соглашается на «потом», смягчает («хотя бы», «как получится», «чтобы мне приятно было», «много времени не займёт»), не называет сумму и дату, не записывает договорённости.
+Сильные приёмы, которые ты поощряешь уступками: конкретная сумма и дата; оплата по этапам; маленький платный пилот; «запишем условия»; уточняющие вопросы «что именно / к какому числу / как мне это сделать?»; пересказ слов собеседника; аудит обвинений («ты, наверное, думаешь, что…»); называть работу сверх объёма вслух; спокойная готовность взять другие проекты; тёплый тон при твёрдых цифрах. Слабое: смягчители, оправдания, извинения, уступка без просьбы, угрозы, блеф, выдуманные сроки, обещание гарантировать результат.
+Как играть: говори по-русски, живо и коротко (1–3 предложения), как этот человек в мессенджере или на созвоне. Не сдавайся сразу, сопротивляйся реалистично; уступай постепенно и только в ответ на сильные приёмы. Не помогай ей и не подсказывай в реплике роли.
+Оцени её ПОСЛЕДНЮЮ реплику строго: 0–3 слабо, 4–6 средне, 7–8 хорошо, 9–10 как профи.
+Ответь ТОЛЬКО JSON без пояснений:
+{"reply":"реплика твоего персонажа","score":7,"good":["что сработало, коротко"],"bad":["что ослабило позицию, коротко"],"tip":"одна готовая фраза, как сказать сильнее, на «ты» или «вы» как в разговоре","deal":"нет|частично|да"}
+"deal":"да" — только когда её цель реально достигнута (конкретика: сумма, дата или записанные условия).`;
+let sample = null, cur = null, turns = [], ctl = null, scores = [];
+(async () => { try { sample = await window.claude?.use?.("sample") ?? null } catch(e){ sample = null }
+  if (sample) { $("k-ai").hidden = false } })();
+
+function renderChars(){
+  $("l-chars").innerHTML = Object.entries(CHARS).map(([k,c]) =>
+    `<button class="char" data-k="${k}" aria-pressed="${cur===k}"><b>${esc(c.name)}</b><span>${esc(c.tag)}</span></button>`).join("");
+  $("l-chars").querySelectorAll(".char").forEach(b => b.onclick = () => startLive(b.dataset.k));
+}
+function startLive(k){
+  ctl?.abort(); cur = k; turns = [{role:"assistant",content:CHARS[k].open}]; scores = [];
+  renderChars();
+  $("l-goal").innerHTML = `<div class="who">Ваша цель</div><p style="margin:0">${esc(CHARS[k].goal)}</p>`;
+  $("l-chat").innerHTML = ""; addMsg("them", CHARS[k].open);
+  $("l-input").hidden = !sample; $("l-off").hidden = !!sample; $("l-err").hidden = true;
+  $("l-text").value = ""; if (sample) $("l-text").focus();
+}
+function addMsg(side, text){ const d=document.createElement("div"); d.className="msg "+side; d.textContent=text; $("l-chat").append(d); return d }
+function addGrade(r){
+  const d=document.createElement("div"); d.className="grade";
+  const good=(r.good||[]).filter(Boolean), bad=(r.bad||[]).filter(Boolean);
+  d.innerHTML = `<span class="sc">Оценка ${Number(r.score)||0} / 10</span>`
+    + (good.length?`<span class="g">✓ ${good.map(esc).join("; ")}</span>`:"")
+    + (bad.length?`<span class="b">✗ ${bad.map(esc).join("; ")}</span>`:"")
+    + (r.tip?`<span class="t">Сильнее: «${esc(r.tip)}»</span>`:"");
+  $("l-chat").append(d);
+}
+function finish(dealt){
+  const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : "0";
+  const d=document.createElement("div"); d.className="scene final";
+  d.innerHTML = `<div class="who">${dealt?"Договорились":"Разговор окончен"}</div><div class="big">${avg}</div><p class="note">средняя оценка за ${scores.length} реплик</p>`;
+  $("l-chat").append(d); $("l-input").hidden = false; $("l-send").disabled = true;
+}
+async function send(){
+  const text = $("l-text").value.trim(); if (!text || !sample || !cur) return;
+  addMsg("me", text); turns.push({role:"user",content:text}); $("l-text").value="";
+  const wait = addMsg("them","…"); $("l-send").disabled = true; $("l-stop").hidden = false; $("l-err").hidden = true;
+  const c = CHARS[cur];
+  const history = turns.map(t => (t.role==="user"?"ОНА: ":c.name.toUpperCase()+": ")+t.content).join("\n");
+  const prompt = RULES + `\n\nТвой персонаж: ${c.persona}\nЕё цель в этой сцене: ${c.goal}\n\nРазговор до сих пор:\n${history}\n\nОцени её последнюю реплику и ответь за персонажа.`;
+  ctl = new AbortController();
+  try {
+    const r = await sample.json(prompt, {signal:ctl.signal, cache:false});
+    const reply = String(r?.reply || "…");
+    wait.textContent = reply; turns.push({role:"assistant",content:reply});
+    scores.push(Number(r?.score)||0); addGrade(r||{});
+    if (r?.deal === "да" || scores.length >= 12) finish(r?.deal === "да"); else $("l-send").disabled = false;
+  } catch(e){
+    wait.remove(); turns.pop(); $("l-text").value = text; $("l-chat").lastElementChild?.remove();
+    const msg = {not_granted:"Доступ к Claude не разрешён для этой страницы.", sampling_disabled:"Claude недоступен для этого аккаунта.",
+      rate_limited:"Слишком много запросов. Подождите минуту и нажмите «Ответить» ещё раз.", cancelled:"Остановлено.",
+      invalid_json:"Ответ пришёл в странном виде. Нажмите «Ответить» ещё раз."}[e?.code] || "Не получилось связаться с Claude. Попробуйте ещё раз.";
+    $("l-err").textContent = msg; $("l-err").hidden = false;
+    if (e?.code==="not_granted"||e?.code==="sampling_disabled"){ $("l-input").hidden = true; $("l-off").hidden = false }
+    $("l-send").disabled = false;
+  } finally { $("l-stop").hidden = true }
+}
+$("l-send").onclick = send;
+$("l-stop").onclick = () => ctl?.abort();
+$("l-restart").onclick = () => { $("l-send").disabled = false; startLive(cur) };
+$("l-text").addEventListener("keydown", e => { if (e.key==="Enter" && (e.ctrlKey||e.metaKey)) send() });
+
+/* ---------- проверка сообщения ---------- */
+const SOFT = [
+  ["хотя бы","Снижает вашу же планку. Назовите сумму целиком."],
+  ["как получится","Отдаёт срок собеседнику. Назовите дату."],
+  ["когда будет возможность","Без даты это никогда. Назовите дату."],
+  ["как будет возможность","Без даты это никогда. Назовите дату."],
+  ["когда-нибудь","Без даты это никогда."],
+  ["если не сложно","Просьба о любезности, а не счёт за работу."],
+  ["если можно","Спрашивает разрешения там, где вы сообщаете условия."],
+  ["если вам удобно","Отдаёт решение собеседнику."],
+  ["чтобы мне приятно было","Превращает оплату в подарок."],
+  ["много времени не займ","Обесценивает работу ещё до разговора о цене."],
+  ["не займёт много времени","Обесценивает работу ещё до разговора о цене."],
+  ["быстро сделаю","Обесценивает работу. Скажите, что и к какому сроку."],
+  ["извини","Извиняться не за что: вы говорите о деле."],
+  ["извините","Извиняться не за что: вы говорите о деле."],
+  ["прости","Извиняться не за что: вы говорите о деле."],
+  ["беспокою","Вы не беспокоите, а ведёте проект."],
+  ["я только учусь","Принижает. Скажите, что вы сделаете и к какому сроку."],
+  ["я не эксперт","Принижает. Говорите о результате."],
+  ["я не уверена","Сомнение вслух ослабляет позицию."],
+  ["может быть","Смягчитель. Скажите прямо."],
+  ["наверное","Смягчитель. Скажите прямо."],
+  ["немножко","Уменьшает вашу просьбу."],
+  ["чуть-чуть","Уменьшает вашу просьбу."],
+  ["ну хоть","Снижает вашу планку."],
+  ["ничего страшного","Заранее разрешает отказ."],
+  ["просто","Часто уменьшает просьбу: «просто хотела спросить»."],
+  ["в счёт будущих","Деньги «потом» стоят меньше. Нужна сумма сейчас или запись условий."],
+  ["🙏","Молитвенные руки — та же просьба о милости."]
+];
+function check(){
+  const text = $("k-text").value; const low = text.toLowerCase(); const hits = [];
+  SOFT.forEach(([w,why]) => { let i = low.indexOf(w); while (i !== -1){ hits.push({s:i,e:i+w.length,w,why}); i = low.indexOf(w, i+w.length) } });
+  hits.sort((a,b)=>a.s-b.s); const clean=[]; let end=-1; hits.forEach(h=>{ if(h.s>=end){clean.push(h); end=h.e} });
+  let html="", pos=0; clean.forEach(h=>{ html += esc(text.slice(pos,h.s)) + "<mark>"+esc(text.slice(h.s,h.e))+"</mark>"; pos=h.e }); html += esc(text.slice(pos));
+  $("k-out").innerHTML = html; $("k-out").hidden = false;
+  const seen = new Set();
+  const items = clean.filter(h=>{const k=h.why; if(seen.has(k))return false; seen.add(k); return true});
+  const hasSum = /\d[\d\s]*(₽|руб|тыс|000)/i.test(text), hasDate = /(до|к)\s+(понедельник|вторник|сред|четверг|пятниц|суббот|воскресень|\d{1,2}[.\s])/i.test(text);
+  const extra = [];
+  if (!hasSum) extra.push("<li><b>Нет суммы.</b> Назовите цифру: «15 000».</li>");
+  if (!hasDate) extra.push("<li><b>Нет срока.</b> Добавьте: «до пятницы» или «до 20.10».</li>");
+  $("k-found").innerHTML = (items.length ? items.map(h=>`<li><b>«${esc(h.w)}»</b> — ${esc(h.why)}</li>`).join("") : "<li><b>Смягчителей нет.</b> Хорошо.</li>") + extra.join("");
+}
+$("k-go").onclick = check;
+$("k-ai").onclick = async () => {
+  if (!sample) return; const out = $("k-rewrite"); out.hidden = false; out.textContent = "Claude переписывает…"; $("k-ai").disabled = true;
+  try {
+    const {text} = await sample("Перепиши это сообщение заказчику или подруге по-русски: тепло, но твёрдо, без смягчителей и извинений («хотя бы», «как получится», «если не сложно», «извини», «много времени не займёт»). Назови, что сделано, сумму и срок; если суммы или срока нет в исходнике, поставь пропуски __ ₽ и до __. Не добавляй давления и выдуманных сроков. Ответь только готовым текстом сообщения.\n\nСообщение:\n" + $("k-text").value, {cache:false, onText:({text})=>{ out.textContent = text }});
+    out.textContent = text;
+  } catch(e){ out.textContent = e?.code==="not_granted" ? "Доступ к Claude не разрешён для этой страницы." : "Не получилось. Попробуйте ещё раз." }
+  finally { $("k-ai").disabled = false }
+};
+
+/* ---------- старт ---------- */
+startCards(); renderChars(); startLive("pasha"); check();
+const saved = store.get("cs_tab"); show(TABS.includes(saved) ? saved : "cards");
+</script>
