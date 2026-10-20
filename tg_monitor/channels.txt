@@ -96,3 +96,42 @@ designdealer
 prouxui
 frontendnoteschannel_ru
 nikitonsky_pub
+# 14.10 её «добавила кучу каналов» (папка IT & AI и подписки 12.10): из 46 новых взято 9, остальное — вакансии, реклама ботов, не по теме
+lookatsoul
+borozdind
+frontend_baza
+neyrogid
+school2030ai
+AcidCrunch
+PHYGITALCREATIVE
+aisetii
+archfinance
+# 14.10 (старые подписки): Shopify — c/<номер> закрытые, читаются через Telegram Web
+c/1733330040
+c/2060071368
+ecomartem
+mpexperts
+# 14.10 (старые подписки): её «по вб озон тоже надо» — блок «Маркетплейсы — WB и Ozon»
+wbbillion
+vitaecom
+tata_nikitenko
+kudahiko
+threeyearsonwb
+Wildberies_world
+mkeeper
+maxprowb
+SEO_for_WB
+analyticsmpstats
+wildbox_news
+seller_mamkin
+product_sizova
+polagushin_clo
+marketplace_hogwarts
+nikakoymagii
+RASK2025
+sonbokalchuk
+ozonbluerise
+raphoeniix
+# 14.10 (старые подписки): маркетинг и мода-ориентир
+youtube_marina
+fashionsmoothie

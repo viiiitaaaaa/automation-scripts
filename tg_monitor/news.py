@@ -42,7 +42,7 @@ CATS = {"biz": "по делу — shopify / дропшиппинг / марке�
         "soft": "фоново"}
 TREND_CATS = {"biz": "мода — что носят и продают", "tool": "тренды контента и инструменты", "soft": "фоново"}
 QUIET = {  # каналы, которые не разбираем подробно
-    "irina_agafonova_ved": "Импорт из Китая и комплаенс Wildberries — доступа к WB сейчас нет, оставлено под общие новости e-commerce.",
+    "irina_agafonova_ved": "Импорт из Китая и комплаенс Wildberries — 14.10 она: «по ВБ и Озон тоже надо», теперь в блоке «Маркетплейсы — WB и Ozon».",
     "LLMScience": "AI-research фон — для кругозора.",
     "slivaker_it": "Курсы пачками — полезное вынесено в раздел «Курсы».",
     "uxlive": "UX и тренды, много шума — поглядывать для сайта (05.10).",
@@ -88,7 +88,45 @@ QUIET = {  # каналы, которые не разбираем подробн
     "prouxui": "Дизайн сайтов (12.10), фон: строго только полезное — Про UX, UI и AI: Figma + MCP (вытащить шейдеры, анимации как стили), мысли про интерфейсы",
     "frontendnoteschannel_ru": "Дизайн сайтов (12.10), фон: строго только полезное — Frontender's notes: новости фронтенда и ИИ-разработки (Next.js, Chrome, Claude) короткими пересказами",
     "nikitonsky_pub": "Дизайн сайтов (12.10), фон: строго только полезное — Никита Прокопов (Tonsky): мнения про UX интерфейсов и форм, иногда про ИИ",
+    "lookatsoul": "Маркетинг (14.10, папка IT & AI), фон: строго только полезное — Лукашов, ИИ в маркетинге: мониторинг цен конкурентов через changedetection.io, исследование аудитории из Telegram-чатов; часть постов — анонсы эфиров",
+    "frontend_baza": "Дизайн сайтов (14.10), фон: строго только полезное — Frontend База: короткие новости CSS (стилизация select, Anchor Positioning); есть реклама «слитых курсов» — её мимо",
+    "neyrogid": "ИИ (14.10, папка IT & AI), фон: строго только полезное — НейроГид: скиллы для Claude Code (Anatomy), Midjourney MCP, промпты «кадр как из рекламы»; бывает реклама своего бота",
+    "school2030ai": "ИИ (14.10, папка IT & AI), фон: строго только полезное — 2030ai: понятные разборы новинок Claude/ChatGPT/Nano Banana, совет «бэкап Claude на случай блокировки»",
+    "AcidCrunch": "ИИ (14.10, папка IT & AI), фон: строго только полезное — Acid Crunch: находки флоу для Claude Code + Opus 5.5 (скиллы анатомии и озвучки), новости моделей; много мемов",
+    "PHYGITALCREATIVE": "ИИ (14.10, папка IT & AI), фон: строго только полезное — Phygital+: советы по ИИ-видео и картинкам для креативов (Draft Mode в Seedance, референсы), открытый MCP; бывают розыгрыши и эфиры",
+    "aisetii": "ИИ (14.10, папка IT & AI), фон: строго только полезное — AI SETI: новые ИИ-инструменты с GitHub (Hypit — ролик в шаблон для Claude Code), гайд AI Studio; кликбейтные заголовки",
+    "archfinance": "ИИ (14.10, папка IT & AI), фон: строго только полезное — Бизнес-архитектор: личный опыт ИИ в малом бизнесе (бан Claude за регион, скилл brag для видео); пишет редко",
+    "c/1733330040": "Shopify (14.10, старые подписки), фон: строго только полезное — Александр Ткачев: Q4-сезон, кейсы Хэллоуина на органике; много продажи наставничества",
+    "ecomartem": "Shopify (14.10, старые подписки), фон: строго только полезное — Артем Кайгородцев: органика без рекламы к Чёрной пятнице; много набора на «магазины под ключ»",
+    "mpexperts": "E-commerce (14.10, старые подписки), фон: строго только полезное — Николай Шапкин: Amazon США — компания и аккаунт продавца без поездки, истории закрытий",
+    "youtube_marina": "Маркетинг (14.10, старые подписки), фон: строго только полезное — «кабинет маркетолога»: подкасты с основателями (Lovable, OpenAI), сайт за 35 минут с ИИ",
+    "fashionsmoothie": "Мода-ориентир (14.10, старые подписки) — выходы звёзд и образы из кино; только как насмотренность",
 }
+# 14.10 she: «по вб озон тоже надо» — WB/Ozon channels (from her old subscriptions) share one block, all «строго только полезное»
+MP_QUIET = {
+    "wbbillion": "Аналитик на миллиард: CTR до 9% с ИИ, как поднять процент выкупа, набор контактов ВБшника",
+    "vitaecom": "Вита: fashion на WB и Ozon — распродажа остатков, условия Ozon для новых fashion-селлеров",
+    "tata_nikitenko": "Тренд-аналитик одежды на WB/Ozon/Ламода: где шить (Киргизия), продвижение; бывает реклама",
+    "kudahiko": "Курятник: новости WB/Ozon (штрафы FBS, страховка Ozon) и «почему сайт не спасёт fashion-бренд»",
+    "threeyearsonwb": "Тарасов: стратегия роста на WB — СПП, переход ФБС↔ФБО, набор инструментов контроля кабинета",
+    "Wildberies_world": "Иван Т: анализ, гипотезы и цифры WB; Uzum как новый рынок",
+    "mkeeper": "Основатель mkeeper: почему падают продажи, ФБО или ФБС, CPC в полках",
+    "maxprowb": "Max EVIRMA: какую ставку ставить в рекламе WB, CPC в полках; бывает продажа обучения",
+    "SEO_for_WB": "Оракул маркетплейсов: рейтинг карточки WB, обложка как часть воронки, новости Ozon",
+    "analyticsmpstats": "MPSTATS: вебинары (AI-агенты для селлера), данные рынка; много анонсов Expo",
+    "wildbox_news": "Wildbox.News: еженедельный дайджест правил WB и Ozon — главный источник новостей площадок",
+    "seller_mamkin": "Мамкин Селлер: тарифы Ozon FBO/FBS, бонусы fashion-продавцам, страховка",
+    "product_sizova": "Марина Сизова, продуктолог: юнит-экономика, логистика, сезонные товары",
+    "polagushin_clo": "Влад Полагушин: склад и фулфилмент (WMS), большие рынки Китая и США, тренды контента",
+    "marketplace_hogwarts": "Хогвартс маркетплейсов: эфиры по трендам, одежда — где высокая рентабельность",
+    "nikakoymagii": "«Никакой магии — только цифры»: китайские кабинеты для WB и Ozon, маркировка КИЗ",
+    "RASK2025": "Сергей Колесник: реальная аналитика, торговля на WB через китайскую компанию",
+    "sonbokalchuk": "Сын Бакальчук: честные истории селлеров (выход в DIY-сети, почему закрылись)",
+    "ozonbluerise": "Синий рассвет: бренд-менеджмент и разборы брендов на Ozon",
+    "raphoeniix": "Внешняя реклама на WB/Ozon: трафик от блогеров, на какую площадку вести",
+    "irina_agafonova_ved": "Ирина Агафонова: импорт из Китая и комплаенс Wildberries",
+}
+QUIET.update({c: "Маркетплейсы (14.10, старые подписки), фон: строго только полезное — " + t for c, t in MP_QUIET.items()})
 # channels with their own block on the panel (user 29.09: «python_tg — для новостей и полезностей», not lost in «фоново»)
 # 05.10: she starts building the site — the four web-design channels share one block «Дизайн сайтов», shown first
 DESIGN_BLOCK = ("design", "Дизайн сайтов — новости и полезное")
@@ -101,12 +139,18 @@ OWN_BLOCKS["c/3128735547"] = OWN_BLOCKS["python_tg"]
 OWN_BLOCKS.update({c: DESIGN_BLOCK for c in ['webstandards_ru', 'mozhno', 'fourdesign', 'htmlacademy', 'typetoday', 'figmaweb', 'figma_pro', 'onlyfigma', 'pdigest', 'designdealer', 'prouxui', 'frontendnoteschannel_ru', 'nikitonsky_pub']})  # 12.10 new web-design channels
 MARKETING_BLOCK = ("marketing", "Маркетинг — реклама, лиды, тексты")
 OWN_BLOCKS.update({c: MARKETING_BLOCK for c in ['serezha_pro_marketing', 'boringmarketer', 'vanzhula', 'b2b_marketing_ru', 'target_nata', 'irina_trafik', 'glvrdru', 'marketingmass', 'HelloDigitalWorld', 'Meo_marketing', 'TexterraBlog', 'coreboot_marketing', 'molyanov_blog', 'websstudio', 'copywritersdigest', 'sukhachevk', 'eduard_trubcheninov', 'maps_biz']})
+OWN_BLOCKS.update({"lookatsoul": MARKETING_BLOCK, "frontend_baza": DESIGN_BLOCK})  # 14.10 new channels from her folder «IT & AI»
+OWN_BLOCKS["youtube_marina"] = MARKETING_BLOCK
+MP_BLOCK = ("mp", "Маркетплейсы — WB и Ozon")
+OWN_BLOCKS.update({c: MP_BLOCK for c in MP_QUIET})  # 14.10 her old subscriptions + irina_agafonova_ved
+PRIVATE_TITLES.update({"c/1733330040": "SHOPIFY | Александр Ткачев", "c/2060071368": "Абдулхамид | Shopify"})  # 14.10 old subscriptions
 COURSE_CHANNEL = "slivaker_it"   # каталог курсов: посты вида «Название / Размер: / Цена:»
 # fashion & trend channels: their cards go to a separate «Мода и тренды» block BELOW dropshipping/AI news
 # (user 23.09.2026: «не смешивай с новостями дропшип и ИИ»)
 TREND_CHANNELS = {"now_trends", "moda_po_sprosu", "odezhda_stil_moda", "shop_sekret", "shoppingfyou", "topoeva_olesya",
                   "runtobuy", "svetlana_nechego_nadet", "moda_vtelege", "my_image_and_style", "valeri_bloc", "pro_reelss",
-                  "promty_by_irri", "photopingvin_ai", "BrandAnalytics", "thetrends_journal"}
+                  "promty_by_irri", "photopingvin_ai", "BrandAnalytics", "thetrends_journal",
+                  "fashionsmoothie"}  # 14.10 fashionsmoothie — old subscription
 COLORS = ["#4F7358", "#43618A", "#A97A45", "#3E6E6B", "#7A5C8A", "#8A5A4F", "#5C6E3E"]
 FASHION_OUT = BASE / "fashion_panel.html"   # old separate page, kept only as a local copy
 FASHION_DATA = BASE / "fashion_data.json"   # -> «Мода — ориентиры» section of the radar dashboard
@@ -220,6 +264,7 @@ def collect(conn):
     horizon = datetime.now(timezone.utc) - timedelta(days=CATCHUP_DAYS)
     now = datetime.now(timezone.utc).isoformat()
     total = 0
+    unread = []  # 16.10: a channel that failed to load is «не прочитан», not «нового нет»
     full = "--full" in sys.argv  # 29.09 «исчерпывающий сбор»: walk the whole window, filling every gap
     only = set(filter(None, os.environ.get("TG_ONLY", "").split(",")))  # 12.10: collect just the newly added channels
     chans = [c for c in tm.load_channels() if not only or c in only]
@@ -234,6 +279,8 @@ def collect(conn):
                 posts = tm.parse_posts(tm.fetch_page(ch, before))
             except requests.RequestException as e:
                 print(f"  [{ch}] ошибка загрузки: {e}")
+                if not pages:
+                    unread.append(ch)
                 break
             pages += 1
             if not posts:
@@ -256,6 +303,8 @@ def collect(conn):
         status = "нет постов (закрыт веб-просмотр)" if pages and not new and not known else f"новых: {len(new)}"
         print(f"  {idx} из {len(chans)} [{ch}] {status}")
         time.sleep(tm.REQUEST_DELAY)
+    if unread:
+        print(f"  НЕ ПРОЧИТАНЫ ({len(unread)}): {', '.join(unread)}")
     return total
 
 
@@ -290,6 +339,15 @@ def ru_date(d):
 WHEN_ORDER = ["Всегда: кому можно отдавать данные", "Всегда: лимит Claude и чужие скиллы", "Экономика товара и теста", "Реклама и креативы", "Платежи, корзина, каналы", "После запуска рекламы",
               "Страны и доставка", "Когда будет время (инструменты)"]
 CHATS = {"shopify_chat": ("дропшиппинг", "biz"), "vibecoding_community": ("вайбкодинг", "tool")}
+# 14.10 she: «чаты тоже нужны» — active seller chats about WB/Ozon (Q&A of sellers, fresh rule changes, cases).
+# c/<id> = discussion group without @address (read through its parent channel, see CHAT_PARENT in tg_web_import.py)
+CHATS.update({"redmilliard_chat": ("WB и Ozon", "biz"), "sellermpchat": ("WB и Ozon", "biz"),
+              "c/1777935062": ("WB и Ozon", "biz"), "c/1554685217": ("WB и Ozon", "biz"),
+              "chat_wildbox": ("WB и Ozon", "biz"), "polagushin_chat": ("WB и Ozon", "biz"),
+              "ChatMaxProWb": ("реклама на WB", "biz"), "billionwb_chat": ("WB и Ozon", "biz"),
+              "ozon_chat_mp": ("Ozon и WB", "biz"), "chatggecom": ("дропшиппинг", "biz")})
+PRIVATE_TITLES.update({"c/1777935062": "Каморка Дамблдора (чат «Хогвартс маркетплейсов»)",
+                       "c/1554685217": "Акулы Wildberries и Ozon — чат"})
 
 
 # user 29.09: «я прочла» — the panel shows only what she has not seen yet (any date).
@@ -310,7 +368,7 @@ def chat_block(conn, notes, CHAT="shopify_chat"):
         msgs = {r[0]: r for r in conn.execute("SELECT msg_id, date, text, reply_to FROM chat_msgs WHERE chat=?", (CHAT,))}
     except sqlite3.OperationalError:
         return ""
-    items = sorted(((int(k.split("/")[1]), v) for k, v in notes.items() if k.startswith(CHAT + "/") and v.get("cat") == "chat"
+    items = sorted(((int(k.rsplit("/", 1)[1]), v) for k, v in notes.items() if k.startswith(CHAT + "/") and v.get("cat") == "chat"
                     and shown(k, v)),
                    key=lambda x: msgs.get(x[0], (0, ""))[1], reverse=True)
     if not items:
@@ -339,7 +397,7 @@ def chat_block(conn, notes, CHAT="shopify_chat"):
                 msg_html(k, "chat-a") for k, m in sorted(msgs.items()) if m[3] == extra)
         cards.append(f'<article class="article">{num_tag(f"{CHAT}/{root}", msgs.get(root, (0, ""))[1] or "")}<h3 class="headline">{html.escape(n["headline"])}</h3>{body}'
                      f'<div class="chat-thread"><b>Из чата — вопрос и ответы:</b>{thread}</div></article>')
-    return (f'<div class="pill-row"><span class="pill {pill}">чат {CHAT} ({topic}) — важное с ответами</span><span class="rule"></span>'
+    return (f'<div class="pill-row"><span class="pill {pill}">чат {html.escape(PRIVATE_TITLES.get(CHAT, CHAT))} ({topic}) — важное с ответами</span><span class="rule"></span>'
             f'<span class="cnt">{len(cards)}</span></div><div class="chat-cards">{"".join(cards)}</div>')
 
 

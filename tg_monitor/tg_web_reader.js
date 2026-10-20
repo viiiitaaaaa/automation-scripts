@@ -85,10 +85,22 @@ async function tgWebSync(list, days = 31) {
 // Group chats (shopify_chat): messages of the last `days` days with the id of the message each one answers.
 // Author = first name only. -> POST http://127.0.0.1:8765/chat
 // minId: stop at an already stored message (incremental); offsetId: start below this id (backfill older history)
-async function readChat(username, days = 45, minId = 0, offsetId = 0) {
+// 14.10: "c/<id>" = discussion group without @address — found through its channel `parent` (CHAT_PARENT in tg_web_import.py)
+async function readChat(username, days = 45, minId = 0, offsetId = 0, parent = "") {
   const m = rootScope.managers;
-  const peer = await m.appUsersManager.resolveUsername(username);
-  const inputPeer = await m.appChatsManager.getChannelInputPeer(peer.id);
+  let inputPeer;
+  if (username.startsWith("c/")) {
+    const r = await m.apiManager.invokeApi("contacts.resolveUsername", {username: parent});
+    const ch = r.chats[0];
+    const full = await m.apiManager.invokeApi("channels.getFullChannel",
+      {channel: {_: "inputChannel", channel_id: ch.id, access_hash: ch.access_hash}});
+    const g = full.chats.find(c => c.id === +username.slice(2));
+    inputPeer = {_: "inputPeerChannel", channel_id: g.id, access_hash: g.access_hash};
+  } else {
+    const r = await m.apiManager.invokeApi("contacts.resolveUsername", {username});
+    const ch = r.chats[0];  // also works for groups she has not joined
+    inputPeer = {_: "inputPeerChannel", channel_id: ch.id, access_hash: ch.access_hash};
+  }
   const since = Date.now() / 1000 - days * 86400;
   const out = [];
   let offset = offsetId;

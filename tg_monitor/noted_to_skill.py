@@ -22,7 +22,7 @@ nums = nums.get("numbers", nums) if isinstance(nums, dict) else {}
 groups = {}
 for k, v in notes.items():
     if isinstance(v, dict) and v.get("noted"):
-        groups.setdefault(v.get("when", "Другое"), []).append((dates.get(k, ""), k, v))
+        groups.setdefault(v.get("when", "Другое"), []).append((dates.get(k) or v.get("date", ""), k, v))
 order = sorted(groups, key=lambda w: WHEN_ORDER.index(w) if w in WHEN_ORDER else len(WHEN_ORDER))
 total = sum(map(len, groups.values()))
 
@@ -35,16 +35,17 @@ for w in order:
     full.append(f"\n# {w}\n")
     index.append(f"\n### {w} ({len(items)})\n")
     for d, k, v in items:
+        d = d or v.get("date", "")   # заметки не из Telegram (статьи) несут свою дату и url
         title = v.get("noted_title") or v.get("headline", k)
         num = f"пост {nums[k]} · " if isinstance(nums.get(k), (int, str)) and nums.get(k) else ""
-        full.append(f"\n## {title}\n{num}{d} · [источник](https://t.me/{k}) · `{k}`\n\n")
+        full.append(f"\n## {title}\n{num}{d} · [источник]({v.get('url') or 'https://t.me/' + k}) · `{k}`\n\n")
         full += [s + "\n\n" for s in v.get("summary", [])]
         if v.get("for_us"):
             full.append(f"**Для нас:** {v['for_us']}\n\n")
         full.append(f"**📌 Принято:** {v['noted']}\n")
         if v.get("installed"):
             full.append(f"\n✓ Установлено: {v['installed']}\n")
-        index.append(f"- {title} — {v['noted']} ([{k}](https://t.me/{k}))\n")
+        index.append(f"- {title} — {v['noted']} ([{k}]({v.get('url') or 'https://t.me/' + k}))\n")
 
 os.makedirs(SKILL, exist_ok=True)
 open(os.path.join(SKILL, "принятое.md"), "w", encoding="utf-8").write("".join(full))
@@ -63,6 +64,8 @@ description: "Память «принято к сведению» из Telegram-
 - Новая карточка, которую она переслала с панели = «принято к сведению»: в notes.json дописать `"noted": "что берём"`,
   `"when": "<группа ниже>"` → `python noted_to_skill.py` → `python news.py --build` (карточка уходит с панели) →
   дальше процедура скилла dropship-lessons (урок в нужный раздел, GitHub, применить к делу).
+- Статья не из Telegram (Хабр, сайт — прислала ссылкой): ключ вида `habr/ruvds-1058310`, в заметке ещё `"url"` и
+  `"date"` (ГГГГ-ММ-ДД) — ссылка и дата берутся из них (с 14.10.2026).
 - Когда нужен подробный текст урока — открыть `принятое.md` и найти по заголовку или ключу `канал/номер`.
 - При разборе новых постов: если новость повторяет уже принятое — `skip` (дубль), не показывать снова.
 - Изучение ссылок принятого (12.10): помощникам на чтение статей, доков, уроков курсов, кода GitHub — `model: sonnet`,

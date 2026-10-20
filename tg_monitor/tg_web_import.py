@@ -21,6 +21,14 @@ import tg_monitor as tm
 
 DB = Path(__file__).parent / "tg_monitor.db"
 PORT = 8765
+# group chats read with readChat (the same list as CHATS in news.py). 14.10 she: «чаты тоже нужны» — WB/Ozon seller chats
+CHATS = ["shopify_chat", "vibecoding_community", "redmilliard_chat", "sellermpchat", "c/1777935062", "c/1554685217",
+         "chat_wildbox", "polagushin_chat", "ChatMaxProWb", "billionwb_chat", "ozon_chat_mp", "chatggecom"]
+# hundreds-thousands of messages a day: the first read only for a few days, then incremental by minId
+CHAT_DAYS = {"redmilliard_chat": 3, "sellermpchat": 3, "c/1777935062": 7, "ChatMaxProWb": 7, "polagushin_chat": 7,
+             "chat_wildbox": 7, "ozon_chat_mp": 7, "c/1554685217": 7, "billionwb_chat": 14}
+# discussion groups without @address: Telegram Web finds them through the channel they belong to
+CHAT_PARENT = {"c/1777935062": "marketplace_hogwarts", "c/1554685217": "wbsharks"}
 
 
 def save(posts):
@@ -63,8 +71,11 @@ def plan():
     if "--full" in sys.argv:  # 29.09 «исчерпывающий сбор»: every channel, whole window, hidden posts included
         print(json.dumps([[ch, 0] for ch in tm.load_channels()], ensure_ascii=False))
         chats = {c: conn.execute("SELECT min(msg_id), max(msg_id) FROM chat_msgs WHERE chat=?", (c,)).fetchone()
-                 for c in ("shopify_chat", "vibecoding_community")}
+                 for c in CHATS}
         print("чаты (min, max):", json.dumps(chats))
+        print("чаты-план readChat (имя, дней, minId, offsetId, канал-родитель):",
+              json.dumps([[c, CHAT_DAYS.get(c, 45), (chats[c][1] or 0) + 1 if chats[c][1] else 0, 0, CHAT_PARENT.get(c, "")]
+                          for c in CHATS], ensure_ascii=False))
         return
     out = [[ch, mid] for ch, mid in conn.execute(
         "SELECT channel, min(post_id) FROM posts WHERE text=? GROUP BY channel", (tm.HIDDEN,))]
