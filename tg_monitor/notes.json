@@ -60956,5 +60956,49 @@
  },
  "mpgo_ru/8491": {
   "cat": "skip"
+ },
+ "aisetii/2674": {
+  "cat": "skip"
+ },
+ "thetrends_journal/445": {
+  "cat": "skip"
+ },
+ "llm_under_hood/971": {
+  "cat": "skip"
+ },
+ "projplus/4964": {
+  "cat": "skip"
+ },
+ "valeri_bloc/4785": {
+  "cat": "skip"
+ },
+ "polagushin_clo/3478": {
+  "cat": "skip"
+ },
+ "threeyearsonwb/2939": {
+  "cat": "skip"
+ },
+ "threeyearsonwb/2931": {
+  "cat": "skip"
+ },
+ "threeyearsonwb/2925": {
+  "cat": "skip"
+ },
+ "threeyearsonwb/2921": {
+  "cat": "skip"
+ },
+ "threeyearsonwb/2914": {
+  "cat": "skip"
+ },
+ "threeyearsonwb/2910": {
+  "cat": "skip"
+ },
+ "polagushin_clo/3512": {
+  "cat": "soft",
+  "headline": "Контент-завод: товар с видимой «болью» и До/После продаётся через ролики легче",
+  "summary": [
+   "Канал пишет про магазин бритв: рост продаж с 3,5 млн в сентябре до 22 млн в октябре, десятки миллионов просмотров. Автор связывает это с двумя «болями» в роликах — раздражение после бритья и вросшие волосы. Цифры от канала, нами не проверены."
+  ],
+  "for_us": "Для креативов магазина: искать у товара видимую проблему или До/После (углы подачи в dropship-lessons), а не снимать «просто красиво»."
  }
 }
