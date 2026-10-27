@@ -1,0 +1,96 @@
+[
+ {
+  "name": "Marketplace Pulse",
+  "theme": "Amazon/Walmart/Temu/TikTok Shop, данные о площадках США",
+  "url": "https://www.marketplacepulse.com/articles/recent.atom",
+  "limit": 15
+ },
+ {
+  "name": "Shopify Dev Changelog",
+  "theme": "что меняется в Shopify для разработчиков (API, темы, чекаут)",
+  "url": "https://shopify.dev/changelog/feed.xml",
+  "limit": 12,
+  "filter": [
+   "theme",
+   "checkout",
+   "admin api",
+   "storefront",
+   "catalog",
+   "markets",
+   "payments",
+   "agent",
+   "ucp",
+   "function"
+  ]
+ },
+ {
+  "name": "Practical Ecommerce",
+  "theme": "практика интернет-магазинов США (Shopify, реклама, SEO)",
+  "url": "https://www.practicalecommerce.com/feed",
+  "limit": 15
+ },
+ {
+  "name": "Modern Retail",
+  "theme": "DTC-бренды и ритейл США",
+  "url": "https://www.modernretail.co/feed/",
+  "limit": 10
+ },
+ {
+  "name": "Digital Commerce 360",
+  "theme": "цифры по e-commerce США и маркетплейсам",
+  "url": "https://www.digitalcommerce360.com/feed/",
+  "limit": 10
+ },
+ {
+  "name": "PYMNTS",
+  "theme": "платежи и e-commerce США",
+  "url": "https://www.pymnts.com/feed/",
+  "limit": 10,
+  "filter": [
+   "ecommerce",
+   "e-commerce",
+   "amazon",
+   "shopify",
+   "marketplace",
+   "retail",
+   "dtc",
+   "tiktok shop",
+   "walmart"
+  ]
+ },
+ {
+  "name": "Sostav",
+  "theme": "реклама и e-commerce России",
+  "url": "https://www.sostav.ru/rss/",
+  "limit": 40,
+  "filter": [
+   "маркетплейс",
+   "wildberries",
+   "ozon",
+   "e-commerce",
+   "интернет-магазин",
+   "ecommerce",
+   "селлер"
+  ]
+ },
+ {
+  "name": "Data Insight",
+  "theme": "исследования e-commerce России",
+  "url": "https://datainsight.ru/rss.xml",
+  "limit": 10
+ },
+ {
+  "name": "eCommerce Fastlane",
+  "theme": "Shopify: ИИ-видимость товаров, описания, средний чек, реклама; подкаст 2 раза в неделю",
+  "manual": true,
+  "url": "https://ecommercefastlane.com/",
+  "look": "блоки Essential reading, Podcast, AI Visibility, AI Commerce"
+ },
+ {
+  "name": "Retail TouchPoints",
+  "theme": "розница и DTC США, сезон, возвраты, ИИ-покупки (статьи за формой — только заголовки)",
+  "manual": true,
+  "url": "https://www.retailtouchpoints.com/",
+  "look": "Top Stories, Executive Viewpoints"
+ }
+]
